@@ -58,18 +58,40 @@ nodes.dofs =    [   0 0 0 0 0 0;...
                     1 1 1 1 1 1;...
                     1 1 1 1 1 1];
 
-beam.nodes1 = [1; 3; 3; 2; 4; 2 ];                  % elements starting nodes
-beam.nodes2 = [2; 2; 4; 4; 5; 5 ];                  % elements ending nodes
+beam.nodes1 = [1; 3; 3; 2; 2; 4 ];                  % elements starting nodes
+beam.nodes2 = [2; 2; 4; 5; 4; 5 ];                  % elements ending nodes
 beam.disc   = 16;
 beam.nbeam = numel(beam.nodes1);
 beam.vertex     = beamVertex(beam,nodes);
 beam.XY         = beamXY(beam,nodes);
-beam.ndofs      = nodes.ndofs * 2;
-beam.codeNumbers = codeNumb (beam,nodes);
 
-beam.codeNumbers
+
+p = 0 ;
+    for n = 1:nodes.nnodes                
+        for k = 1:nodes.ndofs
+            if nodes.dofs(n,k) == 1
+                nodes.codeDofs(n,k) = p+1;
+                p = p+1;
+                else
+                nodes.codeDofs(n,k) = 0;   
+            end
+        end
+    end
+    for b = 1:beam.nbeam
+        codeNumbers = beam.nodes1(i),k
+    end
+
+
+kc_stycniku=[0 0 0 0 0 0 1 2 3 4 5 6;...
+            0 0 0 0 0 0 1 2 3 4 5 6;...
+            0 0 0 0 0 0 7 8 9 10 11 12;...%kódová čísla prutů
+            1 2 3 4 5 6 7 8 9 10 11 12;...
+            7 8 9 10 11 12 13 14 15 16 17 18;...
+            1 2 3 4 5 6 13 14 15 16 17 18;];
                 
-pn_stycniku=max(max(beam.codeNumbers));
+pn_stycniku=max(max(kc_stycniku));
+psv=6; %posuny a pootoceni ve stycniku pro 2D=3, pro 3D=6
+nodes.ndofs=2*pnodes.ndofs; %stupne volnosti prutu
 ne=beam.nbeam*beam.disc; %pocet elementu
 
 %========================================================================
@@ -83,7 +105,7 @@ Ip=prtoel(Ip_prut,beam.nbeam,beam.disc,prurez);
 %========================================================================
 %Parametry prutů - vytvoreni kódových čísel a vektorů jednotlivých prutů
 %========================================================================
-[kc,vektor_elem]=diskprut(pn_stycniku,beam.vertex,beam.codeNumbers,beam.disc,beam.nbeam);
+[kc,vektor_elem]=diskprut(pn_stycniku,beam.vertex,kc_stycniku,beam.disc,beam.nbeam);
 pn=max(max(kc));
 [vektorXY_elem]=XYtoel(beam.nbeam,beam.disc,beam.XY);
 
@@ -96,22 +118,22 @@ f_global(14)=-1;
 %==========================================================================
 %Transformacni matice
 %==========================================================================
-[L_all,T_cell]=transfM(vektor_elem,vektorXY_elem,beam.ndofs,ne);
+[L_all,T_cell]=transfM(vektor_elem,vektorXY_elem,nodes.ndofs,ne);
 
 %==========================================================================
 %Matice tuhosti lokalni a globalni
 %==========================================================================
-[K_local,K_global]=stiffnessM(A,Iy,Iz,Ip,T_cell,L_all,v,E,ne,pn,kc,beam.ndofs);
+[K_local,K_global]=stiffnessM(A,Iy,Iz,Ip,T_cell,L_all,v,E,ne,pn,kc,nodes.ndofs);
 
 %==========================================================================
 %Vypocet vnitrrnich sil
 %==========================================================================
-[f_local]=EndForces(K_global,K_local,f_global,T_cell,beam.ndofs,ne,pn,kc);
+[f_local]=EndForces(K_global,K_local,f_global,T_cell,nodes.ndofs,ne,pn,kc);
 
 %==========================================================================
 %Geometricka_matice
 %==========================================================================
-[Ksigma_local,Ksigma_global]=geometricM(A,Ip,T_cell,L_all,f_local,pn,ne,kc,beam.ndofs);
+[Ksigma_local,Ksigma_global]=geometricM(A,Ip,T_cell,L_all,f_local,pn,ne,kc,nodes.ndofs);
 
 %==========================================================================
 %Kriticke bremeno a vlastni tvary
