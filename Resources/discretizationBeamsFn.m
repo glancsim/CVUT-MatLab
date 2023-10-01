@@ -13,51 +13,53 @@
 %   elementVector =                 směrový vektor jednotlivých elementů
 %
 % (c) S. Glanc, 2022
-function [elemntsCodeNumber,elemVector]=diskprut(numberOfUnknownForcesInJoints,beamVector,beamCodeNumbers,discretizationOfBeam,numberOfBeam)
-
-cislonezname=numberOfUnknownForcesInJoints+1;
-for p=1:numberOfBeam
-    c=discretizationOfBeam;
-    for s=1:discretizationOfBeam
-    elemVector(s+discretizationOfBeam*p-discretizationOfBeam,1)=beamVector(p,1)/c;
-    elemVector(s+discretizationOfBeam*p-discretizationOfBeam,2)=beamVector(p,2)/c;
-    elemVector(s+discretizationOfBeam*p-discretizationOfBeam,3)=beamVector(p,3)/c;
+function [elements]=discretizationBeamsFn(beams,nodes)
+cislonezname=max(max(beams.codeNumbers))+1;
+for p=1:beams.nbeams
+    c=beams.disc(p);
+    for s=1:c
+    elemVector(s+c*p-c,1)=beams.vertex(p,1)/c;
+    elemVector(s+c*p-c,2)=beams.vertex(p,2)/c;
+    elemVector(s+c*p-c,3)=beams.vertex(p,3)/c;
     end
 end
-for p=1:numberOfBeam
+for p=1:beams.nbeams
 %doplneni pozice zacatku prutu--------------------------------------------    
     for f=1:6
-        elemntsCodeNumber(1+discretizationOfBeam*(p-1),f)=beamCodeNumbers(p,f);
+        elementsCodeNumber(1+c*(p-1),f)=beams.codeNumbers(p,f);
     end
-    if discretizationOfBeam>1
+    if c>1
     for f=7:12
-        elemntsCodeNumber(1+discretizationOfBeam*(p-1),f)=cislonezname;
+        elementsCodeNumber(1+c*(p-1),f)=cislonezname;
         cislonezname=cislonezname+1;
     end
     end
 %-------------------------------------------------------------------------
 %doplneni pozice pomocnych neznamych--------------------------------------------
-    if discretizationOfBeam>1
-    for h=2:discretizationOfBeam-1
+    if c>1
+    for h=2:c-1
         for f=1:6
-            elemntsCodeNumber(h+discretizationOfBeam*(p-1),f)= elemntsCodeNumber(h-1+discretizationOfBeam*(p-1),f+6);
+            elementsCodeNumber(h+c*(p-1),f)= elementsCodeNumber(h-1+c*(p-1),f+6);
         end
         for f=7:12
-            elemntsCodeNumber(h+discretizationOfBeam*(p-1),f)=cislonezname;
+            elementsCodeNumber(h+c*(p-1),f)=cislonezname;
             cislonezname=cislonezname+1;
         end
     end
     end
 %-------------------------------------------------------------------------
 %doplneni pozice konce prutu--------------------------------------------
-    if discretizationOfBeam>1
+    if c>1
     for f=1:6
-        elemntsCodeNumber(discretizationOfBeam+discretizationOfBeam*(p-1),f)=elemntsCodeNumber(discretizationOfBeam-1+discretizationOfBeam*(p-1),f+6);
+        elementsCodeNumber(c+c*(p-1),f)=elementsCodeNumber(c-1+c*(p-1),f+6);
     end
     end
     for f=7:12
-        elemntsCodeNumber(discretizationOfBeam+discretizationOfBeam*(p-1),f)=beamCodeNumbers(p,f);
+        elementsCodeNumber(c+c*(p-1),f)=beams.codeNumbers(p,f);
     end
 %-------------------------------------------------------------------------
 end
+elements.codeNumbers = elementsCodeNumber
+elements.vertex = elemVector
+[elements.nelement,~] = size(elemVector)
 end

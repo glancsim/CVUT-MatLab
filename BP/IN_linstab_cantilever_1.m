@@ -111,15 +111,15 @@ clearvars -except   f_global...
 [sorEigVal,sorEigVec] = sortEigVec(eigVal,eigVec);
 disp('První vlastní číslo')
 disp([num2str(sorEigVal(1)),' N'])
-disp('Tvar pro první vlastní číslo')
-disp([num2str(sorEigVec(:,1))])
+% disp('Tvar pro první vlastní číslo')
+% disp([num2str(sorEigVec(:,1))])
 
 disp('Druhé vlastní číslo')
 disp([num2str(sorEigVal(2)),' N'])
-disp('Tvar pro druhé vlastní číslo')
-disp([num2str(sorEigVec(:,1))])
+% disp('Tvar pro druhé vlastní číslo')
+% disp([num2str(sorEigVec(:,1))])
 
 disp('Třetí vlastní číslo')
 disp([num2str(sorEigVal(3)),' N'])
-disp('Tvar pro třetí vlastní číslo')
-disp([num2str(sorEigVec(:,2))])
+% disp('Tvar pro třetí vlastní číslo')
+% disp([num2str(sorEigVec(:,2))])
