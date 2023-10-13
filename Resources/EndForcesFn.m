@@ -17,39 +17,42 @@
 %
 % (c) S. Glanc, 2021
 
-function [localEndForces]=EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements)
-%==========================================================================
-%Globalni posun stycniku
-%==========================================================================
-r_global=zeros(elements.ndofs,1);
-r_global(:,1)= stiffnesMatrix.global\endForces.global;
-    
-%==========================================================================
-%Lokalni posun stycniku
-%==========================================================================
-r_local=zeros(12,elements.nelement);
-for j=1:elements.nelement
-    kcisla=elements.codeNumbers(j,:);
-        for i=1:12
-            if kcisla(i)==0;
-            r_local(i,j)=0;
-            else
-            r_local(i,j)=r_global(kcisla(i));   
-            end
-        end
-end
+function [localEndForces,displacements]=EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements)
+    %==========================================================================
+    %Globalni posun stycniku
+    %==========================================================================
+    r_global=zeros(elements.ndofs,1);
+    r_global(:,1)= stiffnesMatrix.global\endForces.global;
+    displacements.global = r_global;
 
-for i=1:elements.nelement
-    T=transformationMatrix.matrices{i}; 
-    r=r_local(:,i);
-    r_local(:,i)=T*r;
-end
-%==========================================================================
-%Lokalni sily ve stycniku
-%==========================================================================
-for i=1:elements.nelement
-    K_l=stiffnesMatrix.local{i};
-    r=r_local(:,i);
-    localEndForces(:,i)=K_l*r;
-end
+    %==========================================================================
+    %Lokalni posun stycniku
+    %==========================================================================
+    r_local=zeros(12,elements.nelement);
+    for j=1:elements.nelement
+        kcisla=elements.codeNumbers(j,:);
+            for i=1:12
+                if kcisla(i)==0;
+                r_local(i,j)=0;
+                else
+                r_local(i,j)=r_global(kcisla(i));   
+                end
+            end
+    end
+
+    for i=1:elements.nelement
+        T=transformationMatrix.matrices{i}; 
+        r=r_local(:,i);
+        r_local(:,i)=T*r;
+    end
+    %==========================================================================
+    %Lokalni sily ve stycniku
+    %==========================================================================
+    for i=1:elements.nelement
+        K_l=stiffnesMatrix.local{i};
+        r=r_local(:,i);
+
+        localEndForces(:,i)=K_l*r;
+    end
+    displacements.local = r_local;
 end
