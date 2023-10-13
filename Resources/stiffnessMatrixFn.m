@@ -29,8 +29,8 @@ localStiffnessMatrix={};
 %========================================================================
 %Výpočet
 %========================================================================
-psv = 6
-Kzeros = zeros(psv,psv)
+psv = 6;
+Kzeros = zeros(psv,psv);
 for cp=1:elements.nelement % cislo elementu
 A_el=elements.sections.A(cp);
 Iy_el=elements.sections.Iy(cp);
