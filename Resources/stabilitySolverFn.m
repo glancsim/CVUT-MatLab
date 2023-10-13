@@ -15,7 +15,7 @@ function [Results] = stabilitySolverFn(sections, nodes, beams,loads)
 %   SOLVE
 %------------------------------------------------------------------------
 nodes.ndofs = sum(sum(nodes.dofs));
-nodes.nnodes    = numel(nodes.x)
+nodes.nnodes    = numel(nodes.x);
 
 beams.nbeams  = numel(beams.nodesHead);
 beams.vertex = beamVertexFn(beams,nodes);
@@ -25,7 +25,7 @@ beams.XY = XYtoBeamsFn(beams);
 elements = discretizationBeamsFn(beams,nodes);
 elements.XY = XYtoElementFn(beams);
 elements.sections = sectionToElementFn(sections,beams);
-elements.ndofs = max(max(elements.codeNumbers))
+elements.ndofs = max(max(elements.codeNumbers));
 
 loads.nload  = size(loads,2);
 %------------------------------------------------------------------------

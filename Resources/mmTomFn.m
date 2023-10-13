@@ -11,5 +11,5 @@
 
 
 function [m]=mmTomFn(mm,e)
-    m = mm * 10^(-3 * e)
+    m = mm * 10^(-3 * e);
 end

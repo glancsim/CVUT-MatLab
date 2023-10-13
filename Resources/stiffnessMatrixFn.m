@@ -29,7 +29,8 @@ localStiffnessMatrix={};
 %========================================================================
 %Výpočet
 %========================================================================
-psv=12/2;
+psv = 6
+Kzeros = zeros(psv,psv)
 for cp=1:elements.nelement % cislo elementu
 A_el=elements.sections.A(cp);
 Iy_el=elements.sections.Iy(cp);
@@ -44,7 +45,7 @@ T_t=T';
 %Matice tuhosti
 %=========================================================================
 % Matice K11
-K11=zeros(psv,psv);
+K11=Kzeros;
 K11(1,1)=A_el/L;
 K11(2,2)=12*Iz_el/(L^3);
 K11(2,6)=6*Iz_el/(L^2);
@@ -57,7 +58,7 @@ K11(6,2)=6*Iz_el/(L^2);
 K11(6,6)=4*Iz_el/L;
 
 % Matice K22
-K22=zeros(6,6);
+K22=Kzeros;
 K22(1,1)=A_el/L;
 K22(2,2)=12*Iz_el/(L^3);
 K22(2,6)=-6*Iz_el/(L^2);
@@ -70,7 +71,7 @@ K22(6,2)=-6*Iz_el/(L^2);
 K22(6,6)=4*Iz_el/L;
 
 % Matice K12
-K12=zeros(6,6);
+K12=Kzeros;
 K12(1,1)=-A_el/L;
 K12(2,2)=-12*Iz_el/(L^3);
 K12(2,6)=6*Iz_el/(L^2);
@@ -83,7 +84,7 @@ K12(6,2)=-6*Iz_el/(L^2);
 K12(6,6)=2*Iz_el/L;
 
 % Matice K21
-K21=zeros(6,6);
+K21=Kzeros;
 K21(1,1)=-A_el/L;
 K21(2,2)=-12*Iz_el/(L^3);
 K21(2,6)=-6*Iz_el/(L^2);

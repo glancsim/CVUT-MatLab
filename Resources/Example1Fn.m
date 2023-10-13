@@ -1,6 +1,7 @@
 clear
 clc
 addpath('../Resources')
+profile on
 %------------------------------------------------------------------------
 %   INPUTS
 %------------------------------------------------------------------------
@@ -35,7 +36,7 @@ loads.value  = -1;
 %------------------------------------------------------------------------
 %   SOLVE
 %------------------------------------------------------------------------
-Results = stabilitySolverFn(sections, nodes, beams,loads)
+Results = stabilitySolverFn(sections, nodes, beams,loads);
 %------------------------------------------------------------------------
 %   RESULTS
 %------------------------------------------------------------------------
@@ -48,4 +49,6 @@ disp('Druhé kritické břemeno')
 disp([num2str(SortedResults(2)),' N'])
 disp('Třetí kritické břemeno')
 disp([num2str(SortedResults(3)),' N'])
+profile off
+profile viewer
 
