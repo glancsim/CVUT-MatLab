@@ -1,5 +1,4 @@
-clc
-clear
+clc;clear;startup
 % It's good practice to start by clearing YALMIPs internal database 
 % Every time you call sdpvar etc, an internal database grows larger
 yalmip('clear')

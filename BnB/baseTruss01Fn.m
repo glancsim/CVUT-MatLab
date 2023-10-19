@@ -1,5 +1,4 @@
-clear
-clc
+function stress = Truss01Fn(r,idx)
 addpath('../Resources')
 %------------------------------------------------------------------------
 %   INPUTS
@@ -52,7 +51,7 @@ beams.XY = XYtoBeamsFn(beams);
 elements = discretizationBeamsFn(beams,nodes);
 elements.XY = XYtoElementFn(beams);
 elements.sections = sectionToElementFn(sections,beams);
-elements.ndofs = max(max(elements.codeNumbers))
+elements.ndofs = max(max(elements.codeNumbers));
 
 
 %------------------------------------------------------------------------
@@ -65,13 +64,15 @@ transformationMatrix = transformationMatrixFn(elements);
 stiffnesMatrix = stiffnessMatrixFn(elements,transformationMatrix);
 
 [endForces.local,displacements] = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
-displacements.local
-displacements.global
-endForces.local
-
+% displacements.local
+% displacements.global
+% endForces.local
 for i = 1 : size(endForces.local,2)
     normalStress(i) = endForces.local(7,i) / sections.A(i);
 end
+stress = normalStress(idx);
+end
+
 
 
 

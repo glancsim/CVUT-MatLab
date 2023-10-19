@@ -1,12 +1,12 @@
-clear
-clc
+function stress = Truss01Fn(x,idx)
 addpath('../Resources')
 %------------------------------------------------------------------------
 %   INPUTS
 %------------------------------------------------------------------------
 % Sections
-r = [ 1 , 1 ];
-[~,sizeR] = size(r)
+% r = [ 1 , 1 ];
+r = value(x)
+[~,sizeR] = size(r);
 sections.A  = pi() * r .^ 2;
 sections.Iy = 1/4 * pi() * r .^ 4;
 sections.Iz = sections.Iy;
@@ -15,9 +15,9 @@ sections.E  = 1000 * ones(1,sizeR);
 sections.v  = 0.3 * ones(1,sizeR);
 
 %Nodes
-nodes.x         = [0;0;0]
-nodes.y         = [0;8;16]
-nodes.z         = [0;0;0]
+nodes.x         = [0;0;0];
+nodes.y         = [0;8;16];
+nodes.z         = [0;0;0];
 
 nodes.dofs      = [ 0 0 0 0 0 0;...
                     1 1 1 1 1 1;...
@@ -42,7 +42,7 @@ loads = loadInputFn(loads,nodes);
 %   SOLVE
 %------------------------------------------------------------------------
 nodes.ndofs = sum(sum(nodes.dofs));
-nodes.nnodes    = numel(nodes.x)
+nodes.nnodes    = numel(nodes.x);
 
 beams.nbeams  = numel(beams.nodesHead);
 beams.vertex = beamVertexFn(beams,nodes);
@@ -52,7 +52,7 @@ beams.XY = XYtoBeamsFn(beams);
 elements = discretizationBeamsFn(beams,nodes);
 elements.XY = XYtoElementFn(beams);
 elements.sections = sectionToElementFn(sections,beams);
-elements.ndofs = max(max(elements.codeNumbers))
+elements.ndofs = max(max(elements.codeNumbers));
 
 
 %------------------------------------------------------------------------
@@ -65,13 +65,16 @@ transformationMatrix = transformationMatrixFn(elements);
 stiffnesMatrix = stiffnessMatrixFn(elements,transformationMatrix);
 
 [endForces.local,displacements] = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
-displacements.local
-displacements.global
-endForces.local
-
+% displacements.local
+% displacements.global
+% endForces.local
 for i = 1 : size(endForces.local,2)
     normalStress(i) = endForces.local(7,i) / sections.A(i);
 end
+stress = abs(normalStress(idx) ) < 0.5
+
+end
+
 
 
 
