@@ -18,6 +18,8 @@
 % (c) S. Glanc, 2021
 
 function [localEndForces,displacements]=EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements)
+    psv = 3;
+    psv2 = psv*2;
     %==========================================================================
     %Globalni posun stycniku
     %==========================================================================
@@ -28,10 +30,10 @@ function [localEndForces,displacements]=EndForcesFn(stiffnesMatrix,endForces,tra
     %==========================================================================
     %Lokalni posun stycniku
     %==========================================================================
-    r_local=zeros(12,elements.nelement);
+    r_local=zeros(psv2,elements.nelement);
     for j=1:elements.nelement
         kcisla=elements.codeNumbers(j,:);
-            for i=1:12
+            for i=1:psv2
                 if kcisla(i)==0;
                 r_local(i,j)=0;
                 else

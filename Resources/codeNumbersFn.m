@@ -10,7 +10,8 @@
 % (c) S. Glanc, 2023
 
 function [codes]=codeNumbersFn(beams,nodes)
-    [s,k] = size(nodes.dofs);
+   [s,k] = size(nodes.dofs);
+    dofs = zeros(s,k);
     m = 0;
     for g = 1:s
         for j = 1:k
@@ -20,8 +21,13 @@ function [codes]=codeNumbersFn(beams,nodes)
             end
         end
     end
+    s1 = s  ;
+    s2 = s + 1 ; 
+    s3 = 2*s ;
+%     beams.nbeams
+    codes = zeros(beams.nbeams,s3);
     for i = 1:beams.nbeams
-    codes(i,1:6) = dofs(beams.nodesHead(i),:);
-    codes(i,7:12) = dofs(beams.nodesEnd(i),:);
+    codes(i,1:s1) = dofs(beams.nodesHead(i),:);
+    codes(i,s2:s3) = dofs(beams.nodesEnd(i),:);
     end
 end

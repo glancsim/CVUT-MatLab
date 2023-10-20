@@ -14,6 +14,10 @@
 %
 % (c) S. Glanc, 2022
 function [elements]=discretizationBeamsFn(beams,nodes)
+    [s,k] = size(nodes.dofs);
+    s1 = s  ;
+    s2 = s + 1 ; 
+    s3 = 2*s ;
 cislonezname=max(max(beams.codeNumbers))+1;
 for p=1:beams.nbeams
     c=beams.disc(p);
@@ -25,11 +29,11 @@ for p=1:beams.nbeams
 end
 for p=1:beams.nbeams
 %doplneni pozice zacatku prutu--------------------------------------------    
-    for f=1:6
+    for f=1:s1
         elementsCodeNumber(1+c*(p-1),f)=beams.codeNumbers(p,f);
     end
     if c>1
-    for f=7:12
+    for f=s2:s3
         elementsCodeNumber(1+c*(p-1),f)=cislonezname;
         cislonezname=cislonezname+1;
     end
@@ -38,10 +42,10 @@ for p=1:beams.nbeams
 %doplneni pozice pomocnych neznamych--------------------------------------------
     if c>1
     for h=2:c-1
-        for f=1:6
-            elementsCodeNumber(h+c*(p-1),f)= elementsCodeNumber(h-1+c*(p-1),f+6);
+        for f=1:s1
+            elementsCodeNumber(h+c*(p-1),f)= elementsCodeNumber(h-1+c*(p-1),f+s1);
         end
-        for f=7:12
+        for f=s2:s3
             elementsCodeNumber(h+c*(p-1),f)=cislonezname;
             cislonezname=cislonezname+1;
         end
@@ -50,11 +54,11 @@ for p=1:beams.nbeams
 %-------------------------------------------------------------------------
 %doplneni pozice konce prutu--------------------------------------------
     if c>1
-    for f=1:6
-        elementsCodeNumber(c+c*(p-1),f)=elementsCodeNumber(c-1+c*(p-1),f+6);
+    for f=1:s1
+        elementsCodeNumber(c+c*(p-1),f)=elementsCodeNumber(c-1+c*(p-1),f+s1);
     end
     end
-    for f=7:12
+    for f=s2:s3
         elementsCodeNumber(c+c*(p-1),f)=beams.codeNumbers(p,f);
     end
 %-------------------------------------------------------------------------
