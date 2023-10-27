@@ -18,4 +18,5 @@ function [XY]=XYtoBeamsFn(beams)
         else
             XY(b,:) = [0 1 0];
         end
+    end
 end

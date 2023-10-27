@@ -14,99 +14,68 @@
 % stiffnesMatrix.local =    lokální matice tuhosti - cell
 % stiffnesMatrix.global =   globální matice tuhosti       
 %
-% (c) S. Glanc, 2022
+% (c) S. Glanc, 2023
 
-function [stiffnesMatrix]=stiffnessMatrixTrussFn(beams,transformationMatrix)
-%========================================================================
-%Příprava paměti počítače
-%========================================================================
-ndofs = max(max(beams.codeNumbers));
-globalStiffnessMatrix=zeros(ndofs ,ndofs);
-localStiffnessMatrix={};
-%========================================================================
-%Výpočet
-%========================================================================
-psv = 3;
-psv2 = psv *2;
-Kzeros = zeros(psv,psv);
-for cp=1:beams.nelement % cislo elementu
-A_el=beams.sections.A(cp);
-E_el=beams.sections.E(cp);
-L=transformationMatrix.lengths(cp);
-T=transformationMatrix.matrices{cp};
-T_t=T';
-%=========================================================================
-%Matice tuhosti
-%=========================================================================
-% Matice K11
-K11=Kzeros;
-K11(1,1)=A_el/L;
-
-% Matice K22
-K22=Kzeros;
-K22(1,1)=A_el/L;
-
-
-% Matice K12
-K12=Kzeros;
-K12(1,1)=-A_el/L;
-
-
-% Matice K21
-K21=Kzeros;
-K21(1,1)=-A_el/L;
-
-
-K_tuhost=zeros(psv2,psv2);
-% Doplneni matice K11 do matice K
-for j = 1:psv
-    for  i = 1:psv  
-    K_tuhost(i,j)=K11(i,j);
-    end
-end
-% Doplneni matice K22 do matice K
-for j = psv+1:psv2
-    k22j=j-psv;
-    for  i = psv+1:psv2
-    k22i=i-psv;
-    K_tuhost(i,j)=K22(k22i,k22j);
-    end
-end
-
-% Doplneni matice K12 do matice K
-for j = psv+1:psv2
-    k12j=j-psv;
-    for  i = 1:psv 
-    K_tuhost(i,j)=K12(i,k12j);
-    end
-end
-
-% Doplneni matice K21 do matice K
-for j = 1:psv
-    for  i = psv+1:psv2 
-    k21i=i-psv;
-    K_tuhost(i,j)=K21(k21i,j);
-    end
-end
-
-K_tuhost=E_el*K_tuhost;
-localStiffnessMatrix{cp}=K_tuhost;
-K_tuhost=T_t*K_tuhost*T;
-
-%========================================================================
-%Assembly
-%========================================================================
-kcisla=beams.codeNumbers(cp,:);
-for i=1:psv2
-    if kcisla(i)>0
-        for j=1:psv2
-            if kcisla(j)>0
-            globalStiffnessMatrix(kcisla(i),kcisla(j))=globalStiffnessMatrix(kcisla(i),kcisla(j))+K_tuhost(i,j);
+function [stiffnesMatrix]=stiffnessMatrixTrussFn(inA,inE,inL,inT,nelem,codeNumbs)
+    %========================================================================
+    %Příprava paměti počítače
+    %========================================================================
+    ndofs = max(max(codeNumbs));
+    globalStiffnessMatrix=double2sdpvar(zeros(ndofs ,ndofs));
+%     globalStiffnessMatrix=(zeros(ndofs ,ndofs));
+    localStiffnessMatrix{nelem}=[];
+    psv = 3;
+    psv2 = psv *2;
+    %========================================================================
+    %Výpočet
+    %========================================================================
+    for idElem=1:nelem % cislo elementu
+        A=inA(idElem);
+        E=inE(idElem);
+        L=inL(idElem);
+        T=inT{idElem};
+        T_t=T';
+        %=========================================================================
+        %Matice tuhosti
+        %=========================================================================
+        localK  = localStiffMatFn(E/L)*A;
+        localStiffnessMatrix{idElem}=localK;
+        localK=T_t*localK*T;
+        %========================================================================
+        %Assembly
+        %========================================================================
+        codes=codeNumbs(idElem,:);
+        for i=1:psv2
+            if codes(i)>0
+                for j=1:psv2
+                    if codes(j)>0
+                    globalStiffnessMatrix(codes(i),codes(j))=globalStiffnessMatrix(codes(i),codes(j))+localK(i,j);
+                    end
+                end
             end
         end
     end
-end
-end
-stiffnesMatrix.global = globalStiffnessMatrix;
-stiffnesMatrix.local = localStiffnessMatrix;
+    
+    stiffnesMatrix = globalStiffnessMatrix;
+%     stiffnesMatrix.local = localStiffnessMatrix;
+    
+    function A = localStiffMatFn(k)
+        % Definujte rozměry matice a hodnotu k
+        n = 6;  % Počet řádků a sloupců matice
+
+        % Vytvoření řídké matice s hodnotami na specifických pozicích
+        row_indices = [1, 1, 4, 4];
+        col_indices = [1, 4, 1, 4];
+        values = [k, -k, k, -k];
+
+        A = sparse(row_indices, col_indices, values, n, n);
+
+        % Vytvořená matice A bude mít rozměr 6x6 a vypadat následovně:
+        %   k   0   0   0   0   -k
+        %   0   0   0   0   0    0
+        %   0   0   0   0   0    0
+        %   0   0   0   k   0    0
+        %   0   0   0   0   0    0
+        %  -k   0   0   0   0    0
+    end
 end
