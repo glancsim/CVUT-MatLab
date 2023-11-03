@@ -11,7 +11,7 @@ objective_function = @(x) -20*x(1) -10*x(2) + sum(linear_constraints(x) > 0) * 1
 initial_solution = [0,0];
 
 % Rozsah hodnot proměnných (lower_bound a upper_bound jsou vektory o stejné délce jako počet proměnných)
-lower_bound = [2,6];
+lower_bound = [2,0];
 upper_bound = [2,6];
 
 % Počáteční teplota
