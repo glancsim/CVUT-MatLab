@@ -1,5 +1,6 @@
 % cd 'C:\GitHub\CVUT-MatLab\BnB'
 clear;clc;startup;yalmip('clear')
+tic
 %% 
 % 
 
@@ -191,6 +192,7 @@ ops = sdpsettings('solver', 'gurobi');  % Nastavení Gurobi solveru s metodou Bn
 ops = sdpsettings(ops,'verbose',1,'debug',1);
 constraints = [constIneq, constEq, constBox];  % Kombinace všech omezení
 result = optimize(constraints, objective, ops)
+toc
 %% Post-procesing
 % Write solution
 
