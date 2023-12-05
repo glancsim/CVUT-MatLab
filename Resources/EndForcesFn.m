@@ -18,7 +18,7 @@
 % (c) S. Glanc, 2021
 
 function [localEndForces,displacements]=EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements)
-    psv = 3;
+    psv = 6;
     psv2 = psv*2;
     %==========================================================================
     %Globalni posun stycniku

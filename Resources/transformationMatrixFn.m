@@ -66,6 +66,6 @@ for cp=1:elements.nelement % cislo elementu
     end   
     matrices{cp}=T;
 end
-transformationMatrix.lengths = lengths
-transformationMatrix.matrices = matrices
+transformationMatrix.lengths = lengths;
+transformationMatrix.matrices = matrices;
 end                   

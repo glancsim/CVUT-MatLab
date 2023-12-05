@@ -21,13 +21,13 @@ function [codes]=codeNumbersFn(beams,nodes)
             end
         end
     end
-    s1 = s  ;
-    s2 = s + 1 ; 
-    s3 = 2*s ;
+    k1 = k  ;
+    k2 = k + 1 ; 
+    k3 = 2*k ;
 %     beams.nbeams
-    codes = zeros(beams.nbeams,s3);
+    codes = zeros(beams.nbeams,k3);
     for i = 1:beams.nbeams
-    codes(i,1:s1) = dofs(beams.nodesHead(i),:);
-    codes(i,s2:s3) = dofs(beams.nodesEnd(i),:);
+    codes(i,1:k1) = dofs(beams.nodesHead(i),:);
+    codes(i,k2:k3) = dofs(beams.nodesEnd(i),:);
     end
 end

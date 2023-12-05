@@ -11,36 +11,36 @@
 %
 % (c) S. Glanc, 2022
 
-function [sections]=sectionToElementFn(sections,beams)
+function [outSections]=sectionToElementFn(sections,beams)
 
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.A(s+beams.disc*(p-1))=sections.A(beams.sections(p));   
+                outSections.A(s+beams.disc*(p-1))=sections.A(beams.sections(p));   
             end
     end
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.Iy(s+beams.disc*(p-1))=sections.Iy(beams.sections(p));   
+                outSections.Iy(s+beams.disc*(p-1))=sections.Iy(beams.sections(p));   
             end
     end
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.Iz(s+beams.disc*(p-1))=sections.Iz(beams.sections(p));   
+                outSections.Iz(s+beams.disc*(p-1))=sections.Iz(beams.sections(p));   
             end
     end
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.Ix(s+beams.disc*(p-1))=sections.Ix(beams.sections(p));   
+                outSections.Ix(s+beams.disc*(p-1))=sections.Ix(beams.sections(p));   
             end
     end
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.E(s+beams.disc*(p-1))=sections.E(beams.sections(p));   
+                outSections.E(s+beams.disc*(p-1))=sections.E(beams.sections(p));   
             end
     end
     for p=1:beams.nbeams
             for s=1:beams.disc
-                sections.v(s+beams.disc*(p-1))=sections.v(beams.sections(p));   
+                outSections.v(s+beams.disc*(p-1))=sections.v(beams.sections(p));   
             end
     end
 end
