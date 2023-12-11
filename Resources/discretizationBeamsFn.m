@@ -63,7 +63,7 @@ for p=1:beams.nbeams
     end
 %-------------------------------------------------------------------------
 end
-elements.codeNumbers = elementsCodeNumber
-elements.vertex = elemVector
-[elements.nelement,~] = size(elemVector)
+elements.codeNumbers = elementsCodeNumber;
+elements.vertex = elemVector;
+[elements.nelement,~] = size(elemVector);
 end
