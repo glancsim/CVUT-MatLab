@@ -10,7 +10,7 @@
 % 
 % (c) S. Glanc, 2022
 function [Results]=criticalLoadFn(stiffnesMatrix,geometricMatrix)
-[eigenVectors,eigeinValues]=eig(stiffnesMatrix.global,-geometricMatrix.global);
+[eigenVectors,eigeinValues]=eigs(stiffnesMatrix.global,-geometricMatrix.global,10,'smallestabs');;
 eigeinValues=diag(eigeinValues);
 [Min,Pos]=min(abs(eigeinValues));
 Results.values = eigeinValues;
