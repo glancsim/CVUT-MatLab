@@ -1,4 +1,4 @@
-clc
+  clc
 clear
 % profile on
 
@@ -7,21 +7,21 @@ addpath 'C:\GitHub\CVUT-MatLab\Resources'
 disp(['i      ','A1     ', 'A2      ', 'A3      ','refV          ','newV          ','eig          ','OK',])
 nRhs = 9;
 nL = 54;
-P=[nRhs;nRhs+nL;nRhs+nL];
+P=[nRhs;nRhs;nRhs+nL];
 
 nom = size(P,1); %number of members
 [pastEig,pastVolume] = towerStabFn(P);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %Optimalizační parametry
 %%%%%%%%%%%%%%%%%%%%%%%%%
-Tmax=0.5;
+Tmax=0.50;
 Tmin=0.01*Tmax;
 
-succMax=100;
-% succMax = 5;
+% succMax=10;
+succMax = 5;
 countMax=10*succMax;
 iterMax=20*countMax;
+results = zeros(iterMax,6);
 
 Tmult=(Tmin/Tmax)^(succMax/iterMax);
 
@@ -38,7 +38,7 @@ while iter < iterMax
     while count < countMax && succ < succMax
        iter=iter+1;
        count = count + 1;
-       N = P + [randi([-1,1]);randi([-2,2]);randi([-2,2])];
+       N = P + [randi([-1,1]);randi([-1,1]);randi([-2,2])];
        % Omezení na proměnné
        if N(1) > nRhs
            N(1) = nRhs;           
@@ -46,11 +46,11 @@ while iter < iterMax
        if N(1) < 1
            N(1) = 1;
        end
-       if N(2) > nRhs+nL
-           N(2) = nRhs+nL;         
+       if N(2) > nRhs
+           N(2) = nRhs;         
        end
-       if N(2) < nRhs+1
-           N(2) = nRhs+1;
+       if N(2) < 1
+           N(2) = 1;
        end
        if N(3) > nRhs+nL
            N(3) = nRhs+nL;          
@@ -67,9 +67,10 @@ while iter < iterMax
        else
             fN = sqrt((1-abs(newEig))^2) + newVolume/refVolume;
        end
-       %Pravděpodobnos
+       %Pravděpodobnost přijetí řešení
        prob=exp((fP-fN)/T);
        if rand < prob
+                test(iter) = 1;
                succ = succ + 1;
                P = N;
                pastEig = newEig;
