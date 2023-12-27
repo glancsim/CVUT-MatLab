@@ -1,5 +1,5 @@
 function [value,volume] = towerStabFn(sectionsID)
-
+% tic
 % Sections
 
 crossSectionsSet.import = importdata("../Bnb/Sections.mat");
@@ -20,19 +20,23 @@ sections.Ix = [crossSectionsSet.Ip(sections.id(1));crossSectionsSet.Ip(sections.
 sections.E  = ones(3,1) * 210*10^9;
 sections.v  = ones(3,1) * 0.3;
 
+ndisc = 7;
+
 % Nodes
 
 width = 2.9;
 length = 2.9;
 height = 3;
+topHeight = 20;
 nbricks = 7;
-nodes.x = kron(ones(nbricks+1,1),[0;length;length;0]);                            % x coordinates of nodes
-nodes.y = kron(ones(nbricks+1,1),[0;0;width;width]);                              % y coordinates of nodes
-nodes.z = kron([height;height;height;height], ones(nbricks+1, 1)) ...
-        .* repelem((0:nbricks)', numel([height;height;height;height]), 1)  ;
-nodes.z((nbricks)*4+1:(nbricks+1)*4) =[20;20;20;20]; % z coordinates of nodes
+nodes.x = [[0;length;length;0];kron(ones(nbricks,1),[length/2;length;length/2;0;0;length;length;0])];                            % x coordinates of nodes
+nodes.y = [[0;0;width;width];kron(ones(nbricks,1),[0;width/2;width;width/2;0;0;width;width])];                              % y coordinates of nodes
+nodes.z = [0;0;0;0];
+for i = 1:nbricks
+    nodes.z  = [nodes.z; [height/2;height/2;height/2;height/2;height;height;height;height] + (i-1) .* [height;height;height;height;height;height;height;height]];
+end
+nodes.z((nbricks)*7+4:(nbricks+1)*7+4) =[topHeight-(topHeight - height*(nbricks-1))/2;topHeight-(topHeight - height*(nbricks-1))/2;topHeight-(topHeight - height*(nbricks-1))/2;topHeight-(topHeight - height*(nbricks-1))/2;topHeight;topHeight;topHeight;topHeight]; % z coordinates of nodes
 nnodes = numel(nodes.x); 
-
 % Supports
 
 kinematic.x.nodes = [1;2;3;4];              % node indices with restricted x-direction displacements
@@ -51,40 +55,29 @@ nodes.dofs(kinematic.ry.nodes,5) = false;    % mark prevented movement in y-dire
 nodes.dofs(kinematic.rz.nodes,6) = false;    % mark prevented movement in z-direction
 % Beams
 
-modulNodes1 = [1;2;3;4; 1;2;2;3;3;4;4;1; 5;6;7;8  ];   % elements starting nodes
+modulNodes1 = [1;2;3;4; 1;5;2;5;2;6;3;6;3;7;4;7;4;8;1;8; 9;10;11;12  ];   % elements starting nodes
 beams.nodesHead = (reshape(kron(modulNodes1', ones(nbricks, 1))', 1, [])' ...
-        + repelem((0:nbricks-1)', numel(modulNodes1))*4);
-modulNodes2 = [5;6;7;8; 6;5;7;6;8;7;5;8; 6;7;8;5  ];   % elements ending nodes
+        + repelem((0:nbricks-1)', numel(modulNodes1))*8);
+% beams.nodesHead = modulNodes1;
+modulNodes2 = [9;10;11;12; 5;10;5;9;6;11;6;10;7;12;7;11;8;9;8;12; 10;11;12;9  ];   % elements ending nodes
 beams.nodesEnd = (reshape(kron(modulNodes2', ones(nbricks, 1))', 1, [])' ...
-        + repelem((0:nbricks-1)', numel(modulNodes2))*4);
+        + repelem((0:nbricks-1)', numel(modulNodes2))*8);
+% beams.nodesEnd = modulNodes2;
 nr = numel(beams.nodesHead);
 % Beams sections
 
-beams.disc      = ones(nr,1)*4;
-modulElemGroup = [1;1;1;1; 2;2;2;2;2;2;2;2;    3;3;3;3];
+beams.disc      = ones(nr,1)*ndisc;
+modulElemGroup = [1;1;1;1; 3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;    2;2;2;2];
 beams.sections = reshape(kron(modulElemGroup', ones(nbricks, 1))', 1, [])';
 ng = max(max(beams.sections));
-% plot3([nodes.x(beams.nodesHead) nodes.x(beams.nodesEnd)]', ...
-%      [nodes.y(beams.nodesHead) nodes.y(beams.nodesEnd)]', ...
-%      [nodes.z(beams.nodesHead) nodes.z(beams.nodesEnd)]', ...
-%      'k','LineWidth',1);
-% hold on;
-% scatter3(nodes.x, nodes.y, nodes.z, 'blue', 'filled', 'o');
-% axis equal;
-% xlim([min(nodes.x)-1,max(nodes.x)+1]);  % to avoid tight limits
-% ylim([min(nodes.y)-1,max(nodes.y)+1]);  % to avoid tight limits
-% zlim([min(nodes.z)-1,max(nodes.z)+1]);  % to avoid tight limits
-% grid on
-% view([90 0])
-% hold off;
-% Loads
 
-loads.x.nodes = [1;2;3;4]+(nbricks)*4;             % node indices with x-direction forces
-loads.x.value = [-10000;-10000;-10000;-10000];             % magnitude of the x-direction forces
-loads.y.nodes = reshape((repmat([1,2], nbricks, 1) + (1:nbricks)'*4).',1,[])';          % node indices with y-direction forces
-loads.y.value = ones(nbricks*2,1)*0.25;          % magnitude of the y-direction forces 
-loads.z.nodes = [1;2;3;4]+(nbricks)*4;             % node indices with z-direction forces
-loads.z.value = [-10000;-10000;-10000;-10000];
+% Loads
+loads.y.nodes = reshape((repmat([1,2], nbricks, 1) + (1:nbricks)'*8).',1,[])';             % node indices with x-direction forces
+loads.y.value = ones(nbricks*2,1)*0.25;             % magnitude of the x-direction forces
+loads.x.nodes = [1;2;3;4]+(nbricks)*8;             % node indices with y-direction forces
+loads.x.value = [-10;-10;-10;-10]*10^3;             % magnitude of the y-direction forces 
+loads.z.nodes = [1;2;3;4]+(nbricks)*8;             % node indices with y-direction forces
+loads.z.value = [-10;-10;-10;-10]*10^3;             % magnitude of the y-direction forces 
 
 loads.rx.nodes = [];          % node indices with x-direction forces
 loads.rx.value = [];          % magnitude of the x-direction forces
@@ -92,21 +85,22 @@ loads.ry.nodes = [];          % node indices with y-direction forces
 loads.ry.value = [];          % magnitude of the y-direction forces 
 loads.rz.nodes = [];          % node indices with z-direction forces
 loads.rz.value = []; 
-% Force vector
 
+% Force vector
 forceVector = sparse([loads.x.nodes*6-5; loads.y.nodes*6-4; loads.z.nodes*6-3;loads.rx.nodes*3-2; loads.ry.nodes*3-1; loads.rz.nodes*3], ...
                      1, ...
                      [loads.x.value; loads.y.value; loads.z.value;loads.rx.value; loads.ry.value; loads.rz.value], ...
                      nnodes*6, 1);
 f = forceVector(reshape(reshape(nodes.dofs.',[],1).', 1, [])');
-% FEM
 
+% FEM
 nodes.ndofs = sum(sum(nodes.dofs));
 nodes.nnodes    = nnodes;
 
 beams.nbeams  = nr;
 beams.vertex = beamVertexFn(beams,nodes);
 beams.codeNumbers = codeNumbersFn(beams,nodes);
+
 beams.XY = XYtoBeamsFn(beams);
 
 elements = discretizationBeamsFn(beams,nodes);
@@ -126,7 +120,7 @@ transformationMatrix = transformationMatrixFn(elements);
 
 stiffnesMatrix = stiffnessMatrixFn(elements,transformationMatrix);
 
-endForces.local = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
+[endForces.local, displ] = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
 %------------------------------------------------------------------------
 %   Non-linear analysis
 %------------------------------------------------------------------------
@@ -135,7 +129,8 @@ geometricMatrix = geometricMatrixFn(elements,transformationMatrix,endForces);
 SortedResults = criticalLoadFnV2(stiffnesMatrix,geometricMatrix);
 
 volume = sum(elements.sections.A .* transformationMatrix.lengths);
-cond = SortedResults > 0; 
-positiveValues = SortedResults(cond);
-value = positiveValues(1);
+% cond = abs(SortedResults) > 0; 
+% positiveValues = SortedResults(cond);
+value = SortedResults(1);
+% toc
 end
