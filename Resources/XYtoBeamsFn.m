@@ -14,7 +14,7 @@
 function [XY]=XYtoBeamsFn(beams)
     for b = 1:beams.nbeams
         if beams.vertex(b,1) == 0 && beams.vertex(b,3) == 0 
-            XY(b,:) = [1 0 0];
+            XY(b,:) = [0 0 1];
         else
             XY(b,:) = [0 1 0];
         end
