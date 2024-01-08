@@ -12,6 +12,6 @@ norm_v1 = norm(v1);
 norm_v2 = norm(v2);
 
 % vypočítání koeficientu korelace
-MAC = dot_product / (norm_v1 * norm_v2)
+MAC = dot_product / (norm_v1 * norm_v2);
 end
 

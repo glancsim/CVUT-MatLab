@@ -1,13 +1,15 @@
-function [value,volume] = towerStabFn(sectionsID,crossSectionsSet)
+function [value,volume] = towerStabFn_vol3(sectionsID,crossSectionsSet)
 
 sections.id = sectionsID;
-
-sections.A  = [crossSectionsSet.A(sections.id(1));crossSectionsSet.A(sections.id(2));crossSectionsSet.A(sections.id(3))];
-sections.Iy = [crossSectionsSet.Iy(sections.id(1));crossSectionsSet.Iy(sections.id(2));crossSectionsSet.Iy(sections.id(3))];
-sections.Iz = [crossSectionsSet.Iz(sections.id(1));crossSectionsSet.Iz(sections.id(2));crossSectionsSet.Iz(sections.id(3))];
-sections.Ix = [crossSectionsSet.Ip(sections.id(1));crossSectionsSet.Ip(sections.id(2));crossSectionsSet.Ip(sections.id(3))];
-sections.E  = ones(3,1) * 210*10^9;
-sections.v  = ones(3,1) * 0.3;
+[s,~] = size(sectionsID);
+for j = 1:s
+    sections.A(j,1)  = crossSectionsSet.A(sections.id(j));
+    sections.Iy(j,1) = crossSectionsSet.Iy(sections.id(j));
+    sections.Iz(j,1) = crossSectionsSet.Iz(sections.id(j));
+    sections.Ix(j,1) = crossSectionsSet.Ip(sections.id(j));
+end
+sections.E  = ones(s,1) * 210*10^9;
+sections.v  = ones(s,1) * 0.3;
 
 ndisc = 7;
 
@@ -57,10 +59,17 @@ nr = numel(beams.nodesHead);
 
 beams.disc      = ones(nr,1)*ndisc;
 modulElemGroup = [1;1;1;1; 3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;    2;2;2;2];
-beams.sections = reshape(kron(modulElemGroup', ones(nbricks, 1))', 1, [])';
+pocetOpakovani = 4;
+opakovani = repmat(modulElemGroup, 1, pocetOpakovani);
+posuny = (0:pocetOpakovani-1) * 3;
+elemGroup = opakovani + posuny;
+elemGroup = [elemGroup(:, 1); elemGroup(:, 1); elemGroup(:, 2);  % První sloupec třikrát
+          elemGroup(:, 2); elemGroup(:, 3); elemGroup(:, 3);  % Druhý sloupec třikrát
+          elemGroup(:, end)];
+beams.sections = elemGroup;
+
 % ng = max(max(beams.sections));
 
-% Loads
 loads.y.nodes = reshape((repmat([1,2], nbricks, 1) + (1:nbricks)'*8).',1,[])';             % node indices with x-direction forces
 loads.y.value = ones(nbricks*2,1)*0.25;             % magnitude of the x-direction forces
 loads.x.nodes = [1;2;3;4]+(nbricks)*8;             % node indices with y-direction forces
@@ -74,22 +83,22 @@ loads.ry.nodes = [];          % node indices with y-direction forces
 loads.ry.value = [];          % magnitude of the y-direction forces 
 loads.rz.nodes = [];          % node indices with z-direction forces
 loads.rz.value = []; 
-
 % Force vector
+
 forceVector = sparse([loads.x.nodes*6-5; loads.y.nodes*6-4; loads.z.nodes*6-3;loads.rx.nodes*3-2; loads.ry.nodes*3-1; loads.rz.nodes*3], ...
                      1, ...
                      [loads.x.value; loads.y.value; loads.z.value;loads.rx.value; loads.ry.value; loads.rz.value], ...
                      nnodes*6, 1);
 f = forceVector(reshape(reshape(nodes.dofs.',[],1).', 1, [])');
-
+% f = full(f)
 % FEM
+
 nodes.ndofs = sum(sum(nodes.dofs));
 nodes.nnodes    = nnodes;
 
 beams.nbeams  = nr;
 beams.vertex = beamVertexFn(beams,nodes);
 beams.codeNumbers = codeNumbersFn(beams,nodes);
-
 beams.XY = XYtoBeamsFn(beams);
 
 elements = discretizationBeamsFn(beams,nodes);
@@ -109,7 +118,7 @@ transformationMatrix = transformationMatrixFn(elements);
 
 stiffnesMatrix = stiffnessMatrixFn(elements,transformationMatrix);
 
-[endForces.local, displ] = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
+[endForces.local, ~] = EndForcesFn(stiffnesMatrix,endForces,transformationMatrix,elements);
 %------------------------------------------------------------------------
 %   Non-linear analysis
 %------------------------------------------------------------------------
