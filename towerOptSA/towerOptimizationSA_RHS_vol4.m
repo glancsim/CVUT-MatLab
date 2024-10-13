@@ -19,13 +19,13 @@ for run=1:10
     %%%%%%%%%%%%%%%%%%%%%%%%%
     %Optimalizační parametry
     %%%%%%%%%%%%%%%%%%%%%%%%%
-    Tmax=14;
+    Tmax=44;
     Tmin=0.01*Tmax;
     % succMax=2;
     succMax = 10;
     countMax=10*succMax;
     % iterMax=10*countMax;
-    iterMax=20*countMax;
+    iterMax=40*countMax;
     results = zeros(iterMax,16);
 
     Tmult=(Tmin/Tmax)^(succMax/iterMax);
@@ -45,7 +45,7 @@ for run=1:10
             while count < countMax && succ < succMax
                iter=iter+1;
                count = count + 1;
-               difL = floor(1 + (T-Tmin) * (3 - 1) / (Tmax));
+               difL = floor(1 + (T-Tmin) * (3) / (Tmax));
                N = P + [randi([-difL,difL]);...
                         randi([-difL,difL]);...
                         randi([-difL,difL]);...

@@ -1,0 +1,2585 @@
+{
+  "Nodes": [
+    [
+      -1.45,
+      -1.45,
+      0.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      3.0
+    ],
+    [
+      1.45,
+      -1.45,
+      0.0
+    ],
+    [
+      1.45,
+      -1.45,
+      3.0
+    ],
+    [
+      1.45,
+      1.45,
+      0.0
+    ],
+    [
+      1.45,
+      1.45,
+      3.0
+    ],
+    [
+      -1.45,
+      1.45,
+      0.0
+    ],
+    [
+      -1.45,
+      1.45,
+      3.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      6.0
+    ],
+    [
+      1.45,
+      -1.45,
+      6.0
+    ],
+    [
+      1.45,
+      1.45,
+      6.0
+    ],
+    [
+      -1.45,
+      1.45,
+      6.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      9.0
+    ],
+    [
+      1.45,
+      -1.45,
+      9.0
+    ],
+    [
+      1.45,
+      1.45,
+      9.0
+    ],
+    [
+      -1.45,
+      1.45,
+      9.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      12.0
+    ],
+    [
+      1.45,
+      -1.45,
+      12.0
+    ],
+    [
+      1.45,
+      1.45,
+      12.0
+    ],
+    [
+      -1.45,
+      1.45,
+      12.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      15.0
+    ],
+    [
+      1.45,
+      -1.45,
+      15.0
+    ],
+    [
+      1.45,
+      1.45,
+      15.0
+    ],
+    [
+      -1.45,
+      1.45,
+      15.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      18.0
+    ],
+    [
+      1.45,
+      -1.45,
+      18.0
+    ],
+    [
+      1.45,
+      1.45,
+      18.0
+    ],
+    [
+      -1.45,
+      1.45,
+      18.0
+    ],
+    [
+      -1.45,
+      -1.45,
+      20.0
+    ],
+    [
+      1.45,
+      -1.45,
+      20.0
+    ],
+    [
+      1.45,
+      1.45,
+      20.0
+    ],
+    [
+      -1.45,
+      1.45,
+      20.0
+    ]
+  ],
+  "SectionsDB": [
+    {
+      "SectionId": 0,
+      "SectionName": "50x75x1.6",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.00038976000000000006,
+        "Iy": 1.677897642666667E-07,
+        "Iz": 3.1405883093333326E-07,
+        "Ip": 2.295953901194422E-06
+      }
+    },
+    {
+      "SectionId": 1,
+      "SectionName": "50x75x2.3",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0004388400000000001,
+        "Iy": 1.6641471060000005E-07,
+        "Iz": 1.6641471060000005E-07,
+        "Ip": 1.4561287177500007E-06
+      }
+    },
+    {
+      "SectionId": 2,
+      "SectionName": "50x100x3.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0008640000000000002,
+        "Iy": 3.73321E-07,
+        "Iz": 1.1196710000000003E-06,
+        "Ip": 8.188598670523249E-06
+      }
+    },
+    {
+      "SectionId": 3,
+      "SectionName": "50x100x1.9",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0005555600000000001,
+        "Iy": 2.5085702026666667E-07,
+        "Iz": 7.387083036000001E-07,
+        "Ip": 5.394928173937367E-06
+      }
+    },
+    {
+      "SectionId": 4,
+      "SectionName": "100x100x3.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001164,
+        "Iy": 1.8253460000000001E-06,
+        "Iz": 1.8253460000000001E-06,
+        "Ip": 1.5971777500000004E-05
+      }
+    },
+    {
+      "SectionId": 5,
+      "SectionName": "100x100x4.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001536,
+        "Iy": 2.359296E-06,
+        "Iz": 2.359296E-06,
+        "Ip": 2.0643840000000003E-05
+      }
+    },
+    {
+      "SectionId": 6,
+      "SectionName": "100x100x4.5",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0017190000000000003,
+        "Iy": 2.6129516250000004E-06,
+        "Iz": 2.6129516250000004E-06,
+        "Ip": 2.286332671875001E-05
+      }
+    },
+    {
+      "SectionId": 7,
+      "SectionName": "100x100x6.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.002256,
+        "Iy": 3.3223360000000005E-06,
+        "Iz": 3.3223360000000005E-06,
+        "Ip": 2.907043999999999E-05
+      }
+    },
+    {
+      "SectionId": 8,
+      "SectionName": "50x100x2.3",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0006688400000000001,
+        "Iy": 2.9724388560000007E-07,
+        "Iz": 8.81093902266667E-07,
+        "Ip": 6.43796604401169E-06
+      }
+    },
+    {
+      "SectionId": 9,
+      "SectionName": "50x100x4.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001136,
+        "Iy": 4.711626666666666E-07,
+        "Iz": 1.4376960000000001E-06,
+        "Ip": 1.0529065405947961E-05
+      }
+    },
+    {
+      "SectionId": 10,
+      "SectionName": "40x40x1.6",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.00024576000000000003,
+        "Iy": 6.039797760000002E-08,
+        "Iz": 6.039797760000002E-08,
+        "Ip": 5.284823040000003E-07
+      }
+    },
+    {
+      "SectionId": 11,
+      "SectionName": "150x100x3.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001464,
+        "Iy": 4.732371E-06,
+        "Iz": 2.5310210000000004E-06,
+        "Ip": 3.459998852844778E-05
+      }
+    },
+    {
+      "SectionId": 12,
+      "SectionName": "150x100x4.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0019359999999999998,
+        "Iy": 6.167429333333333E-06,
+        "Iz": 3.280896E-06,
+        "Ip": 4.506892696908519E-05
+      }
+    },
+    {
+      "SectionId": 13,
+      "SectionName": "150x100x4.5",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0021690000000000004,
+        "Iy": 6.859161E-06,
+        "Iz": 3.63897975E-06,
+        "Ip": 5.01109786319712E-05
+      }
+    },
+    {
+      "SectionId": 14,
+      "SectionName": "150x100x5.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0024,
+        "Iy": 7.533958333333333E-06,
+        "Iz": 3.986041666666667E-06,
+        "Ip": 5.502684297613265E-05
+      }
+    },
+    {
+      "SectionId": 15,
+      "SectionName": "150x100x6.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.002856,
+        "Iy": 8.833536E-06,
+        "Iz": 4.647736E-06,
+        "Ip": 6.448623035186634E-05
+      }
+    },
+    {
+      "SectionId": 16,
+      "SectionName": "150x50x3.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001164,
+        "Iy": 3.1116959999999993E-06,
+        "Iz": 5.389959999999999E-07,
+        "Ip": 2.4808176249504852E-05
+      }
+    },
+    {
+      "SectionId": 17,
+      "SectionName": "150x50x4.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001536,
+        "Iy": 4.035829333333333E-06,
+        "Iz": 6.827626666666665E-07,
+        "Ip": 3.229956031735779E-05
+      }
+    },
+    {
+      "SectionId": 18,
+      "SectionName": "150x50x4.5",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.001719,
+        "Iy": 4.477507875E-06,
+        "Iz": 7.483953750000001E-07,
+        "Ip": 3.59050336398478E-05
+      }
+    },
+    {
+      "SectionId": 19,
+      "SectionName": "200x100x5.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0029000000000000002,
+        "Iy": 1.5210000000000002E-05,
+        "Iz": 5.1141666666666675E-06,
+        "Ip": 0.00011116433073085622
+      }
+    },
+    {
+      "SectionId": 20,
+      "SectionName": "125x50x3.0",
+      "SectionType": "rhs",
+      "SectionProperties": {
+        "A": 0.0010140000000000001,
+        "Iy": 1.957246E-06,
+        "Iz": 4.561585000000001E-07,
+        "Ip": 1.4909983745243182E-05
+      }
+    }
+  ],
+  "SectionSets": [
+    {
+      "Name": "RHS",
+      "Id": "CatalogRhsAll",
+      "AvailableSectionsDBIndexes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "Name": "L equal",
+      "Id": "CatalogLAll",
+      "AvailableSectionsDBIndexes": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210
+      ]
+    }
+  ],
+  "DesignGroups": [
+    {
+      "Name": "RHS - vertical 938e32",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal 751f43",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals 68f5b4",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 100551",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal 072769",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals 6b0f2a",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 6892ef",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal b997ee",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals f2b43a",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 732e2a",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal 042dbb",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals 2f8bdc",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 22a8ce",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal 734044",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals f73519",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 87ff18",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal e41a22",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals 2812b1",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - vertical 91f628",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "RHS - horizontal 506262",
+      "SectionSetIndex": 0,
+      "IndexInSectionSet": 0
+    },
+    {
+      "Name": "Diagonals f72c83",
+      "SectionSetIndex": 1,
+      "IndexInSectionSet": 0
+    }
+  ],
+  "FrameElements": [
+    {
+      "DesignGroupIndex": 0,
+      "HeadNode": 0,
+      "EndNode": 1,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 0,
+      "HeadNode": 2,
+      "EndNode": 3,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 0,
+      "HeadNode": 4,
+      "EndNode": 5,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 0,
+      "HeadNode": 6,
+      "EndNode": 7,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 1,
+      "HeadNode": 7,
+      "EndNode": 1,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 1,
+      "HeadNode": 1,
+      "EndNode": 3,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 1,
+      "HeadNode": 3,
+      "EndNode": 5,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 1,
+      "HeadNode": 5,
+      "EndNode": 7,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 6,
+      "EndNode": 1,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 7,
+      "EndNode": 0,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 0,
+      "EndNode": 3,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 1,
+      "EndNode": 2,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 2,
+      "EndNode": 5,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 3,
+      "EndNode": 4,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 4,
+      "EndNode": 7,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 2,
+      "HeadNode": 5,
+      "EndNode": 6,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 3,
+      "HeadNode": 1,
+      "EndNode": 8,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 3,
+      "HeadNode": 3,
+      "EndNode": 9,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 3,
+      "HeadNode": 5,
+      "EndNode": 10,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 3,
+      "HeadNode": 7,
+      "EndNode": 11,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 4,
+      "HeadNode": 11,
+      "EndNode": 8,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 4,
+      "HeadNode": 8,
+      "EndNode": 9,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 4,
+      "HeadNode": 9,
+      "EndNode": 10,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 4,
+      "HeadNode": 10,
+      "EndNode": 11,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 7,
+      "EndNode": 8,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 11,
+      "EndNode": 1,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 1,
+      "EndNode": 9,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 8,
+      "EndNode": 3,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 3,
+      "EndNode": 10,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 9,
+      "EndNode": 5,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 5,
+      "EndNode": 11,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 5,
+      "HeadNode": 10,
+      "EndNode": 7,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 6,
+      "HeadNode": 8,
+      "EndNode": 12,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 6,
+      "HeadNode": 9,
+      "EndNode": 13,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 6,
+      "HeadNode": 10,
+      "EndNode": 14,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 6,
+      "HeadNode": 11,
+      "EndNode": 15,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 7,
+      "HeadNode": 15,
+      "EndNode": 12,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 7,
+      "HeadNode": 12,
+      "EndNode": 13,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 7,
+      "HeadNode": 13,
+      "EndNode": 14,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 7,
+      "HeadNode": 14,
+      "EndNode": 15,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 11,
+      "EndNode": 12,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 15,
+      "EndNode": 8,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 8,
+      "EndNode": 13,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 12,
+      "EndNode": 9,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 9,
+      "EndNode": 14,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 13,
+      "EndNode": 10,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 10,
+      "EndNode": 15,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 8,
+      "HeadNode": 14,
+      "EndNode": 11,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 9,
+      "HeadNode": 12,
+      "EndNode": 16,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 9,
+      "HeadNode": 13,
+      "EndNode": 17,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 9,
+      "HeadNode": 14,
+      "EndNode": 18,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 9,
+      "HeadNode": 15,
+      "EndNode": 19,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 10,
+      "HeadNode": 19,
+      "EndNode": 16,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 10,
+      "HeadNode": 16,
+      "EndNode": 17,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 10,
+      "HeadNode": 17,
+      "EndNode": 18,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 10,
+      "HeadNode": 18,
+      "EndNode": 19,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 15,
+      "EndNode": 16,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 19,
+      "EndNode": 12,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 12,
+      "EndNode": 17,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 16,
+      "EndNode": 13,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 13,
+      "EndNode": 18,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 17,
+      "EndNode": 14,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 14,
+      "EndNode": 19,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 11,
+      "HeadNode": 18,
+      "EndNode": 15,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 12,
+      "HeadNode": 16,
+      "EndNode": 20,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 12,
+      "HeadNode": 17,
+      "EndNode": 21,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 12,
+      "HeadNode": 18,
+      "EndNode": 22,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 12,
+      "HeadNode": 19,
+      "EndNode": 23,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 13,
+      "HeadNode": 23,
+      "EndNode": 20,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 13,
+      "HeadNode": 20,
+      "EndNode": 21,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 13,
+      "HeadNode": 21,
+      "EndNode": 22,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 13,
+      "HeadNode": 22,
+      "EndNode": 23,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 19,
+      "EndNode": 20,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 23,
+      "EndNode": 16,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 16,
+      "EndNode": 21,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 20,
+      "EndNode": 17,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 17,
+      "EndNode": 22,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 21,
+      "EndNode": 18,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 18,
+      "EndNode": 23,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 14,
+      "HeadNode": 22,
+      "EndNode": 19,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 15,
+      "HeadNode": 20,
+      "EndNode": 24,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 15,
+      "HeadNode": 21,
+      "EndNode": 25,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 15,
+      "HeadNode": 22,
+      "EndNode": 26,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 15,
+      "HeadNode": 23,
+      "EndNode": 27,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 16,
+      "HeadNode": 27,
+      "EndNode": 24,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 16,
+      "HeadNode": 24,
+      "EndNode": 25,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 16,
+      "HeadNode": 25,
+      "EndNode": 26,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 16,
+      "HeadNode": 26,
+      "EndNode": 27,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 23,
+      "EndNode": 24,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 27,
+      "EndNode": 20,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 20,
+      "EndNode": 25,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 24,
+      "EndNode": 21,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 21,
+      "EndNode": 26,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 25,
+      "EndNode": 22,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.7189883760491119,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 22,
+      "EndNode": 27,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 17,
+      "HeadNode": 26,
+      "EndNode": 23,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.7189883760491119,
+        0.0,
+        0.6950220968474748
+      ]
+    },
+    {
+      "DesignGroupIndex": 18,
+      "HeadNode": 24,
+      "EndNode": 28,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 18,
+      "HeadNode": 25,
+      "EndNode": 29,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 18,
+      "HeadNode": 26,
+      "EndNode": 30,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 18,
+      "HeadNode": 27,
+      "EndNode": 31,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 19,
+      "HeadNode": 31,
+      "EndNode": 28,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 19,
+      "HeadNode": 28,
+      "EndNode": 29,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 19,
+      "HeadNode": 29,
+      "EndNode": 30,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 19,
+      "HeadNode": 30,
+      "EndNode": 31,
+      "SectionDBIndex": 0,
+      "LocalZ": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 27,
+      "EndNode": 28,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.5677329558036595,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 31,
+      "EndNode": 24,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.5677329558036595,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 24,
+      "EndNode": 29,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.5677329558036595,
+        0.0,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 28,
+      "EndNode": 25,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.5677329558036595,
+        0.0,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 25,
+      "EndNode": 30,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        -0.5677329558036595,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 29,
+      "EndNode": 26,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.0,
+        0.5677329558036595,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 26,
+      "EndNode": 31,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        0.5677329558036595,
+        0.0,
+        0.8232127859153062
+      ]
+    },
+    {
+      "DesignGroupIndex": 20,
+      "HeadNode": 30,
+      "EndNode": 27,
+      "SectionDBIndex": 21,
+      "LocalZ": [
+        -0.5677329558036595,
+        0.0,
+        0.8232127859153062
+      ]
+    }
+  ],
+  "NodalSupports": [
+    {
+      "Node": 0,
+      "Fixed": [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "Node": 2,
+      "Fixed": [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "Node": 4,
+      "Fixed": [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "Node": 6,
+      "Fixed": [
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "LoadCases": [
+    {
+      "Name": "Dead load",
+      "NodalForces": [
+        {
+          "Node": 28,
+          "F": [
+            0.0,
+            0.0,
+            -10000.0
+          ]
+        },
+        {
+          "Node": 29,
+          "F": [
+            0.0,
+            0.0,
+            -10000.0
+          ]
+        },
+        {
+          "Node": 30,
+          "F": [
+            0.0,
+            0.0,
+            -10000.0
+          ]
+        },
+        {
+          "Node": 31,
+          "F": [
+            0.0,
+            0.0,
+            -10000.0
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Live load",
+      "NodalForces": [
+        {
+          "Node": 28,
+          "F": [
+            10000.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 29,
+          "F": [
+            10000.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 30,
+          "F": [
+            10000.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 31,
+          "F": [
+            10000.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "WindLoadXPlus",
+      "NodalForces": [
+        {
+          "Node": 0,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 6,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 1,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 7,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 1,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 7,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 8,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 11,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 8,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 11,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 12,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 15,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 12,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 15,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 16,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 19,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 16,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 19,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 20,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 23,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 20,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 23,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 24,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 27,
+          "F": [
+            -848.5200000000001,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 24,
+          "F": [
+            -643.64,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 27,
+          "F": [
+            -643.64,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 28,
+          "F": [
+            -643.64,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "Node": 31,
+          "F": [
+            -643.64,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "WindLoadYPlus",
+      "NodalForces": [
+        {
+          "Node": 0,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 2,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 1,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 3,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 1,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 3,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 8,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 9,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 8,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 9,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 12,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 13,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 12,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 13,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 16,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 17,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 16,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 17,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 20,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 21,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 20,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 21,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 24,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 25,
+          "F": [
+            0.0,
+            848.5200000000001,
+            0.0
+          ]
+        },
+        {
+          "Node": 24,
+          "F": [
+            0.0,
+            643.64,
+            0.0
+          ]
+        },
+        {
+          "Node": 25,
+          "F": [
+            0.0,
+            643.64,
+            0.0
+          ]
+        },
+        {
+          "Node": 28,
+          "F": [
+            0.0,
+            643.64,
+            0.0
+          ]
+        },
+        {
+          "Node": 29,
+          "F": [
+            0.0,
+            643.64,
+            0.0
+          ]
+        }
+      ]
+    }
+  ],
+  "LoadCombinations": [
+    {
+      "LoadCombinationName": "F_1-ULS-Fundamental-STR/GEO(B) Eq.6.10 EN 1990 ( Q1 = Imposed )",
+      "CombinationItems": [
+        {
+          "LoadGroupName": "Permanent",
+          "LoadGroupRelation": "Together",
+          "LoadCaseNames": [
+            "Self weight",
+            "Dead load"
+          ],
+          "LoadCoefficient": 1.35,
+          "CombCoefficients": [
+            1.35
+          ]
+        },
+        {
+          "LoadGroupName": "Imposed",
+          "LoadGroupRelation": "Standard",
+          "LoadCaseNames": [
+            "Live load"
+          ],
+          "LoadCoefficient": 1.5,
+          "CombCoefficients": [
+            1.5
+          ]
+        },
+        {
+          "LoadGroupName": "Snow",
+          "LoadGroupRelation": "Exclusive",
+          "LoadCaseNames": [
+            "Snow undrifted"
+          ],
+          "LoadCoefficient": 1.0499999999999998,
+          "CombCoefficients": [
+            1.5,
+            0.7
+          ]
+        }
+      ]
+    }
+  ]
+}

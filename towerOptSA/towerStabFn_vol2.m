@@ -60,14 +60,7 @@ beams.nbeams = nr;
 
 beams.disc      = ones(nr,1)*ndisc;
 modulElemGroup = [1;1;1;1; 3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;    2;2;2;2];
-pocetOpakovani = 4;
-opakovani = repmat(modulElemGroup, 1, pocetOpakovani);
-posuny = (0:pocetOpakovani-1) * 3;
-elemGroup = opakovani + posuny;
-elemGroup = [elemGroup(:, 1); elemGroup(:, 1); elemGroup(:, 2);  % První sloupec třikrát
-          elemGroup(:, 2); elemGroup(:, 3); elemGroup(:, 3);  % Druhý sloupec třikrát
-          elemGroup(:, end)];
-beams.sections = elemGroup;
+beams.sections = reshape(repmat(modulElemGroup, 1, ndisc),1,[])';
 
 % ng = max(max(beams.sections));
 
