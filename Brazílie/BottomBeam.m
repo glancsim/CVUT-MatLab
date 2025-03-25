@@ -1,6 +1,6 @@
 %% LLENTAB - Prefabricated steel hall
 
-clc;clear all;clearvars;uqlab;close all
+clc;clear all;clearvars;uqlab;close all; addpath 'Functions\'
 %% Vazník - Dolní pás
 % Section properties
 
@@ -23,7 +23,6 @@ forces.G.N_k = 161.89 * 1.00; %kN
 forces.Q.N_k = 140.47 * 1.00; %kN
 %% Probabilistic reliability analysis
 
-N = 1000000; % počet simulací
 % Probablistic models of variables
 % Yeild strength
 
@@ -33,90 +32,80 @@ model.f_y.Dist = 'Lognormal';
 model.f_y.nominal = section.f_y;
 model.f_y.variable = createUQVariable(model.f_y, 'fy');
 InputOpts.Marginals(1) = model.f_y.variable;
-% Geometry
 
+% Geometry
 model.a.V_x = 3 / 100; % percent
 model.a.ratio = 1.00 ;
 model.a.Dist = 'Gaussian';
 model.a.nominal = section.A_g;
 model.a.variable = createUQVariable(model.a, 'A');
 InputOpts.Marginals(2) = model.a.variable;
-% Pernament load
 
+% Pernament load
 model.G.V_x = 5 / 100 ;% percent
 model.G.ratio = 1.00 ;
 model.G.Dist = 'Gaussian';
 model.G.nominal = forces.G.N_k;
 model.G.variable = createUQVariable(model.G, 'G');
 InputOpts.Marginals(3) = model.G.variable;
-% Snow load
 
+% Snow load
 model.Q.V_x = 50 / 100 ;% percent
 model.Q.ratio = 0.40 ;
-model.Q.Dist = 'Gaussian';
+model.Q.Dist = 'Gumbel';
 model.Q.nominal = forces.Q.N_k;
 model.Q.variable = createUQVariable(model.Q, 'Q');
 InputOpts.Marginals(4) = model.Q.variable;
-% Resistance model uncertainty
 
+% Resistance model uncertainty
 model.theta_R.V_x = 6 / 100; % percent
 model.theta_R.ratio = 1.15 ;
 model.theta_R.Dist = 'Lognormal';
 model.theta_R.nominal = 1;
 model.theta_R.variable = createUQVariable(model.theta_R, 'ThetaR');
 InputOpts.Marginals(5) = model.theta_R.variable;
-% Load effect model uncertainty
 
+% Load effect model uncertainty
 model.theta_E.V_x = 7.5 / 100 ;% percent
 model.theta_E.ratio = 1.00 ;
 model.theta_E.Dist = 'Lognormal';
 model.theta_E.nominal = 1;
 model.theta_E.variable = createUQVariable(model.theta_E, 'ThetaE');
 InputOpts.Marginals(6) = model.theta_E.variable;
-% UQLab variables
 
 % Vytvoření vstupního objektu pro UQlab
 inputOpts.Marginals = InputOpts.Marginals;  % Přiřazení všech marginalit
 input = uq_createInput(inputOpts);  % Vytvoření vstupního objektu pro analýzu
-%% Definice limitní funkce (Limit State Function - LSF)
+%% Limit State Function - LSF
 % $$g(x) = \theta _R \cdot R - \theta _E \cdot (G + Q)$$
 
+N = 10^6; % počet simulací
 ModelOpts.mFile = 'limitStateFunction';
 ModelOpts.isVectorized = true;
 
 % Vytvoření modelu
 myModel = uq_createModel(ModelOpts);
-
-% Definice metody Monte Carlo pro výpočet pravděpodobnosti poruchy
+% Nastavení analýzy spolehlivosti metodou FORM
 SimOpts.Type = 'Reliability';
-SimOpts.Method = 'MCS';
-SimOpts.Simulation.MaxSampleSize = N;
+SimOpts.Method = 'FORM';  % Změna na FORM metodu
+SimOpts.FORM.Search = 'StrongJoint';  % Výběr algoritmu hledání designového bodu
+SimOpts.FORM.MaxIterations = 100;  % Maximální počet iterací
+SimOpts.FORM.Tolerance = 1e-6;  % Toleranční kritérium konvergence
 
 % Vytvoření a spuštění analýzy
 reliability = uq_createAnalysis(SimOpts);
-results = reliability.Results;
 
-% Výpočet beta indexu
-% Oprava: použití správné funkce pro inverzní normální distribuční funkci
-beta = -norminv(results.Pf);
+% Extrakce výsledků
+results = reliability.Results;
 
 % Výpis výsledků
 fprintf('Pravděpodobnost poruchy: Pf = %e\n', results.Pf);
-fprintf('Index spolehlivosti: β = %.4f\n', beta);
+fprintf('Index spolehlivosti: β = %.4f\n', results.BetaHL);
 
-% % Vizualizace výsledků
-% figure;
-% uq_display(reliability);
-% title('Analýza spolehlivosti - Dolní pás vazníku');
-% 
-% % Analýza citlivosti
-% if isfield(results, 'Sensitivity')
-%     figure;
-%     bar(results.Sensitivity.Value);
-%     set(gca, 'XTickLabel', {model.f_y.variable.Name, model.a.variable.Name, ...
-%         model.G.variable.Name, model.Q.variable.Name, ...
-%         model.theta_R.variable.Name, model.theta_E.variable.Name});
-%     title('Analýza citlivosti');
-%     ylabel('Citlivostní index');
-%     grid on;
-% end
+% Ruční vypsání citlivostních indexů
+if isfield(results, 'Sensitivity')
+    fprintf('\nCitlivostní indexy:\n');
+    for i = 1:length(results.Sensitivity.Value)
+        fprintf('Proměnná %d: %.4f\n', i, results.Sensitivity.Value(i));
+    end
+end
