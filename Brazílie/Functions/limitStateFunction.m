@@ -13,15 +13,17 @@ function g = limitStateFunction(X)
 % Extrakce hodnot z matice X
 f_y = X(:,1);     % Mez kluzu
 A = X(:,2);       % Průřezová plocha
-G = X(:,3);       % Stálé zatížení
-Q = X(:,4);       % Proměnné zatížení (sníh)
-theta_R = X(:,5); % Nejistota modelu únosnosti
-theta_E = X(:,6); % Nejistota modelu zatížení
+G_s = X(:,3);       % Stálé zatížení
+G_p = X(:,4);       % Stálé zatížení
+Q = X(:,5);       % Proměnné zatížení (sníh)
+theta_R = X(:,6); % Nejistota modelu únosnosti
+theta_E = X(:,7); % Nejistota modelu zatížení
 
 % Výpočet únosnosti
 R = f_y .* A;
 
 % Výpočet účinků zatížení
+G = G_s + G_p;
 E = G + Q;
 
 % Limitní funkce
