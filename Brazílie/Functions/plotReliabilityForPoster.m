@@ -65,7 +65,7 @@ function plotReliabilityForPoster(reliability, outputPath)
         'LineWidth', 1.2, ...
         'GridAlpha', 0.3, ...
         'Color', [1, 1, 1], ...
-        'XLim', [min(xdata), max(xdata)+0.1], ... % Přidáno padding na ose X
+        'XLim', [min(xdata)-0.1, max(xdata)+0.1], ... % Přidáno padding na ose X
         'YLim', [min(ydata)-0.1*range(ydata), max(ydata)+0.25*range(ydata)]); % Přidáno padding na ose Y
 
     % 1. Reliability Index (Beta)
@@ -107,10 +107,12 @@ function plotReliabilityForPoster(reliability, outputPath)
     title('Sensitivity Indices', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
     xlabel('Variables', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     ylabel('Importance', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
-    xticklabels({'Yield Strength', 'Geometry', 'Permanent Load', 'Snow Load', 'Resistance Model', 'Load Effect Model'});
+    xticklabels({'Yield Strength', 'Geometry', 'Self weight load','Permanent Load', 'Snow Load', 'Resistance Model', 'Load Effect Model'});
     xtickangle(45);
     grid on;
-    axesProperties(xdata3, [0, ydata3]);  % Začít od nuly pro bar chart
+    axesProperties(xdata3, ydata3);  % Začít od nuly pro bar chart
+    xlim([0.5 (0.5 + length(results.Importance))]);
+    % ylim([-0.10 1.00]);
     box on;
 
     % 4. Summary of Key Results - opraveno pro správné zobrazení
