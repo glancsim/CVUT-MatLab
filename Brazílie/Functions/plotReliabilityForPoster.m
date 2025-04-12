@@ -107,7 +107,7 @@ function plotReliabilityForPoster(reliability, outputPath)
     title('Sensitivity Indices', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
     xlabel('Variables', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     ylabel('Importance', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
-    xticklabels({'Yield Strength', 'Geometry', 'Self weight load','Permanent Load', 'Snow Load', 'Resistance Model', 'Load Effect Model'});
+    xticklabels({'Yield Strength','Ultimate tensile strength', 'Geometry', 'Self weight load','Permanent Load', 'Snow Load', 'Resistance Model - tension','Resistance Model - net', 'Load Effect Model'});
     xtickangle(45);
     grid on;
     axesProperties(xdata3, ydata3);  % Začít od nuly pro bar chart

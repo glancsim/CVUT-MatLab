@@ -52,7 +52,7 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     targetLine = line([min(ratio_range), max(ratio_range)], [target_beta, target_beta], ...
                       'Color', colors.plotBeta, 'LineStyle', '--', 'LineWidth', 1.8);
     targetText = text(min(ratio_range) + 0.1*(max(ratio_range)-min(ratio_range)), ...
-                     target_beta + 0.04, ...
+                     target_beta + 0.14, ...
                      ['Target \beta = ', num2str(target_beta)], ...
                      'Color', colors.plotBeta, 'FontName', fontName, 'FontSize', fontSize);
     
@@ -60,7 +60,7 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     ylabel('Reliability Index \beta', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBeta);
     ax1 = gca;
     ax1.YColor = colors.plotBeta;
-    ylim([0, max(beta_values)*1.15]); % Nastavení osy y pro začátek od 0 s malým paddingem
+    ylim([2, 7]); % Nastavení osy y pro začátek od 0 s malým paddingem
     
     % Vytvoření pravé osy y pro poměr R_d/E_d
     yyaxis right
@@ -157,8 +157,8 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     % Display original beta and R_d/E_d values
     fprintf('\nSafety at original cross-section area:\n');
     beta_at_original = interp1(ratio_range, beta_values, original_ratio);
-    fprintf('Reliability index (β) at original area: %.4f\n', beta_at_original);
-    fprintf('R_d/E_d ratio at original area: %.4f\n', rd_ed_at_original);
+    fprintf('   Reliability index (β) at original area: %.4f\n', beta_at_original);
+    fprintf('   R_d/E_d ratio at original area: %.4f\n', rd_ed_at_original);
     
     % Display the minimum area ratio needed to achieve target reliability
     [~, idx] = min(abs(beta_values - target_beta));
