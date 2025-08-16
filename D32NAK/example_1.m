@@ -34,7 +34,10 @@ loadcase3 = [
 ];
 
 % Spojení zatěžovacích stavů do jedné buňkové matice
-loads = {loadcase1, loadcase2, loadcase3};
+loads = {   loadcase1, ...
+            % loadcase2, ...
+            % loadcase3...
+        };
 
 % Názvy zatěžovacích stavů pro výpis
 loadcase_names = {'Vertikální síla', 'Horizontální síla', 'Moment'};
@@ -65,32 +68,81 @@ for i = 1:length(loads)
     end
     
     fprintf('\n');
+end
+
+% Vykreslení deformovaného tvaru pro každý zatěžovací stav
+for i = 1:length(loads)
+    plot_deformed_shape(nodes, elements, displacements, i);
+end
+
+% Vykreslení průběhů vnitřních sil pro každý zatěžovací stav
+% s rozdělením každého prvku na 20 segmentů pro hladší průběhy
+for i = 1:length(loads)
+    plot_internal_forces(nodes, elements, displacements, i, 20);
+end
+
+% Vykreslení grafů průběhů vnitřních sil podél prvků
+figure('Name', 'Průběhy vnitřních sil podél prvků');
+
+for elem_id = 1:size(elements, 1)
+    % Získání vlastností prvku
+    n1 = elements(elem_id, 2);
+    n2 = elements(elem_id, 3);
+    L = sqrt((nodes(n2,2) - nodes(n1,2))^2 + (nodes(n2,3) - nodes(n1,3))^2);
     
-    % Vykreslení konstrukce a deformace vedle sebe pro každý zatěžovací stav
-    figure('Name', ['Zatěžovací stav ' num2str(i) ': ' loadcase_names{i} ' - Konstrukce a deformace'], 'Position', [100, 100, 1200, 500]);
-    
-    % Subplot pro původní konstrukci
-    subplot(1, 2, 1);
-    plotStructure(nodes, elements, constraints, loads{i});
-    title(['Původní konstrukce - ' loadcase_names{i}]);
-    
-    % Subplot pro deformovanou konstrukci
-    subplot(1, 2, 2);
-    plotDeformation(nodes, elements, constraints, loads, displacements, 1, i);
-    title(['Deformace - ' loadcase_names{i}]);
-    
-    % Vykreslení vnitřních sil N, V, M pro každý zatěžovací stav
-    figure('Name', ['Zatěžovací stav ' num2str(i) ': ' loadcase_names{i} ' - Vnitřní síly'], 'Position', [100, 600, 1200, 400]);
-    
-    % Subplot pro normálové síly N
-    subplot(1, 3, 1);
-    plotInternalForces(nodes, elements, element_forces, 'N', i);
-    
-    % Subplot pro posouvající síly V
-    subplot(1, 3, 2);
-    plotInternalForces(nodes, elements, element_forces, 'V', i);
-    
-    % Subplot pro ohybové momenty M
-    subplot(1, 3, 3);
-    plotInternalForces(nodes, elements, element_forces, 'M', i);
+    % Pro každý zatěžovací stav
+    for lc = 1:length(loads)
+        % Vytvoření x souřadnic podél prvku (20 bodů)
+        num_points = 20;
+        x_local = linspace(0, L, num_points);
+        
+        % Inicializace polí pro vnitřní síly
+        N = zeros(num_points, 1);
+        V = zeros(num_points, 1);
+        M = zeros(num_points, 1);
+        
+        % Výpočet vnitřních sil v každém bodě
+        for i = 1:num_points
+            % Zde byste vypočítali vnitřní síly podobně jako ve funkci plot_internal_forces
+            % Pro zjednodušení zde využijeme jen krajní hodnoty z element_forces
+            xi = x_local(i);
+            N1 = element_forces{lc}(elem_id, 1);
+            V1 = element_forces{lc}(elem_id, 2);
+            M1 = element_forces{lc}(elem_id, 3);
+            N2 = element_forces{lc}(elem_id, 4);
+            V2 = element_forces{lc}(elem_id, 5);
+            M2 = element_forces{lc}(elem_id, 6);
+            
+            % Lineární interpolace pro N a V
+            N(i) = N1 * (1 - xi/L) + N2 * (xi/L);
+            V(i) = V1 * (1 - xi/L) + V2 * (xi/L);
+            
+            % Pro M použijeme kvadratickou interpolaci (M = M1 + V1*x - q*x^2/2)
+            % Předpokládáme, že q je konstantní po délce prvku
+            q = (V2 - V1) / L;  % Změna posouvající síly / délka
+            M(i) = M1 + V1 * xi - q * xi^2 / 2;
+        end
+        
+        % Vykreslení grafů
+        subplot(3, length(loads), lc);
+        plot(x_local, N, 'LineWidth', 2);
+        title(sprintf('N - Prvek %d - ZS %d', elem_id, lc));
+        xlabel('Pozice na prvku [m]');
+        ylabel('N [N]');
+        grid on;
+        
+        subplot(3, length(loads), length(loads) + lc);
+        plot(x_local, V, 'LineWidth', 2);
+        title(sprintf('V - Prvek %d - ZS %d', elem_id, lc));
+        xlabel('Pozice na prvku [m]');
+        ylabel('V [N]');
+        grid on;
+        
+        subplot(3, length(loads), 2*length(loads) + lc);
+        plot(x_local, M, 'LineWidth', 2);
+        title(sprintf('M - Prvek %d - ZS %d', elem_id, lc));
+        xlabel('Pozice na prvku [m]');
+        ylabel('M [Nm]');
+        grid on;
+    end
 end

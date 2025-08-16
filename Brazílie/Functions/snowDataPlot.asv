@@ -1,0 +1,187 @@
+function snowDataPlot(years, maxima, mu, sigma, outputPath)
+    % SNOWDATAPLOT Creates plots for snow load data analysis
+    %
+    % Syntax:
+    %   snowDataPlot(years, maxima, mu, sigma)
+    %   snowDataPlot(years, maxima, mu, sigma, outputPath)
+    %
+    % Input parameters:
+    %   years   - Vector of years for the data points
+    %   maxima  - Vector of annual maximum snow loads [kN/m²]
+    %   mu      - Location parameter of the Gumbel distribution
+    %   sigma   - Scale parameter of the Gumbel distribution
+    %   outputPath - (Optional) Path for saving plots, e.g., 'Plots/snow_analysis'
+    %
+    % Example:
+    %   snowDataPlot(1990:2020, snow_maxima, 1.5, 0.3)
+    %   snowDataPlot(1990:2020, snow_maxima, 1.5, 0.3, 'Plots/snow_analysis')
+    
+    % Define color scheme from the example
+    colors = struct();
+    colors.primary = [178/255, 197/255, 249/255];    % B2C5F9 - main blue
+    colors.secondary = [178/255, 234/255, 249/255];  % B2EAF9 - lighter blue
+    colors.accent = [212/255, 239/255, 244/255];     % D4EFF4 - lightest blue
+    colors.background = [243/255, 243/255, 243/255]; % F3F3F3 - light gray
+    colors.text = [50/255, 50/255, 70/255];          % Darker text for better readability
+    colors.grid = [220/255, 220/255, 230/255];       % Subtle grid
+    colors.plotLine = [100/255, 143/255, 255/255];   % Vibrant blue for main line
+    colors.plotGumbel = [0/255, 0/255, 0/255];   % Darker blue for Gumbel
+    colors.plotHighlight = [255/255, 71/255, 71/255]; % Red for highlighting
+    colors.boxBackground = [252/255, 252/255, 252/255]; % White for text box background
+
+    % Font settings
+    fontName = 'Helvetica';
+    fontSize = 11;
+    titleSize = 13;
+    mainTitleSize = 16;
+    
+    % Create figure with new layout (2 plots on top, 1 on bottom)
+    figure('Name', 'Snow Load Analysis', 'NumberTitle', 'off', 'Position', [100, 100, 1000, 700]);
+    set(gcf, 'Color', colors.background);
+    
+    %% 1. Histogram with Gumbel distribution overlay
+    subplot(2, 2, 1);
+    
+    % Calculate histogram for data range 0 to 1
+    [counts, edges] = histcounts(maxima, 'Normalization', 'pdf');
+    centers = (edges(1:end-1) + edges(2:end)) / 2;
+    
+    % Plot histogram
+    bar_h = bar(centers, counts, 'FaceColor', colors.primary, 'EdgeColor', colors.plotLine, 'FaceAlpha', 0.7);
+    hold on;
+    
+    % Generate points for Gumbel PDF (range from 0 to 1)
+    x_range = linspace(0, 1, 1000);
+    gumbel_pdf = exp(-(x_range - mu)/sigma) .* exp(-exp(-(x_range - mu)/sigma)) / sigma;
+    
+    % Plot Gumbel PDF
+    gumbel_h = plot(x_range, gumbel_pdf, 'LineWidth', 4, 'Color', colors.plotGumbel);
+    % Add map value line (0.7 kN/m²)
+    map_value = 0.7;
+    map_line = line([map_value, map_value], [0, max(gumbel_pdf)*1.1], ...
+                    'Color', colors.plotHighlight, 'LineStyle', '-', 'LineWidth', 2);
+    
+    % Add 98% fractile line
+    fractile_98 = 0.66;
+    fractile_line = line([fractile_98, fractile_98], [0, max(gumbel_pdf)*1.1], ...
+                        'Color', colors.plotGumbel, 'LineStyle', '-', 'LineWidth', 2);
+    % Formatting
+    xlabel('Annual Maximum Snow Load [kN/m²]', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
+    ylabel('PDF, Relative Frequency', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
+    title('Histogram with Gumbel Distribution', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
+    grid off;
+    xlim([0, 1]);  % Set x-axis from 0 to 1
+    set(gca, 'GridColor', colors.grid, 'GridAlpha', 0.5, 'Box', 'on', 'LineWidth', 1.2);
+    set(gca, 'FontName', fontName, 'FontSize', fontSize, 'XColor', colors.text, 'YColor', colors.text);
+    legend([bar_h, gumbel_h, map_line, fractile_line], ...
+       {'Observed Data', 'Gumbel PDF', 'Map Value (0.7 kN/m²)', '98% Fractile'}, ...
+       'Location', 'best', 'FontName', fontName, 'FontSize', fontSize, 'TextColor', colors.text, ...
+       'EdgeColor', colors.primary, 'Box', 'on');
+    
+    %% 2. Statistics text box (replacing QQ plot)
+    subplot(2, 2, 2);
+    
+    % Create an empty axis for the text box
+    axis off;
+    set(gca, 'Color', colors.boxBackground);
+    
+    % Text box with statistics
+    stats_text = {
+        'Snow Load Data Statistics',
+        '',
+        ['Number of observations:   ', num2str(length(maxima))],
+        ['Time period:   ', num2str(min(years)), ' - ', num2str(max(years))],
+        '',
+        'Descriptive Statistics',
+        ['Mean value:   ', num2str(mean(maxima), '%.3f')],
+        ['Standard deviation:   ', num2str(std(maxima), '%.3f')],
+        ['Minimum value:   ', num2str(min(maxima), '%.3f')],
+        ['Maximum value:   ', num2str(max(maxima), '%.3f')],
+        '',
+        'Gumbel Distribution Parameters',
+        ['Location parameter (μ):   ', num2str(mu, '%.3f')],
+        ['Scale parameter (σ):   ', num2str(sigma, '%.3f')],
+
+    };
+    
+    % Create text box with border
+    annotation('textbox', [0.62, 0.54, 0.44, 0.35], 'String', stats_text, ...
+               'BackgroundColor', colors.boxBackground, 'FaceAlpha', 0.9, ...
+               'EdgeColor', colors.primary, 'LineWidth', 1.5, ...
+               'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text, ...
+               'Interpreter', 'tex', 'FitBoxToText', 'on', 'HorizontalAlignment', 'left');
+    
+    title('Snow Load Data Statistics', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
+    
+    %% 3. Time series of annual maxima (now at the bottom spanning the full width)
+    subplot(2, 1, 2);
+    
+    % Plot annual maxima over time
+    plot(years, maxima, '-o', 'LineWidth', 2, 'Color', colors.plotLine, 'MarkerSize', 6, ...
+         'MarkerFaceColor', colors.primary, 'MarkerEdgeColor', colors.plotLine);
+    hold on;
+    
+    % Add mean line
+    mean_line = line([min(years), max(years)], [mean(maxima), mean(maxima)], ...
+                    'Color', colors.plotGumbel, 'LineStyle', '--', 'LineWidth', 2);
+    
+    % Formatting
+    xlabel('Year', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
+    ylabel('Annual Maximum Snow Load [kN/m²]', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
+    xlim([min(years),max(years)]);
+    title('Annual Maximum Snow Loads Over Time', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
+    grid on;
+    set(gca, 'GridColor', colors.grid, 'GridAlpha', 0.5, 'Box', 'on', 'LineWidth', 1.2);
+    set(gca, 'FontName', fontName, 'FontSize', fontSize, 'XColor', colors.text, 'YColor', colors.text);
+    
+    % Add text for mean value
+    % text(min(years) + 0.1*(max(years)-min(years)), mean(maxima) + 0.05*range(maxima), ...
+    %      ['Mean = ', num2str(mean(maxima), '%.2f')], ...
+    %      'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotGumbel);
+    
+    legend('Annual Maxima', 'Mean Value', 'Location', 'best', ...
+           'FontName', fontName, 'FontSize', fontSize, 'TextColor', colors.text, ...
+           'EdgeColor', colors.primary, 'Box', 'on');
+    
+    %% Main title for the entire figure
+    sgtitle('Snow Load Analysis', 'FontWeight', 'bold', 'FontSize', mainTitleSize, 'FontName', fontName, 'Color', colors.text);
+    
+    % Adjust spacing between subplots
+    set(gcf, 'Units', 'Normalized');
+    set(findall(gcf, 'Type', 'axes'), 'Units', 'Normalized');
+    
+    % Add some padding
+    p = get(gcf, 'Position');
+    set(gcf, 'Position', [p(1), p(2), p(3), p(4)]);
+    
+    % Export plots if output path is provided
+    if nargin > 4 && ~isempty(outputPath)
+        % Remove extension if provided
+        [folder, baseFilename, ~] = fileparts(outputPath);
+        
+        % Create folder if it doesn't exist
+        if ~isempty(folder) && ~exist(folder, 'dir')
+            mkdir(folder);
+        end
+        
+        % Build file paths
+        fullPath = fullfile(folder, baseFilename);
+        
+        % Export high-resolution image
+        print([fullPath '.png'], '-dpng', '-r300');
+        saveas(gcf, [fullPath '.fig']);
+        
+        % Try to export to SVG if available
+        
+        fprintf('Plots were saved to: %s\n', fullPath);
+    else
+        % Check if Plots folder exists, create if not
+        if ~exist('Plots', 'dir')
+            mkdir('Plots');
+        end
+        % Save plots to default path
+        saveas(gcf, 'Plots/snow_data_analysis.png');
+        fprintf('Plots were saved to: %s\n', 'Plots/snow_data_analysis.png');
+    end
+    
+end

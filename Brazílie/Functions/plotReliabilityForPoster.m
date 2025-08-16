@@ -1,5 +1,5 @@
-function plotReliabilityForPoster(reliability, outputPath)
-    % PLOTRELIABILITYFORPOSTER Vykreslí grafy analýzy reliability ve stylu kompatibilním s posterem
+function plotReliabilityForPoster(reliability, outputPath, paramNames)
+    % PLOTRELIABILITYFORPOSTER Vykreslí čtyři samostatné grafy analýzy reliability pro poster
     %
     % Syntax:
     %   plotReliabilityForPoster(reliability)
@@ -17,7 +17,7 @@ function plotReliabilityForPoster(reliability, outputPath)
     %   reliability.Results.History.BetaHL - Historie beta hodnot
     %   reliability.Results.History.G - Historie limit state hodnot
     %   reliability.Results.Importance - Důležitost jednotlivých proměnných
-    %   reliability.Results.Pf - Pravděpodobnost selhání
+    %   reliability.Results.Pf - Pravděpodobnost selhání;
     %   reliability.Results.BetaHL - Konečná beta hodnota
     %   reliability.Results.Iterations - Počet iterací
     %   reliability.Results.ModelEvaluations - Počet evaluací modelu
@@ -49,55 +49,85 @@ function plotReliabilityForPoster(reliability, outputPath)
     fontSize = 11;
     titleSize = 13;
     mainTitleSize = 16;
+    
+    % Nastavení figury - společné vlastnosti
+    figProperties = {'Color', colors.background, 'Position', [100, 100, 700, 400]};
+    
+    % Společné vlastnosti os
+    function setupAxes(xdata, ydata)
+        set(gca, ...
+            'FontName', fontName, ...
+            'FontSize', fontSize, ...
+            'XColor', colors.text, ...
+            'YColor', colors.text, ...
+            'GridColor', colors.grid, ...
+            'Box', 'on', ...
+            'LineWidth', 1.2, ...
+            'GridAlpha', 0.3, ...
+            'Color', [1, 1, 1], ...
+            'XLim', [min(xdata)-0.1, max(xdata)+0.1], ...
+            'YLim', [min(ydata)-0.1*range(ydata), max(ydata)+0.25*range(ydata)]);
+    end
 
-    % Vytvoření figure
-    figure('Name', 'Reliability Key Parameters', 'NumberTitle', 'off', 'Position', [100, 100, 1000, 600]);
-    set(gcf, 'Color', colors.background);
-
-    % Společné vlastnosti os - přidán padding pomocí 'XLim' a 'YLim'
-    axesProperties = @(xdata, ydata) set(gca, ...
-        'FontName', fontName, ...
-        'FontSize', fontSize, ...
-        'XColor', colors.text, ...
-        'YColor', colors.text, ...
-        'GridColor', colors.grid, ...
-        'Box', 'on', ...
-        'LineWidth', 1.2, ...
-        'GridAlpha', 0.3, ...
-        'Color', [1, 1, 1], ...
-        'XLim', [min(xdata)-0.1, max(xdata)+0.1], ... % Přidáno padding na ose X
-        'YLim', [min(ydata)-0.1*range(ydata), max(ydata)+0.25*range(ydata)]); % Přidáno padding na ose Y
+    % Funkce pro uložení grafu
+    function saveGraph(figHandle, graphName)
+        if nargin > 1 && ~isempty(outputPath)
+            % Vytvoření složky, pokud neexistuje
+            [folder, ~, ~] = fileparts(outputPath);
+            if ~isempty(folder) && ~exist(folder, 'dir')
+                mkdir(folder);
+            end
+            
+            % Sestavení cesty k souboru
+            fullPath = fullfile(outputPath, graphName);
+            
+            % Export ve vysokém rozlišení
+            print(figHandle, [fullPath '.png'], '-dpng', '-r300');
+            saveas(figHandle, [fullPath '.fig']);
+            
+            % Pokud je dostupný export do SVG, použít ho
+            try
+                saveas(figHandle, [fullPath '.svg']);
+            catch
+                warning('SVG export není k dispozici. Soubor byl uložen pouze jako PNG a FIG.');
+            end
+            
+            fprintf('Graf "%s" byl uložen do: %s\n', graphName, fullPath);
+        end
+    end
 
     % 1. Reliability Index (Beta)
-    subplot(2,2,1);
+    fig1 = figure('Name', 'Reliability Index', 'NumberTitle', 'off', figProperties{:});
     xdata1 = 1:length(results.History.BetaHL);
     ydata1 = results.History.BetaHL;
-    p1 = plot(xdata1, ydata1, '-', 'LineWidth', 2, 'Color', colors.plot1);
+    plot(xdata1, ydata1, '-', 'LineWidth', 2, 'Color', colors.plot1);
     hold on;
     scatter(xdata1, ydata1, 60, colors.plot1, 'filled', 'MarkerEdgeColor', 'white', 'LineWidth', 1);
     title('Reliability Index β', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
     xlabel('Iterations', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     ylabel('β Value', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     grid on;
-    axesProperties(xdata1, ydata1);
+    setupAxes(xdata1, ydata1);
     box on;
+    saveGraph(fig1, 'reliability_index');
 
     % 2. Limit State G
-    subplot(2,2,2);
+    fig2 = figure('Name', 'Limit State', 'NumberTitle', 'off', figProperties{:});
     xdata2 = 1:length(results.History.G);
     ydata2 = results.History.G;
-    p2 = plot(xdata2, ydata2, '-', 'LineWidth', 2, 'Color', colors.plot2);
+    plot(xdata2, ydata2, '-', 'LineWidth', 2, 'Color', colors.plot2);
     hold on;
     scatter(xdata2, ydata2, 60, colors.plot2, 'filled', 'MarkerEdgeColor', 'white', 'LineWidth', 1);
     title('Limit State G', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
     xlabel('Iterations', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     ylabel('Limit State Value', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     grid on;
-    axesProperties(xdata2, ydata2);
+    setupAxes(xdata2, ydata2);
     box on;
+    saveGraph(fig2, 'limit_state');
 
     % 3. Sensitivity Indices
-    subplot(2,2,3);
+    fig3 = figure('Name', 'Sensitivity Indices', 'NumberTitle', 'off', figProperties{:});
     xdata3 = 1:length(results.Importance);
     ydata3 = results.Importance;
     b = bar(xdata3, ydata3, 'FaceColor', 'flat');
@@ -107,61 +137,36 @@ function plotReliabilityForPoster(reliability, outputPath)
     title('Sensitivity Indices', 'FontWeight', 'bold', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
     xlabel('Variables', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
     ylabel('Importance', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
-    xticklabels({'Yield Strength','Ultimate tensile strength', 'Geometry', 'Self weight load','Permanent Load', 'Snow Load', 'Resistance Model - tension','Resistance Model - net', 'Load Effect Model'});
-    xtickangle(45);
+    if exist('paramNames', 'var') && ~isempty(paramNames)
+        xticklabels(paramNames);
+        xtickangle(45);
+    end
     grid on;
-    axesProperties(xdata3, ydata3);  % Začít od nuly pro bar chart
+    setupAxes(xdata3, ydata3);
     xlim([0.5 (0.5 + length(results.Importance))]);
-    % ylim([-0.10 1.00]);
     box on;
+    saveGraph(fig3, 'sensitivity_indices');
 
-    % 4. Summary of Key Results - opraveno pro správné zobrazení
-    subplot(2,2,4);
-    % Nastavíme limity na 0-1 pro použití normalizovaných souřadnic
+    % 4. Summary of Key Results
+    fig4 = figure('Name', 'Key Results', 'NumberTitle', 'off', figProperties{:});
+    % Nastavení osy pro textový panel
     axis([0 1 0 1]);
     
-    % Vytvořit pozadí pro textový panel - upraveno na souřadnice v rámci osy
-    rectangle('Position', [0.0, 0.0, 1.0, 1.0], 'FaceColor', [1, 1, 1], 'EdgeColor', colors.primary, 'LineWidth', 1.5);
+    % Vytvoření pozadí pro textový panel
+    rectangle('Position', [0.0, 0.0, 1.0, 1.0], 'FaceColor', [1 1 1], 'EdgeColor', colors.primary, 'LineWidth', 1.5);
 
-    text(0.5, 0.85, sprintf('Key Results:'), 'FontWeight', 'bold', 'HorizontalAlignment', 'center', 'FontSize', titleSize, 'FontName', fontName, 'Color', colors.text);
+    % Nadpis panelu s výsledky
+    text(0.5, 0.85, 'Reliability Analysis: Key Results', 'FontWeight', 'bold', 'HorizontalAlignment', 'center', 'FontSize', mainTitleSize, 'FontName', fontName, 'Color', colors.text);
+    
+    % Textové informace s výsledky
     text(0.5, 0.7, sprintf('Failure Probability: %e', results.Pf), 'HorizontalAlignment', 'center', 'FontSize', fontSize, 'FontName', fontName, 'Color', colors.text);
     text(0.5, 0.55, sprintf('Reliability Index: %.4f', results.BetaHL), 'HorizontalAlignment', 'center', 'FontSize', fontSize, 'FontName', fontName, 'Color', colors.text);
     text(0.5, 0.4, sprintf('Number of Iterations: %d', results.Iterations), 'HorizontalAlignment', 'center', 'FontSize', fontSize, 'FontName', fontName, 'Color', colors.text);
     text(0.5, 0.25, sprintf('Model Evaluations: %d', results.ModelEvaluations), 'HorizontalAlignment', 'center', 'FontSize', fontSize, 'FontName', fontName, 'Color', colors.text);
-    axis off; % Vypnout osy pro textový panel
     
-    % Overall title
-    sgtitle('Reliability Analysis using FORM Method', 'FontWeight', 'bold', 'FontSize', mainTitleSize, 'FontName', fontName, 'Color', colors.text);
-
-    % Úprava rozestupů mezi grafy
-    set(gcf, 'Units', 'normalized');
-    p = get(gcf, 'Position');
-    set(gcf, 'Position', [p(1), p(2), p(3), p(4)]);
-
-    % Export, pokud byla zadána cesta
-    if nargin > 1 && ~isempty(outputPath)
-        % Odstranění přípony, pokud byla zadána
-        [folder, baseFilename, ~] = fileparts(outputPath);
-        
-        % Vytvoření složky, pokud neexistuje
-        if ~isempty(folder) && ~exist(folder, 'dir')
-            mkdir(folder);
-        end
-        
-        % Sestavení cest k souborům
-        fullPath = fullfile(folder, baseFilename);
-        
-        % Export ve vysokém rozlišení
-        print([fullPath '.png'], '-dpng', '-r300');
-        saveas(gcf, [fullPath '.fig']);
-        
-        % Pokud je dostupný export do SVG, použít ho
-        try
-            saveas(gcf, [fullPath '.svg']);
-        catch
-            warning('SVG export není k dispozici. Soubor byl uložen pouze jako PNG a FIG.');
-        end
-        
-        fprintf('Grafy byly uloženy do: %s\n', fullPath);
-    end
+    % Vypnutí os pro textový panel
+    axis off;
+    saveGraph(fig4, 'key_results');
+    
+    fprintf('Všechny grafy byly úspěšně vykresleny.\n');
 end

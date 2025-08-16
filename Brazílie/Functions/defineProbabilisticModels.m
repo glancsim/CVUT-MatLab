@@ -1,4 +1,4 @@
-function InputOpts = defineProbabilisticModels(section, forces)
+function InputOpts = defineProbabilisticModels(section, forces, snow)
     
     % Yeild strength
     model.f_y.V_x = 5 / 100; % percent
@@ -41,21 +41,13 @@ function InputOpts = defineProbabilisticModels(section, forces)
     InputOpts.Marginals(5) = model.G_p.variable;
     
     
-    % Snow load
-    model.Q.V_x = 50 / 100 ;% percent
-    model.Q.ratio = 0.40 ;
-    model.Q.Dist = 'Gumbel';
-    model.Q.nominal = forces.Q.N_k;
-    model.Q.variable = createUQVariable(model.Q, 'Q');
-    InputOpts.Marginals(6) = model.Q.variable;
-    
     % Resistance model uncertainty yeild stength
     model.theta_Ry.V_x = 5 / 100; % percent
     model.theta_Ry.ratio = 1.00 ;
     model.theta_Ry.Dist = 'Lognormal';
     model.theta_Ry.nominal = 1;
     model.theta_Ry.variable = createUQVariable(model.theta_Ry, 'ThetaR');
-    InputOpts.Marginals(7) = model.theta_Ry.variable;
+    InputOpts.Marginals(6) = model.theta_Ry.variable;
 
     % Resistance model uncertainty tensile stength
     model.theta_Ru.V_x = 5 / 100; % percent
@@ -63,7 +55,7 @@ function InputOpts = defineProbabilisticModels(section, forces)
     model.theta_Ru.Dist = 'Lognormal';
     model.theta_Ru.nominal = 1;
     model.theta_Ru.variable = createUQVariable(model.theta_Ru, 'ThetaR');
-    InputOpts.Marginals(8) = model.theta_Ru.variable;
+    InputOpts.Marginals(7) = model.theta_Ru.variable;
     
     % Load effect model uncertainty
     model.theta_E.V_x = 7.5 / 100 ;% percent
@@ -71,7 +63,23 @@ function InputOpts = defineProbabilisticModels(section, forces)
     model.theta_E.Dist = 'Lognormal';
     model.theta_E.nominal = 1;
     model.theta_E.variable = createUQVariable(model.theta_E, 'ThetaE');
-    InputOpts.Marginals(9) = model.theta_E.variable;
-    
+    InputOpts.Marginals(8) = model.theta_E.variable;
+
+    % Shape coeficient
+    model.C_0.V_x = 20 / 100 ;% percent
+    model.C_0.ratio = 0.64 ;
+    model.C_0.Dist = 'Lognormal';
+    model.C_0.nominal = 0.8;
+    model.C_0.variable = createUQVariable(model.C_0, 'C0');
+    InputOpts.Marginals(9) = model.C_0.variable;
+
+    % Shape coeficient
+    model.S_g.V_x = 50 / 100 ;% percent
+    model.S_g.ratio = 0.40 ;
+    model.S_g.Dist = 'Gumbel';
+    model.S_g.nominal = snow.s_k;
+    model.S_g.variable = createUQVariable(model.S_g, 'Sg');
+    InputOpts.Marginals(10) = model.S_g.variable;
+
     
 end

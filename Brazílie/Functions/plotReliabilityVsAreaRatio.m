@@ -1,20 +1,21 @@
-function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, original_ratio, outputPath)
+function plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru, rd_ed_ratio, original_ratio, outputPath)
     % PLOTRELIABILITYVSAREARATIO Vykreslí kombinovaný graf analýzy spolehlivosti v závislosti na poměru ploch
     %
     % Syntax:
-    %   plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, original_ratio)
-    %   plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, original_ratio, outputPath)
+    %   plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru, rd_ed_ratio, original_ratio)
+    %   plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru, rd_ed_ratio, original_ratio, outputPath)
     %
     % Vstupní parametry:
     %   ratio_range - Rozsah poměrů ploch (A_g / A_{s,EN})
-    %   beta_values - Hodnoty indexu spolehlivosti beta
+    %   beta_values_ry - Hodnoty indexu spolehlivosti beta pro osu y
+    %   beta_values_ru - Hodnoty indexu spolehlivosti beta pro osu u
     %   rd_ed_ratio - Hodnoty poměru R_d/E_d
     %   original_ratio - Původní poměr ploch použitý v analýze
     %   outputPath - (Volitelné) Cesta pro uložení grafů, např. 'Plots/reliability_vs_area'
     %
     % Příklad:
-    %   plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, original_ratio)
-    %   plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, original_ratio, 'Plots/reliability_vs_area')
+    %   plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru, rd_ed_ratio, original_ratio)
+    %   plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru, rd_ed_ratio, original_ratio, 'Plots/reliability_vs_area')
     
     % Definice barevného schématu dle posteru
     colors = struct();
@@ -26,9 +27,10 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     colors.grid = [220/255, 220/255, 230/255];       % Jemná mřížka
 
     % Komplementární barvy pro grafy
-    colors.plotBeta = [100/255, 143/255, 255/255];   % Sytější modrá pro beta hodnoty
-    colors.plotRatio = [13/255, 71/255, 161/255];    % Tmavší modrá pro poměr R_d/E_d
-    colors.plotHighlight = [255/255, 71/255, 71/255]; % Červená pro zdůraznění
+    colors.plotBetaRy = [100/255, 143/255, 255/255];   % Sytější modrá pro beta_ry hodnoty
+    colors.plotBetaRu = [70/255, 100/255, 200/255];    % Další modrá pro beta_ru hodnoty
+    colors.plotRatio = [13/255, 71/255, 161/255];      % Tmavší modrá pro poměr R_d/E_d
+    colors.plotHighlight = [255/255, 71/255, 71/255];  % Červená pro zdůraznění
 
     % Nastavení fontu
     fontName = 'Helvetica';
@@ -40,27 +42,34 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     target_beta = 4.7; % Cílová spolehlivost pro ULS
     
     % Vytvoření figure
-    figure('Name', 'Reliability Analysis vs. Area Ratio', 'NumberTitle', 'off', 'Position', [100, 100, 800, 600]);
+    figure('Name', 'Reliability Analysis vs. Area Ratio', 'NumberTitle', 'off', 'Position', [100, 100, 900, 600]);
     set(gcf, 'Color', colors.background);
 
     % Vytvoření levé osy y pro hodnoty beta
     yyaxis left
-    betaPlot = plot(ratio_range, beta_values, '-', 'LineWidth', 2.5, 'Color', colors.plotBeta);
+    betaRyPlot = plot(ratio_range, beta_values_ry, '-', 'LineWidth', 2.5, 'Color', colors.plotBetaRy);
     hold on;
+    betaRuPlot = plot(ratio_range, beta_values_ru, '-.', 'LineWidth', 2.5, 'Color', colors.plotBetaRu);
     
     % Přidání cílové hodnoty spolehlivosti
     targetLine = line([min(ratio_range), max(ratio_range)], [target_beta, target_beta], ...
-                      'Color', colors.plotBeta, 'LineStyle', '--', 'LineWidth', 1.8);
+                      'Color', colors.plotBetaRy, 'LineStyle', '--', 'LineWidth', 1.8);
     targetText = text(min(ratio_range) + 0.1*(max(ratio_range)-min(ratio_range)), ...
                      target_beta + 0.14, ...
                      ['Target \beta = ', num2str(target_beta)], ...
-                     'Color', colors.plotBeta, 'FontName', fontName, 'FontSize', fontSize);
+                     'Color', colors.plotBetaRy, 'FontName', fontName, 'FontSize', fontSize);
     
     % Formátování levé osy
-    ylabel('Reliability Index \beta', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBeta);
+    ylabel('Reliability Index \beta', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBetaRy);
     ax1 = gca;
-    ax1.YColor = colors.plotBeta;
-    ylim([2, 7]); % Nastavení osy y pro začátek od 0 s malým paddingem
+    ax1.YColor = colors.plotBetaRy;
+    
+    % Nastavení limitu osy y na základě dat s malým paddingem
+    max_beta = 7;
+    min_beta = 2;
+    y_padding = (max_beta - min_beta) * 0.1;
+    ylim([max(2, min_beta - y_padding), max_beta + y_padding]);
+    xlim = [0.75,1.75];
     
     % Vytvoření pravé osy y pro poměr R_d/E_d
     yyaxis right
@@ -81,26 +90,35 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
     
     % Označení původního poměru v obou grafech
     yyaxis left
-    beta_at_original = interp1(ratio_range, beta_values, original_ratio);
-    originalBetaPoint = scatter(original_ratio, beta_at_original, 100, colors.plotBeta, 'filled', ...
+    beta_ry_at_original = interp1(ratio_range, beta_values_ry, original_ratio);
+    beta_ru_at_original = interp1(ratio_range, beta_values_ru, original_ratio);
+    
+    originalBetaRyPoint = scatter(original_ratio, beta_ry_at_original, 100, colors.plotBetaRy, 'filled', ...
                               'MarkerEdgeColor', 'white', 'LineWidth', 1.5);
-    originalBetaText = text(original_ratio + 0.03*(max(ratio_range)-min(ratio_range)), ...
-                           beta_at_original, ...
-                           ['Original \beta = ', num2str(beta_at_original, '%.2f')], ...
-                           'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBeta);
+    % originalBetaRyText = text(original_ratio + 0.03*(max(ratio_range)-min(ratio_range)), ...
+    %                        beta_ry_at_original, ...
+    %                        ['\beta_{Ry} = ', num2str(beta_ry_at_original, '%.2f')], ...
+    %                        'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBetaRy);
+    
+    originalBetaRuPoint = scatter(original_ratio, beta_ru_at_original, 100, colors.plotBetaRu, 'filled', ...
+                              'MarkerEdgeColor', 'white', 'LineWidth', 1.5);
+    % originalBetaRuText = text(original_ratio + 0.03*(max(ratio_range)-min(ratio_range)), ...
+    %                        beta_ru_at_original, ... % Mírný posun dolů pro prevenci překrytí textu
+    %                        ['\beta_{Ru} = ', num2str(beta_ru_at_original, '%.2f')], ...
+    %                        'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotBetaRu);
     
     yyaxis right
     rd_ed_at_original = interp1(ratio_range, rd_ed_ratio, original_ratio);
     originalRatioPoint = scatter(original_ratio, rd_ed_at_original, 100, colors.plotRatio, 'filled', ...
                               'MarkerEdgeColor', 'white', 'LineWidth', 1.5);
-    originalRatioText = text(original_ratio + 0.03*(max(ratio_range)-min(ratio_range)), ...
-                           rd_ed_at_original, ...
-                           ['Original R_d/E_d = ', num2str(rd_ed_at_original, '%.2f')], ...
-                           'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotRatio);
+    % originalRatioText = text(original_ratio + 0.03*(max(ratio_range)-min(ratio_range)), ...
+    %                        rd_ed_at_original, ...
+    %                        ['R_d/E_d = ', num2str(rd_ed_at_original, '%.2f')], ...
+    %                        'FontName', fontName, 'FontSize', fontSize, 'Color', colors.plotRatio);
     
     % Přidání vertikální čáry na původním poměru
     originalLine = line([original_ratio, original_ratio], ...
-                      [0, max([max(beta_values), max(rd_ed_ratio)])*1.15], ...
+                      [0, max([max_beta, max(rd_ed_ratio)])*1.15], ...
                       'Color', colors.plotHighlight, 'LineStyle', '-', 'LineWidth', 2);
 
     % Celkové formátování grafu
@@ -113,14 +131,14 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
          'FontWeight', 'bold', 'FontSize', mainTitleSize, 'FontName', fontName, 'Color', colors.text);
     
     % Přidání legendy
-    legend([betaPlot, targetLine, ratioPlot, limitLine, originalBetaPoint, originalRatioPoint, originalLine], ...
-          {'Reliability Index \beta', 'Target \beta', 'R_d / E_d Ratio', 'R_d / E_d = 1', ...
-           'Original \beta', 'Original R_d/E_d', 'Original Ratio'}, ...
+    legend([betaRyPlot, betaRuPlot, targetLine, ratioPlot, limitLine, originalBetaRyPoint, originalBetaRuPoint, originalRatioPoint, originalLine], ...
+          {'Reliability Index \beta_{Ry}', 'Reliability Index \beta_{Ru}', 'Target \beta', 'R_d / E_d Ratio', 'R_d / E_d = 1', ...
+           'Original \beta_{Ry}', 'Original \beta_{Ru}', 'Original R_d/E_d', 'Original Ratio'}, ...
           'Location', 'best', 'FontName', fontName, 'FontSize', fontSize, 'TextColor', colors.text, ...
           'EdgeColor', colors.primary, 'Box', 'on');
     
     % Export grafu, pokud byla zadána cesta
-    if nargin > 4 && ~isempty(outputPath)
+    if nargin > 5 && ~isempty(outputPath)
         % Odstranění přípony, pokud byla zadána
         [folder, baseFilename, ~] = fileparts(outputPath);
         
@@ -154,18 +172,25 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values, rd_ed_ratio, origi
         saveas(gcf, 'Plots/combined_area_ratio_analysis.fig');
         fprintf('Graf byl uložen do: %s\n', 'Plots/combined_area_ratio_analysis.png');
     end
-    % Display original beta and R_d/E_d values
+    
+    % Výpis hodnot pro původní průřez
     fprintf('\nSafety at original cross-section area:\n');
-    beta_at_original = interp1(ratio_range, beta_values, original_ratio);
-    fprintf('   Reliability index (β) at original area: %.4f\n', beta_at_original);
+    fprintf('   Reliability index (β_Ry) at original area: %.4f\n', beta_ry_at_original);
+    fprintf('   Reliability index (β_Ru) at original area: %.4f\n', beta_ru_at_original);
     fprintf('   R_d/E_d ratio at original area: %.4f\n', rd_ed_at_original);
     
-    % Display the minimum area ratio needed to achieve target reliability
-    [~, idx] = min(abs(beta_values - target_beta));
-    min_ratio_for_target = ratio_range(idx);
-    fprintf('\nMinimum A_g/A_s,EN ratio needed to achieve target reliability (β = %.1f): %.3f\n', target_beta, min_ratio_for_target);
+    % Výpis minimálního poměru ploch pro dosažení cílové spolehlivosti pro obě beta hodnoty
+    [~, idx_ry] = min(abs(beta_values_ry - target_beta));
+    [~, idx_ru] = min(abs(beta_values_ru - target_beta));
     
-    % Display the minimum area ratio needed for R_d/E_d ≥ 1
+    min_ratio_for_target_ry = ratio_range(idx_ry);
+    min_ratio_for_target_ru = ratio_range(idx_ru);
+    
+    fprintf('\nMinimum A_g/A_s,EN ratio needed to achieve target reliability (β = %.1f):\n', target_beta);
+    fprintf('   For β_Ry: %.3f\n', min_ratio_for_target_ry);
+    fprintf('   For β_Ru: %.3f\n', min_ratio_for_target_ru);
+    
+    % Výpis minimálního poměru ploch pro R_d/E_d ≥ 1
     [~, idx] = min(abs(rd_ed_ratio - 1));
     min_ratio_for_safety = ratio_range(idx);
     fprintf('Minimum A_g/A_s,EN ratio needed for R_d/E_d ≥ 1: %.3f\n', min_ratio_for_safety);
