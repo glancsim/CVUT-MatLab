@@ -1,0 +1,24 @@
+ANALÝZA ROČNÍCH MAXIM ZÁKLADNÍ RYCHLOSTI VĚTRU
+===============================================
+
+Období analýzy: 2004–2024 (21 let)
+ZÁKLADNÍ STATISTIKY:
+- Průměr: 16.85 m/s
+- Směrodatná odchylka: 2.28 m/s
+- Koeficient variability: 0.135
+- Minimum: 14.00 m/s
+- Maximum: 23.30 m/s
+
+FITOVANÉ MODELY:
+- GEV: AIC=92.78, shape=0.157, scale=1.487, location=15.743
+- Preferovaný model: GEV
+
+KLÍČOVÉ NÁVRATOVÉ HODNOTY:
+- 50letá hodnota (GEV): 23.74 m/s
+- 95% CI (50letá, GEV): [19.29, 36.84] m/s
+
+INTERPRETAČNÍ POZNÁMKY:
+- 50letá hodnota odpovídá 2% roční pravděpodobnosti překročení
+- Koeficient variability 0.135 je nižší než referenční rozsah EC Annex L (0.18-0.23)
+- Analýza byla provedena podle principů extrémní statistiky
+- Výsledky jsou vhodné pro technické aplikace v souladu s evropskými normami
