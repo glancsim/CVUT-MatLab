@@ -77,7 +77,7 @@ function InputOpts = defineProbabilisticModels(section, forces, snow)
     model.S_g.V_x = 50 / 100 ;% percent
     model.S_g.ratio = 0.40 ;
     model.S_g.Dist = 'Gumbel';
-    model.S_g.nominal = snow.s_k;
+    model.S_g.nominal = 0.7;
     model.S_g.variable = createUQVariable(model.S_g, 'Sg');
     InputOpts.Marginals(10) = model.S_g.variable;
 
