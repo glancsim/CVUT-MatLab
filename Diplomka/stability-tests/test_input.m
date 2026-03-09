@@ -1,0 +1,48 @@
+% test_input.m - Vstupní data pro stability test
+%
+% Tento soubor definuje vstupní parametry pro testFn.m
+% Zkopíruj tento soubor do každé složky Test X/ a uprav hodnoty.
+
+%% PRŮŘEZY
+sections.id = [10; 20; 30; 40];  % section id in sectionsSet.mat
+
+%% UZLY
+nodes.x = [0; 0; 0; 10; 10];     % x coordinates of nodes
+nodes.y = [0; 0; 10; 10; 10];    % y coordinates of nodes
+nodes.z = [0; 10; 10; 10; 0];    % z coordinates of nodes
+
+%% DISKRETIZACE
+ndisc = 10;                      % discretization of beams
+
+%% PODPORY
+kinematic.x.nodes = [1; 5];      % node indices with restricted x-direction displacements
+kinematic.y.nodes = [1; 5];      % node indices with restricted y-direction displacements
+kinematic.z.nodes = [1; 5];      % node indices with restricted z-direction displacements
+kinematic.rx.nodes = [1; 5];     % node indices with restricted x-direction rotations
+kinematic.ry.nodes = [1; 5];     % node indices with restricted y-direction rotations
+kinematic.rz.nodes = [1; 5];     % node indices with restricted z-direction rotations
+
+%% PRVKY
+beams.nodesHead = [1; 2; 3; 4];  % elements starting nodes
+beams.nodesEnd = [2; 3; 4; 5];   % elements ending nodes
+beams.sections = [1; 2; 3; 4];   % section to beams
+beams.angles = [90; 0; 0; 90];   % angle of section
+
+%% ZATÍŽENÍ
+loads.x.nodes = [4];             % node indices with x-direction forces
+loads.x.value = [-1];            % magnitude of the x-direction forces
+
+loads.y.nodes = [2];             % node indices with y-direction forces
+loads.y.value = [1];             % magnitude of the y-direction forces
+
+loads.z.nodes = [3];             % node indices with z-direction forces
+loads.z.value = [-1];            % magnitude of the z-direction forces
+
+loads.rx.nodes = [];             % node indices with x-direction moments
+loads.rx.value = [];             % magnitude of the x-direction moments
+
+loads.ry.nodes = [];             % node indices with y-direction moments
+loads.ry.value = [];             % magnitude of the y-direction moments
+
+loads.rz.nodes = [];             % node indices with z-direction moments
+loads.rz.value = [];             % magnitude of the z-direction moments

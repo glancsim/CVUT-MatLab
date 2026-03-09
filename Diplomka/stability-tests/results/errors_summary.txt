@@ -1,0 +1,77 @@
+==============================================================================
+  STABILITY TESTS - SOUHRN VÝSLEDKŮ
+==============================================================================
+Datum: 14-Jan-2026 10:51:59
+Počet testů: 9
+==============================================================================
+
+Test 1:
+  Status:         OK
+  Čas běhu:       3.09 s
+  Průměrná chyba: -3.459 %
+  Max chyba:      75.236 %
+  Min chyba:      -149.687 %
+
+Test 2:
+  Status:         OK
+  Čas běhu:       0.97 s
+  Průměrná chyba: 52.433 %
+  Max chyba:      174.661 %
+  Min chyba:      -147.298 %
+
+Test 3:
+  Status:         OK
+  Čas běhu:       0.60 s
+  Průměrná chyba: 0.000 %
+  Max chyba:      0.000 %
+  Min chyba:      0.000 %
+
+Test 4:
+  Status:         OK
+  Čas běhu:       0.58 s
+  Průměrná chyba: 0.001 %
+  Max chyba:      0.004 %
+  Min chyba:      0.000 %
+
+Test 5:
+  Status:         OK
+  Čas běhu:       0.74 s
+  Průměrná chyba: 0.000 %
+  Max chyba:      0.000 %
+  Min chyba:      0.000 %
+
+Test 6:
+  Status:         OK
+  Čas běhu:       0.99 s
+  Průměrná chyba: 10.189 %
+  Max chyba:      39.676 %
+  Min chyba:      0.000 %
+
+Test 7:
+  Status:         OK
+  Čas běhu:       0.80 s
+  Průměrná chyba: 31.429 %
+  Max chyba:      90.325 %
+  Min chyba:      0.000 %
+
+Test 8:
+  Status:         OK
+  Čas běhu:       0.63 s
+  Průměrná chyba: 74.461 %
+  Max chyba:      205.795 %
+  Min chyba:      1.548 %
+
+Test 9:
+  Status:         OK
+  Čas běhu:       0.74 s
+  Průměrná chyba: 53.159 %
+  Max chyba:      58.199 %
+  Min chyba:      48.870 %
+
+==============================================================================
+CELKOVÉ STATISTIKY:
+  Úspěšné testy:  9 / 9
+  Celkový čas:    9.14 s
+  Průměrná chyba: 24.246 %
+  Max chyba:      205.795 %
+==============================================================================

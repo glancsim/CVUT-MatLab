@@ -1,0 +1,13 @@
+Chyba při spuštění testu:
+eigen.mat is not found in the current folder or on the MATLAB path, but exists in:
+    C:\GitHub\MatLab\Diplomka\stability-tests\Test 6
+    C:\GitHub\MatLab\Diplomka\stability-tests\Test 5
+    C:\GitHub\MatLab\Diplomka\stability-tests\Test 1
+
+Change the MATLAB current folder or add its folder to the MATLAB path.
+
+Stack trace:
+  oofemTestFn (line 8)
+  testFn (line 136)
+  run_single_test_wrapper (line 22)
+  run_all_stability_tests (line 87)

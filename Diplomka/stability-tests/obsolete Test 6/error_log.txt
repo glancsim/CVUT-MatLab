@@ -1,0 +1,8 @@
+Chyba při spuštění testu:
+Index exceeds the number of array elements. Index must not exceed 2.
+
+Stack trace:
+  XYtoRotBeamsFn (line 17)
+  testFn (line 89)
+  run_single_test_wrapper (line 22)
+  run_all_stability_tests (line 87)

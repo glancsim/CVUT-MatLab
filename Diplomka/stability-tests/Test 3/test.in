@@ -40,8 +40,8 @@ Beam3d 8   nodes 2    9 10    refnode 19
 Beam3d 9   nodes 2    10 11    refnode 20
 Beam3d 10   nodes 2    11 3    refnode 21
 #Sections
-SimpleCS 1  area 0.000308   Iy 7.09e-08    Iz 1.9e-08    Ik 1.67e-09  beamShearCoeff 1.e30 material 1  set 1
-SimpleCS 2  area 0.000308   Iy 7.09e-08    Iz 1.9e-08    Ik 1.67e-09  beamShearCoeff 1.e30 material 1  set 2
+SimpleCS 1  area 0.000308   Iy 1.9e-08    Iz 7.09e-08    Ik 1.67e-09  beamShearCoeff 1.e30 material 1  set 1
+SimpleCS 2  area 0.000308   Iy 1.9e-08    Iz 7.09e-08    Ik 1.67e-09  beamShearCoeff 1.e30 material 1  set 2
 #Materials
 IsoLE 1 d 1.  E 210000000000.0 n 0.3 tAlpha 1.2e-5
 #Boundary conditions

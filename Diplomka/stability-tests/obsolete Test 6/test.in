@@ -1,0 +1,110 @@
+test.out
+Linear stability Test 1
+LinearStability nroot 10 rtolv 1.e-8 nmodules 1
+errorcheck
+domain 3dShell
+OutputManager tstep_all dofman_all element_all
+ndofman 31 nelem 15 ncrosssect 3 nmat 1 nbc 21 nic 0 nltf 1  nset 24
+#Nodes
+node 1 coords 3    0 0 0
+node 2 coords 3    5 5 5
+node 3 coords 3    10 10 0
+node 4 coords 3    0 10 0
+node 5 coords 3    1 1 1
+node 6 coords 3    2 2 2
+node 7 coords 3    3 3 3
+node 8 coords 3    4 4 4
+node 9 coords 3    6 6 4
+node 10 coords 3    7 7 3
+node 11 coords 3    8 8 2
+node 12 coords 3    9 9 1
+node 13 coords 3    1 9 1
+node 14 coords 3    2 8 2
+node 15 coords 3    3 7 3
+node 16 coords 3    4 6 4
+#Reference nodes
+node 17 coords 3    -0.7071067811865475 0.7071067811865475 0.0
+node 18 coords 3    0.29289321881345254 1.7071067811865475 1.0
+node 19 coords 3    1.2928932188134525 2.7071067811865475 2.0
+node 20 coords 3    2.2928932188134525 3.7071067811865475 3.0
+node 21 coords 3    4.292893218813452 5.707106781186548 5.0
+node 22 coords 3    4.292893218813452 5.707106781186548 5.0
+node 23 coords 3    5.292893218813452 6.707106781186548 4.0
+node 24 coords 3    6.292893218813452 7.707106781186548 3.0
+node 25 coords 3    7.292893218813452 8.707106781186548 2.0
+node 26 coords 3    9.292893218813452 10.707106781186548 0.0
+node 27 coords 3    0.7071067811865475 10.707106781186548 0.0
+node 28 coords 3    1.7071067811865475 9.707106781186548 1.0
+node 29 coords 3    2.7071067811865475 8.707106781186548 2.0
+node 30 coords 3    3.7071067811865475 7.707106781186548 3.0
+node 31 coords 3    5.707106781186548 5.707106781186548 5.0
+#Beams
+Beam3d 1   nodes 2    1 5    refnode 17
+Beam3d 2   nodes 2    5 6    refnode 18
+Beam3d 3   nodes 2    6 7    refnode 19
+Beam3d 4   nodes 2    7 8    refnode 20
+Beam3d 5   nodes 2    8 2    refnode 21
+Beam3d 6   nodes 2    2 9    refnode 22
+Beam3d 7   nodes 2    9 10    refnode 23
+Beam3d 8   nodes 2    10 11    refnode 24
+Beam3d 9   nodes 2    11 12    refnode 25
+Beam3d 10   nodes 2    12 3    refnode 26
+Beam3d 11   nodes 2    4 13    refnode 27
+Beam3d 12   nodes 2    13 14    refnode 28
+Beam3d 13   nodes 2    14 15    refnode 29
+Beam3d 14   nodes 2    15 16    refnode 30
+Beam3d 15   nodes 2    16 2    refnode 31
+#Sections
+SimpleCS 1  area 0.000308   Iy 1.9e-08    Iz 7.09e-08    Ik 1.67e-09  beamShearCoeff 1.e30 material 1  set 1
+SimpleCS 2  area 0.000753   Iy 1.24e-07    Iz 4.63e-07    Ik 9.22e-09  beamShearCoeff 1.e30 material 1  set 2
+SimpleCS 3  area 0.00488   Iy 6.19e-06    Iz 2.37e-05    Ik 3.31e-07  beamShearCoeff 1.e30 material 1  set 3
+#Materials
+IsoLE 1 d 1.  E 210000000000.0 n 0.3 tAlpha 1.2e-5
+#Boundary conditions
+NodalLoad 1 loadTimeFunction 1 dofs 1 1 Components 1 -1 set 4
+NodalLoad 2 loadTimeFunction 1 dofs 1 2 Components 1 1 set 5
+NodalLoad 3 loadTimeFunction 1 dofs 1 3 Components 1 -1 set 6
+BoundaryCondition 4 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 7
+BoundaryCondition 5 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 8
+BoundaryCondition 6 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 9
+BoundaryCondition 7 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 10
+BoundaryCondition 8 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 11
+BoundaryCondition 9 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 12
+BoundaryCondition 10 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 13
+BoundaryCondition 11 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 14
+BoundaryCondition 12 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 15
+BoundaryCondition 13 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 16
+BoundaryCondition 14 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 17
+BoundaryCondition 15 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 18
+BoundaryCondition 16 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 19
+BoundaryCondition 17 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 20
+BoundaryCondition 18 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 21
+BoundaryCondition 19 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 22
+BoundaryCondition 20 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 23
+BoundaryCondition 21 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 24
+ConstantFunction 1 f(t) 1.
+#Sets
+Set 1 elementranges {(1 5)}
+Set 2 elementranges {(6 10)}
+Set 3 elementranges {(11 15)}
+Set 4 nodes 1 2
+Set 5 nodes 1 2
+Set 6 nodes 1 2
+Set 7 nodes 1 1
+Set 8 nodes 1 3
+Set 9 nodes 1 4
+Set 10 nodes 1 1
+Set 11 nodes 1 3
+Set 12 nodes 1 4
+Set 13 nodes 1 1
+Set 14 nodes 1 3
+Set 15 nodes 1 4
+Set 16 nodes 1 1
+Set 17 nodes 1 3
+Set 18 nodes 1 4
+Set 19 nodes 1 1
+Set 20 nodes 1 3
+Set 21 nodes 1 4
+Set 22 nodes 1 1
+Set 23 nodes 1 3
+Set 24 nodes 1 4

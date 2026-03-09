@@ -48,46 +48,46 @@ node 39 coords 3    10 10 3
 node 40 coords 3    10 10 2
 node 41 coords 3    10 10 1
 #Reference nodes
-node 42 coords 3    0 1 0
-node 43 coords 3    0 1 1
-node 44 coords 3    0 1 2
-node 45 coords 3    0 1 3
-node 46 coords 3    0 1 4
-node 47 coords 3    0 1 5
-node 48 coords 3    0 1 6
-node 49 coords 3    0 1 7
-node 50 coords 3    0 1 8
-node 51 coords 3    0 1 10
-node 52 coords 3    0 0 11
-node 53 coords 3    0 1 11
-node 54 coords 3    0 2 11
-node 55 coords 3    0 3 11
-node 56 coords 3    0 4 11
-node 57 coords 3    0 5 11
-node 58 coords 3    0 6 11
-node 59 coords 3    0 7 11
-node 60 coords 3    0 8 11
-node 61 coords 3    0 10 11
-node 62 coords 3    0 11 10
-node 63 coords 3    1 11 10
-node 64 coords 3    2 11 10
-node 65 coords 3    3 11 10
-node 66 coords 3    4 11 10
-node 67 coords 3    5 11 10
-node 68 coords 3    6 11 10
-node 69 coords 3    7 11 10
-node 70 coords 3    8 11 10
-node 71 coords 3    10 11 10
-node 72 coords 3    10 11 10
-node 73 coords 3    10 11 9
-node 74 coords 3    10 11 8
-node 75 coords 3    10 11 7
-node 76 coords 3    10 11 6
-node 77 coords 3    10 11 5
-node 78 coords 3    10 11 4
-node 79 coords 3    10 11 3
-node 80 coords 3    10 11 2
-node 81 coords 3    10 11 0
+node 42 coords 3    1.0 -6.123233995736766e-17 0.0
+node 43 coords 3    1.0 -6.123233995736766e-17 1.0
+node 44 coords 3    1.0 -6.123233995736766e-17 2.0
+node 45 coords 3    1.0 -6.123233995736766e-17 3.0
+node 46 coords 3    1.0 -6.123233995736766e-17 4.0
+node 47 coords 3    1.0 -6.123233995736766e-17 5.0
+node 48 coords 3    1.0 -6.123233995736766e-17 6.0
+node 49 coords 3    1.0 -6.123233995736766e-17 7.0
+node 50 coords 3    1.0 -6.123233995736766e-17 8.0
+node 51 coords 3    1.0 -6.123233995736766e-17 10.0
+node 52 coords 3    -6.123233995736766e-17 0.0 11.0
+node 53 coords 3    -6.123233995736766e-17 1.0 11.0
+node 54 coords 3    -6.123233995736766e-17 2.0 11.0
+node 55 coords 3    -6.123233995736766e-17 3.0 11.0
+node 56 coords 3    -6.123233995736766e-17 4.0 11.0
+node 57 coords 3    -6.123233995736766e-17 5.0 11.0
+node 58 coords 3    -6.123233995736766e-17 6.0 11.0
+node 59 coords 3    -6.123233995736766e-17 7.0 11.0
+node 60 coords 3    -6.123233995736766e-17 8.0 11.0
+node 61 coords 3    -6.123233995736766e-17 10.0 11.0
+node 62 coords 3    0.0 10.0 11.0
+node 63 coords 3    1.0 10.0 11.0
+node 64 coords 3    2.0 10.0 11.0
+node 65 coords 3    3.0 10.0 11.0
+node 66 coords 3    4.0 10.0 11.0
+node 67 coords 3    5.0 10.0 11.0
+node 68 coords 3    6.0 10.0 11.0
+node 69 coords 3    7.0 10.0 11.0
+node 70 coords 3    8.0 10.0 11.0
+node 71 coords 3    10.0 10.0 11.0
+node 72 coords 3    11.0 10.0 10.0
+node 73 coords 3    11.0 10.0 9.0
+node 74 coords 3    11.0 10.0 8.0
+node 75 coords 3    11.0 10.0 7.0
+node 76 coords 3    11.0 10.0 6.0
+node 77 coords 3    11.0 10.0 5.0
+node 78 coords 3    11.0 10.0 4.0
+node 79 coords 3    11.0 10.0 3.0
+node 80 coords 3    11.0 10.0 2.0
+node 81 coords 3    11.0 10.0 0.0
 #Beams
 Beam3d 1   nodes 2    1 6    refnode 42
 Beam3d 2   nodes 2    6 7    refnode 43
@@ -130,10 +130,10 @@ Beam3d 38   nodes 2    39 40    refnode 79
 Beam3d 39   nodes 2    40 41    refnode 80
 Beam3d 40   nodes 2    41 5    refnode 81
 #Sections
-SimpleCS 1  area 0.00222   Iy 3.23e-06    Iz 3.23e-06    Ik 5.13e-06  beamShearCoeff 1.e30 material 1  set 1
-SimpleCS 2  area 0.00222   Iy 3.23e-06    Iz 3.23e-06    Ik 5.13e-06  beamShearCoeff 1.e30 material 1  set 2
-SimpleCS 3  area 0.00222   Iy 3.23e-06    Iz 3.23e-06    Ik 5.13e-06  beamShearCoeff 1.e30 material 1  set 3
-SimpleCS 4  area 0.00222   Iy 3.23e-06    Iz 3.23e-06    Ik 5.13e-06  beamShearCoeff 1.e30 material 1  set 4
+SimpleCS 1  area 0.000267   Iy 1.25e-08    Iz 4.68e-08    Ik 1.43e-09  beamShearCoeff 1.e30 material 1  set 1
+SimpleCS 2  area 0.000112   Iy 1.6258e-09    Iz 6.13e-09    Ik 3.29e-10  beamShearCoeff 1.e30 material 1  set 2
+SimpleCS 3  area 0.000112   Iy 1.6258e-09    Iz 6.13e-09    Ik 3.29e-10  beamShearCoeff 1.e30 material 1  set 3
+SimpleCS 4  area 0.000267   Iy 1.25e-08    Iz 4.68e-08    Ik 1.43e-09  beamShearCoeff 1.e30 material 1  set 4
 #Materials
 IsoLE 1 d 1.  E 210000000000.0 n 0.3 tAlpha 1.2e-5
 #Boundary conditions

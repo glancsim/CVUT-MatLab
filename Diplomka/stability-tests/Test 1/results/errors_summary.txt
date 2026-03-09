@@ -1,0 +1,48 @@
+==============================================================================
+  STABILITY TESTS - SOUHRN VÝSLEDKŮ
+==============================================================================
+Datum: 13-Jan-2026 22:16:23
+Počet testů: 9
+==============================================================================
+
+Test 1:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 2:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 3:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 4:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 5:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 6:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 7:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 8:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+Test 9:
+  Status:         MISSING
+  Čas běhu:       0.00 s
+
+==============================================================================
+CELKOVÉ STATISTIKY:
+  Úspěšné testy:  0 / 9
+  Celkový čas:    0.00 s
+==============================================================================

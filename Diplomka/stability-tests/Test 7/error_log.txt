@@ -1,0 +1,10 @@
+Chyba při spuštění testu:
+Unable to find a valid starting vector. Most likely the matrix B has low rank.
+
+Stack trace:
+  KrylovSchur (line 1325)
+  eigs (line 126)
+  criticalLoadFn (line 13)
+  testFn (line 130)
+  run_single_test_wrapper (line 22)
+  run_all_stability_tests (line 87)
