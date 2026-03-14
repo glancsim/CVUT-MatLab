@@ -27,10 +27,10 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru,
     colors.grid = [220/255, 220/255, 230/255];       % Jemná mřížka
 
     % Komplementární barvy pro grafy
-    colors.plotBetaRy = [100/255, 143/255, 255/255];   % Sytější modrá pro beta_ry hodnoty
-    colors.plotBetaRu = [70/255, 100/255, 200/255];    % Další modrá pro beta_ru hodnoty
-    colors.plotRatio = [13/255, 71/255, 161/255];      % Tmavší modrá pro poměr R_d/E_d
-    colors.plotHighlight = [255/255, 71/255, 71/255];  % Červená pro zdůraznění
+    colors.plotBetaRy  = [230/255, 115/255,   0/255];   % oranžová  #E67300 — zachovat
+    colors.plotBetaRu  = [ 44/255, 160/255,  44/255];   % zelená    #2CA02C
+    colors.plotRatio   = [123/255,  45/255, 139/255];   % fialová   #7B2D8B
+    colors.plotHighlight = [214/255, 39/255,  40/255];  % červená   #D62728 — zachovat
 
     % Nastavení fontu
     fontName = 'Helvetica';
@@ -127,8 +127,6 @@ function plotReliabilityVsAreaRatio(ratio_range, beta_values_ry, beta_values_ru,
     set(gca, 'FontName', fontName, 'FontSize', fontSize, 'XColor', colors.text);
     
     xlabel('A_g / A_{s,EN} Ratio', 'FontWeight', 'bold', 'FontName', fontName, 'FontSize', fontSize, 'Color', colors.text);
-    title('Reliability Index and Resistance-to-Load Ratio vs. Area Ratio', ...
-         'FontWeight', 'bold', 'FontSize', mainTitleSize, 'FontName', fontName, 'Color', colors.text);
     
     % Přidání legendy
     legend([betaRyPlot, betaRuPlot, targetLine, ratioPlot, limitLine, originalBetaRyPoint, originalBetaRuPoint, originalRatioPoint, originalLine], ...
