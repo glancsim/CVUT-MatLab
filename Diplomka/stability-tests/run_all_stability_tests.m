@@ -28,7 +28,9 @@ clear; close all; clc;
 % --------------------------------------------------------------------------
 
 % Cesty - UPRAVIT PODLE TVÉHO SYSTÉMU
-addpath('C:\GitHub\MatLab\Diplomka\Resources');
+% Cesta k Resources - automaticky relativní k tomuto souboru (worktree kompatibilní)
+scriptsDir = fileparts(mfilename('fullpath'));
+addpath(fullfile(scriptsDir, '..', 'Resources'));
 baseDir = pwd; % Aktuální složka (stability-tests/)
 
 % Nastavení testů

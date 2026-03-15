@@ -9,9 +9,6 @@ function [sorted_values,sorted_vectors] = sortValuesVectorFn(values,vectors)
 % sorted_vectors = sorted eigen vectors
     [~, index] = sort(abs(values));
     sorted_values = values(index);
-    [sizeValues,~] = size(values);
-    for i = 1:sizeValues
-        sorted_vectors (:,index(i)) = vectors(:,i);
-    end
+    sorted_vectors = vectors(:, index);
 end
 
