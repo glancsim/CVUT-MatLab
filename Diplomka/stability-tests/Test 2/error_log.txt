@@ -1,7 +1,5 @@
 Chyba při spuštění testu:
-First input array is an invalid data type.
+Unable to perform assignment because the size of the left side is 1-by-7 and the size of the right side is 7-by-7.
 
 Stack trace:
-  testFn (line 66)
-  run_single_test_wrapper (line 22)
-  run_all_stability_tests (line 87)
+  run_all_stability_tests (line 106)

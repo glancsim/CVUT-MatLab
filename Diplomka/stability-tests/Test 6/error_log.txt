@@ -1,10 +1,5 @@
 Chyba při spuštění testu:
-Unable to find a valid starting vector. Most likely the matrix B has low rank.
+Unable to perform assignment because the size of the left side is 1-by-10 and the size of the right side is 10-by-10.
 
 Stack trace:
-  KrylovSchur (line 1325)
-  eigs (line 126)
-  criticalLoadFn (line 13)
-  testFn (line 130)
-  run_single_test_wrapper (line 22)
-  run_all_stability_tests (line 87)
+  run_all_stability_tests (line 106)

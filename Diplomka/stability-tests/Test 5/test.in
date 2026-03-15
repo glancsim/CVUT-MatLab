@@ -27,17 +27,17 @@ node 17 coords 3    0 1 0
 node 18 coords 3    1 1 0
 node 19 coords 3    2 1 0
 node 20 coords 3    3 1 0
-node 21 coords 3    5 1 0
+node 21 coords 3    4 1 0
 node 22 coords 3    5 1 0
 node 23 coords 3    6 1 0
 node 24 coords 3    7 1 0
 node 25 coords 3    8 1 0
-node 26 coords 3    10 1 0
+node 26 coords 3    9 1 0
 node 27 coords 3    15 -1 0
 node 28 coords 3    13 -1 0
 node 29 coords 3    11 -1 0
 node 30 coords 3    9 -1 0
-node 31 coords 3    5 -1 0
+node 31 coords 3    7 -1 0
 #Beams
 Beam3d 1   nodes 2    1 5    refnode 17
 Beam3d 2   nodes 2    5 6    refnode 18

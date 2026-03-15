@@ -1,13 +1,5 @@
 Chyba při spuštění testu:
-eigen.mat is not found in the current folder or on the MATLAB path, but exists in:
-    C:\GitHub\MatLab\Diplomka\stability-tests\Test 6
-    C:\GitHub\MatLab\Diplomka\stability-tests\Test 5
-    C:\GitHub\MatLab\Diplomka\stability-tests\Test 1
-
-Change the MATLAB current folder or add its folder to the MATLAB path.
+Unable to perform assignment because the size of the left side is 1-by-10 and the size of the right side is 10-by-10.
 
 Stack trace:
-  oofemTestFn (line 8)
-  testFn (line 136)
-  run_single_test_wrapper (line 22)
-  run_all_stability_tests (line 87)
+  run_all_stability_tests (line 106)
