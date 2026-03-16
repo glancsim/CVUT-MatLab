@@ -3,5 +3,5 @@ parseOofemLinearFn: Cannot open file: test.out
 
 Stack:
   parseOofemLinearFn (line 16)
-  linearFemTestFn (line 90)
-  run_all_linear_fem_tests (line 69)
+  linearFemTestFn (line 91)
+  run_all_linear_fem_tests (line 74)

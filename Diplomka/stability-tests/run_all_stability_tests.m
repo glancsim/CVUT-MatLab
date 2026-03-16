@@ -2,7 +2,7 @@
 % ==========================================================================
 % STABILITY TESTS - AUTOMATICKÉ SPUŠTĚNÍ VŠECH TESTŮ
 % ==========================================================================
-% Tento skript spustí všechny stability testy (Test 1 až Test 9) 
+% Tento skript spustí všechny stability testy (Test 1 až Test 12)
 % a vygeneruje souhrnný report s porovnáním oproti OOFEM.
 %
 % Autor: glancsim
@@ -35,7 +35,7 @@ addpath(scriptsDir);  % pro testFn, run_single_test_wrapper
 baseDir = pwd; % Aktuální složka (stability-tests/)
 
 % Nastavení testů
-numTests = 9;                % Počet testů (Test 1 až Test 9)
+numTests = 12;               % Počet testů (Test 1 až Test 12)
 numEigenvalues = 10;        % Počet vlastních čísel (předpoklad)
 
 % Možnosti

@@ -51,15 +51,25 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
     oofem.refNode = disc_XY;
     
     % Initialize section discretization
+    % Build per-beam sectionProp so oofem.py correctly maps set p -> cross-section p.
+    % (oofem.py assigns set p to SimpleCS p; without this, beams sharing a section type
+    %  would each get a different SimpleCS from sections.id ordering.)
     pos = 0;
     for p = 1:beams.nbeams
         n_disc = beams.disc(p);
-        disc_section.Id(p) = beams.sections(p);
+        stype = beams.sections(p);   % 1-based index into sections.*
+        disc_section.Id(p) = p;      % each beam gets its own cross-section number
         disc_section.range(p,:) = [pos + 1, pos + n_disc];
+        perBeamSections.A(p,1)  = sections.A(stype);
+        perBeamSections.Iy(p,1) = sections.Iy(stype);
+        perBeamSections.Iz(p,1) = sections.Iz(stype);
+        perBeamSections.Ix(p,1) = sections.Ix(stype);
+        perBeamSections.E(p,1)  = sections.E(stype);
+        perBeamSections.v(p,1)  = sections.v(stype);
         pos = pos + n_disc;
     end
     oofem.sections = disc_section;
-    
+
     % Load discretization
    
     for l = 1:size(loads.x.nodes, 1)
@@ -114,7 +124,7 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
     
     % Add kinematic and section properties to oofem
     oofem.kinematic = kinematic;
-    oofem.sectionProp = sections;
+    oofem.sectionProp = perBeamSections;  % per-beam so oofem.py set p -> SimpleCS p is correct
     
     % Save the oofem structure to a .mat file
     save(filename, 'oofem');

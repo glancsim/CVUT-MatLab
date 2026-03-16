@@ -1,4 +1,4 @@
-function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
+function [errors, matlabDispl, oofemDispl, forceErrors] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
 % linearFemTestFn - Compare MATLAB linear FEM displacements vs OOFEM reference
 %
 % Runs MATLAB linear static FEM, re-uses OOFEM (via stability run) to get
@@ -17,6 +17,7 @@ function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, nd
 %   errors      - Relative errors per free DOF [%] (absolute for near-zero ref)
 %   matlabDispl - MATLAB free-DOF displacements of original nodes (column vector)
 %   oofemDispl  - OOFEM free-DOF displacements of original nodes (column vector)
+%   forceErrors - Relative errors of local end forces (12 x nelement) [%]
 %
 % Note: Call from within the test directory (cd to testDir first).
 
@@ -78,21 +79,32 @@ endForces.global(1:max(max(beams.codeNumbers))) = f;
 %% MATLAB LINEAR SOLVE
 transformationMatrix = transformationMatrixFn(elements);
 stiffnesMatrix       = stiffnessMatrixFn(elements, transformationMatrix);
-[~, displ]           = EndForcesFn(stiffnesMatrix, endForces, transformationMatrix, elements);
+[localEndForces, displ] = EndForcesFn(stiffnesMatrix, endForces, transformationMatrix, elements);
 
 % Extract free-DOF displacements of original nodes only
 % Code numbers 1..nodes.ndofs belong to original nodes (listed first)
 matlabAll = full(displ.global(1:nodes.ndofs));
 
-%% RUN OOFEM AND PARSE LINEAR DISPLACEMENTS
+%% RUN OOFEM AND PARSE LINEAR DISPLACEMENTS + INTERNAL FORCES
 oofemInputFn(nodes, beams, loads, kinematic, sections_out, 'input.mat');
 system('C:\Install\Python\python.exe C:\GitHub\python\oofemRunner\oofem.py');
-oofemDisplAll = parseOofemLinearFn('test.out', nnodes);  % (nnodes x 6)
+
+% On Windows+WSL the file may have a hidden trailing byte; use dir() to get actual name
+d = dir('test.out*');
+if isempty(d)
+    error('OOFEM output file test.out not found in %s', pwd);
+end
+[~, newest] = max([d.datenum]);
+testOutFile = d(newest).name;
+
+oofemDisplAll = parseOofemLinearFn(testOutFile, nnodes);           % (nnodes x 6)
+oofemForces   = parseOofemInternalForcesFn(testOutFile, elements.nelement); % (12 x nelement)
 
 %% BUILD MATCHED FREE-DOF VECTORS (same ordering as MATLAB codes)
 % MATLAB code numbers: iterate node 1..nnodes, DOF 1..6, assign codes to free DOFs
 matlabDispl = zeros(nodes.ndofs, 1);
 oofemDisplFree = zeros(nodes.ndofs, 1);
+isTranslation = false(nodes.ndofs, 1);  % true for translational DOFs (d=1,2,3)
 idx = 0;
 for n = 1:nnodes
     for d = 1:6
@@ -100,21 +112,49 @@ for n = 1:nnodes
             idx = idx + 1;
             matlabDispl(idx)    = matlabAll(idx);
             oofemDisplFree(idx) = oofemDisplAll(n, d);
+            isTranslation(idx)  = (d <= 3);
         end
     end
 end
 
-%% COMPUTE ERRORS (relative %, or absolute for near-zero reference)
-tol = 1e-15;  % threshold below which reference is considered zero
+%% COMPUTE ERRORS (per-DOF-type normalisation: separate maxima for translations [m] and rotations [rad])
+% This avoids meaningless percentages caused by mixing units.
+maxTrans = max(abs(oofemDisplFree(isTranslation)));
+maxRot   = max(abs(oofemDisplFree(~isTranslation)));
+% Tolerance fallback: if all values are near-zero (or no DOFs of that type), use a small number
+if isempty(maxTrans) || maxTrans < 1e-30, maxTrans = 1e-30; end
+if isempty(maxRot)   || maxRot   < 1e-30, maxRot   = 1e-30; end
+
 errors = zeros(nodes.ndofs, 1);
-for i = 1:nodes.ndofs
-    ref = abs(oofemDisplFree(i));
-    if ref > tol
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i)) / ref * 100;
-    else
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i));  % absolute [m or rad]
-    end
-end
+errors(isTranslation)  = abs(matlabDispl(isTranslation)  - oofemDisplFree(isTranslation))  / maxTrans * 100;
+errors(~isTranslation) = abs(matlabDispl(~isTranslation) - oofemDisplFree(~isTranslation)) / maxRot   * 100;
 
 oofemDispl = oofemDisplFree;
+
+%% COMPUTE FORCE ERRORS – separate normalisation for forces [N] and moments [N·m]
+% Rows 1-3 and 7-9 are Fx,Fy,Fz at each end (forces, unit N).
+% Rows 4-6 and 10-12 are Mx,My,Mz at each end (moments, unit N·m).
+forceRows   = [1 2 3 7 8 9];
+momentRows  = [4 5 6 10 11 12];
+
+forceErrors = zeros(12, elements.nelement);
+
+% Global scale per group – used as fallback when a per-element group is near-zero
+globalForceScale  = max(max(abs(oofemForces(forceRows,  :)))) + 1e-30;
+globalMomentScale = max(max(abs(oofemForces(momentRows, :)))) + 1e-30;
+
+for e = 1:elements.nelement
+    elemForceScale  = max(abs(oofemForces(forceRows,  e)));
+    elemMomentScale = max(abs(oofemForces(momentRows, e)));
+
+    if elemForceScale  < 1e-6 * globalForceScale
+        elemForceScale  = globalForceScale;
+    end
+    if elemMomentScale < 1e-6 * globalMomentScale
+        elemMomentScale = globalMomentScale;
+    end
+
+    forceErrors(forceRows,  e) = abs(localEndForces(forceRows,  e) - oofemForces(forceRows,  e)) / elemForceScale  * 100;
+    forceErrors(momentRows, e) = abs(localEndForces(momentRows, e) - oofemForces(momentRows, e)) / elemMomentScale * 100;
+end
 end

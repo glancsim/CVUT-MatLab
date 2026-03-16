@@ -1,0 +1,5 @@
+Chyba lineárního FEM testu:
+Undefined function 'linearFemTestFn' for input arguments of type 'struct'.
+
+Stack:
+  run_all_linear_fem_tests (line 73)
