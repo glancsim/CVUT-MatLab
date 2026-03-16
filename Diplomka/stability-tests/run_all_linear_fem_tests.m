@@ -2,7 +2,8 @@
 % ==========================================================================
 % LINEAR FEM TESTS - POROVNÁNÍ MATLAB vs OOFEM (lineární analýza)
 % ==========================================================================
-% Spustí lineární FEM analýzu pro všechny stability testy (Test 1 až Test 9)
+% Spustí lineární FEM analýzu pro všechny stability testy (Test 1 až Test 12)
+% Testy 10–12: nové geometrie (portálový rám, konzola s pootočeným průřezem, L-rám)
 % a porovná výchylky s referenčním řešením z OOFEM.
 %
 % Cíl: Ověřit, že MATLAB implementace lineárního MKP (sestavení K, řešení K\f,
@@ -25,7 +26,7 @@ addpath(fullfile(scriptsDir, '..', 'Resources'));
 addpath(scriptsDir);  % aby bylo linearFemTestFn viditelné po cd do testDir
 baseDir = scriptsDir;
 
-numTests = 9;
+numTests = 12;
 
 fprintf('\n');
 fprintf('==============================================================================\n');
