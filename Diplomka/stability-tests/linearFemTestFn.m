@@ -1,4 +1,4 @@
-function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
+function [errors, matlabDispl, oofemDispl, forceErrors] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
 % linearFemTestFn - Compare MATLAB linear FEM displacements vs OOFEM reference
 %
 % Runs MATLAB linear static FEM, re-uses OOFEM (via stability run) to get
@@ -17,6 +17,7 @@ function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, nd
 %   errors      - Relative errors per free DOF [%] (absolute for near-zero ref)
 %   matlabDispl - MATLAB free-DOF displacements of original nodes (column vector)
 %   oofemDispl  - OOFEM free-DOF displacements of original nodes (column vector)
+%   forceErrors - Relative errors of local end forces (12 x nelement) [%]
 %
 % Note: Call from within the test directory (cd to testDir first).
 
@@ -78,16 +79,26 @@ endForces.global(1:max(max(beams.codeNumbers))) = f;
 %% MATLAB LINEAR SOLVE
 transformationMatrix = transformationMatrixFn(elements);
 stiffnesMatrix       = stiffnessMatrixFn(elements, transformationMatrix);
-[~, displ]           = EndForcesFn(stiffnesMatrix, endForces, transformationMatrix, elements);
+[localEndForces, displ] = EndForcesFn(stiffnesMatrix, endForces, transformationMatrix, elements);
 
 % Extract free-DOF displacements of original nodes only
 % Code numbers 1..nodes.ndofs belong to original nodes (listed first)
 matlabAll = full(displ.global(1:nodes.ndofs));
 
-%% RUN OOFEM AND PARSE LINEAR DISPLACEMENTS
+%% RUN OOFEM AND PARSE LINEAR DISPLACEMENTS + INTERNAL FORCES
 oofemInputFn(nodes, beams, loads, kinematic, sections_out, 'input.mat');
 system('C:\Install\Python\python.exe C:\GitHub\python\oofemRunner\oofem.py');
-oofemDisplAll = parseOofemLinearFn('test.out', nnodes);  % (nnodes x 6)
+
+% On Windows+WSL the file may have a hidden trailing byte; use dir() to get actual name
+d = dir('test.out*');
+if isempty(d)
+    error('OOFEM output file test.out not found in %s', pwd);
+end
+[~, newest] = max([d.datenum]);
+testOutFile = d(newest).name;
+
+oofemDisplAll = parseOofemLinearFn(testOutFile, nnodes);           % (nnodes x 6)
+oofemForces   = parseOofemInternalForcesFn(testOutFile, elements.nelement); % (12 x nelement)
 
 %% BUILD MATCHED FREE-DOF VECTORS (same ordering as MATLAB codes)
 % MATLAB code numbers: iterate node 1..nnodes, DOF 1..6, assign codes to free DOFs
@@ -104,17 +115,22 @@ for n = 1:nnodes
     end
 end
 
-%% COMPUTE ERRORS (relative %, or absolute for near-zero reference)
-tol = 1e-15;  % threshold below which reference is considered zero
-errors = zeros(nodes.ndofs, 1);
-for i = 1:nodes.ndofs
-    ref = abs(oofemDisplFree(i));
-    if ref > tol
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i)) / ref * 100;
-    else
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i));  % absolute [m or rad]
-    end
-end
+%% COMPUTE ERRORS (normalise by global max displacement to avoid near-zero blow-up)
+globalMaxDispl = max(abs(oofemDisplFree)) + 1e-30;
+errors = abs(matlabDispl - oofemDisplFree) / globalMaxDispl * 100;
 
 oofemDispl = oofemDisplFree;
+
+%% COMPUTE FORCE ERRORS (normalise by element's max |force| to avoid near-zero blow-up)
+forceErrors = zeros(12, elements.nelement);
+globalMaxForce = max(abs(oofemForces(:))) + 1e-30;
+for e = 1:elements.nelement
+    elemRef = max(abs(oofemForces(:, e)));
+    if elemRef < 1e-6 * globalMaxForce
+        elemRef = globalMaxForce;  % fall back to global scale for near-zero elements
+    end
+    for d = 1:12
+        forceErrors(d, e) = abs(localEndForces(d, e) - oofemForces(d, e)) / elemRef * 100;
+    end
+end
 end
