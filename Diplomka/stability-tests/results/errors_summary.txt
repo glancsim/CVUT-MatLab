@@ -1,27 +1,27 @@
 ==============================================================================
   STABILITY TESTS - SOUHRN VÝSLEDKŮ
 ==============================================================================
-Datum: 15-Mar-2026 09:40:05
+Datum: 16-Mar-2026 08:06:52
 Počet testů: 9
 ==============================================================================
 
 Test 1:
   Status:         OK
-  Čas běhu:       10.21 s
+  Čas běhu:       7.28 s
   Průměrná chyba: 0.000 %
   Max chyba:      0.000 %
   Min chyba:      0.000 %
 
 Test 2:
   Status:         OK
-  Čas běhu:       1.04 s
+  Čas běhu:       1.12 s
   Průměrná chyba: 0.000 %
   Max chyba:      0.000 %
   Min chyba:      0.000 %
 
 Test 3:
   Status:         OK
-  Čas běhu:       0.67 s
+  Čas běhu:       0.93 s
   Průměrná chyba: 0.000 %
   Max chyba:      0.000 %
   Min chyba:      0.000 %
@@ -35,35 +35,35 @@ Test 4:
 
 Test 5:
   Status:         OK
-  Čas běhu:       0.71 s
+  Čas běhu:       0.82 s
   Průměrná chyba: 0.000 %
   Max chyba:      0.000 %
   Min chyba:      0.000 %
 
 Test 6:
   Status:         OK
-  Čas běhu:       0.78 s
+  Čas běhu:       0.91 s
   Průměrná chyba: 7.582 %
   Max chyba:      28.406 %
   Min chyba:      0.000 %
 
 Test 7:
   Status:         OK
-  Čas běhu:       0.61 s
+  Čas běhu:       0.64 s
   Průměrná chyba: 19.410 %
   Max chyba:      47.432 %
   Min chyba:      0.000 %
 
 Test 8:
   Status:         OK
-  Čas běhu:       0.59 s
+  Čas běhu:       0.60 s
   Průměrná chyba: 0.000 %
   Max chyba:      0.000 %
   Min chyba:      0.000 %
 
 Test 9:
   Status:         OK
-  Čas běhu:       0.73 s
+  Čas běhu:       0.74 s
   Průměrná chyba: 114.670 %
   Max chyba:      139.253 %
   Min chyba:      95.581 %
@@ -71,7 +71,7 @@ Test 9:
 ==============================================================================
 CELKOVÉ STATISTIKY:
   Úspěšné testy:  9 / 9
-  Celkový čas:    15.96 s
+  Celkový čas:    13.67 s
   Průměrná chyba: 16.865 %
   Max chyba:      139.253 %
 ==============================================================================

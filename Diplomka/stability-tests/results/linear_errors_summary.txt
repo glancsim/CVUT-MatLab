@@ -1,0 +1,15 @@
+==============================================================================
+  LINEAR FEM TESTS - SOUHRN (MATLAB vs OOFEM)
+==============================================================================
+Datum: 16-Mar-2026 08:19:16
+
+Test 1:  status=OK  mean=6.206e+06%  max=1.117e+08%  min=64.99%
+Test 2:  status=ERROR
+Test 3:  status=ERROR
+Test 4:  status=ERROR
+Test 5:  status=ERROR
+Test 6:  status=ERROR
+Test 7:  status=ERROR
+Test 8:  status=ERROR
+Test 9:  status=ERROR
+==============================================================================

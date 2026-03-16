@@ -1,5 +1,6 @@
 Chyba při spuštění testu:
-Unable to perform assignment because the size of the left side is 1-by-10 and the size of the right side is 10-by-10.
+Undefined function 'testFn' for input arguments of type 'struct'.
 
 Stack trace:
-  run_all_stability_tests (line 106)
+  run_single_test_wrapper (line 22)
+  run_all_stability_tests (line 89)

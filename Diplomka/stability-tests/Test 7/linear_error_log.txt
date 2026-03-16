@@ -1,0 +1,7 @@
+Chyba lineárního FEM testu:
+parseOofemLinearFn: Cannot open file: test.out
+
+Stack:
+  parseOofemLinearFn (line 16)
+  linearFemTestFn (line 90)
+  run_all_linear_fem_tests (line 69)
