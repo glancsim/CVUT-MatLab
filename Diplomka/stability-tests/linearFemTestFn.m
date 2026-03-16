@@ -1,9 +1,9 @@
-function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
+function [errors, matlabDispl, oofemDispl, isRelative] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
 % linearFemTestFn - Compare MATLAB linear FEM displacements vs OOFEM reference
 %
 % Runs MATLAB linear static FEM, re-uses OOFEM (via stability run) to get
-% reference displacements from test.out, and returns per-DOF relative errors
-% for all free DOFs of the original (non-discretized) nodes.
+% reference displacements from test.out, and returns per-DOF errors for all
+% free DOFs of the original (non-discretized) nodes.
 %
 % Inputs:
 %   sections   - sections.id
@@ -14,9 +14,12 @@ function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, nd
 %   loads      - loads.x/y/z/rx/ry/rz.nodes/value
 %
 % Outputs:
-%   errors      - Relative errors per free DOF [%] (absolute for near-zero ref)
+%   errors      - Per-DOF errors: relative [%] when isRelative(i)=true,
+%                 absolute [m or rad] when isRelative(i)=false
 %   matlabDispl - MATLAB free-DOF displacements of original nodes (column vector)
 %   oofemDispl  - OOFEM free-DOF displacements of original nodes (column vector)
+%   isRelative  - Logical vector (same size as errors): true = relative [%],
+%                 false = absolute [m or rad] (reference DOF was near zero)
 %
 % Note: Call from within the test directory (cd to testDir first).
 
@@ -106,11 +109,13 @@ end
 
 %% COMPUTE ERRORS (relative %, or absolute for near-zero reference)
 tol = 1e-15;  % threshold below which reference is considered zero
-errors = zeros(nodes.ndofs, 1);
+errors     = zeros(nodes.ndofs, 1);
+isRelative = false(nodes.ndofs, 1);
 for i = 1:nodes.ndofs
     ref = abs(oofemDisplFree(i));
     if ref > tol
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i)) / ref * 100;
+        errors(i)     = abs(matlabDispl(i) - oofemDisplFree(i)) / ref * 100;
+        isRelative(i) = true;
     else
         errors(i) = abs(matlabDispl(i) - oofemDisplFree(i));  % absolute [m or rad]
     end
