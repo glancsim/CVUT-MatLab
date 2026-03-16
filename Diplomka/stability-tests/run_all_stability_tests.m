@@ -31,6 +31,7 @@ clear; close all; clc;
 % Cesta k Resources - automaticky relativní k tomuto souboru (worktree kompatibilní)
 scriptsDir = fileparts(mfilename('fullpath'));
 addpath(fullfile(scriptsDir, '..', 'Resources'));
+addpath(scriptsDir);  % pro testFn, run_single_test_wrapper
 baseDir = pwd; % Aktuální složka (stability-tests/)
 
 % Nastavení testů
