@@ -32,22 +32,22 @@ node 22 coords 3    0.0 1.0 0.0
 node 23 coords 3    0.5 1.0 0.2
 node 24 coords 3    1.0 1.0 0.4
 node 25 coords 3    1.5 1.0 0.6000000000000001
-node 26 coords 3    2.5 1.0 1.0
+node 26 coords 3    2.0 1.0 0.8
 node 27 coords 3    2.5 1.0 1.0
 node 28 coords 3    3.0 1.0 1.2
 node 29 coords 3    3.5 1.0 1.4
 node 30 coords 3    4.0 1.0 1.6
-node 31 coords 3    5.0 1.0 2.0
+node 31 coords 3    4.5 1.0 1.8
 node 32 coords 3    5.0 1.0 2.0
 node 33 coords 3    5.5 1.0 1.8
 node 34 coords 3    6.0 1.0 1.6
 node 35 coords 3    6.5 1.0 1.4
-node 36 coords 3    7.5 1.0 1.0
+node 36 coords 3    7.0 1.0 1.2
 node 37 coords 3    7.5 1.0 1.0
 node 38 coords 3    8.0 1.0 0.8
 node 39 coords 3    8.5 1.0 0.6
 node 40 coords 3    9.0 1.0 0.3999999999999999
-node 41 coords 3    10.0 1.0 0.0
+node 41 coords 3    9.5 1.0 0.19999999999999996
 #Beams
 Beam3d 1   nodes 2    1 6    refnode 22
 Beam3d 2   nodes 2    6 7    refnode 23

@@ -45,7 +45,7 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
         end
         beamId = beamId + 1;
         disc_beam(beamId, :) = [pos, nodeEnd];  % Final segment
-        disc_XY(beamId, :) = [oofem.nodes(nodeEnd,:)] + beams.XY(p,:);
+        disc_XY(beamId, :) = [oofem.nodes(pos,:)] + beams.XY(p,:);
     end
     oofem.beams = disc_beam;
     oofem.refNode = disc_XY;
@@ -94,19 +94,19 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
         end
     end
     
-    for l = 1:size(loads.y.nodes, 1)
+    for l = 1:size(loads.ry.nodes, 1)
         if isempty(loads.ry.nodes)
-            disc_loads.RY(l, :) = [0,0];    
+            disc_loads.RY(l, :) = [0,0];
         else
             disc_loads.RY(l, :) = [loads.ry.nodes(l), loads.ry.value(l)];
         end
     end
-    
-    for l = 1:size(loads.z.nodes, 1)
+
+    for l = 1:size(loads.rz.nodes, 1)
         if isempty(loads.rz.nodes)
-            disc_loads.RZ(l, :) = [0,0];    
+            disc_loads.RZ(l, :) = [0,0];
         else
-        disc_loads.RZ(l, :) = [loads.rz.nodes(l), loads.rz.value(l)];
+            disc_loads.RZ(l, :) = [loads.rz.nodes(l), loads.rz.value(l)];
         end
     end
     
