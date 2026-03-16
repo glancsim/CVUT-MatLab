@@ -1,9 +1,9 @@
-function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
+function [absErrors, relErrors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, ndisc, kinematic, beams, loads)
 % linearFemTestFn - Compare MATLAB linear FEM displacements vs OOFEM reference
 %
 % Runs MATLAB linear static FEM, re-uses OOFEM (via stability run) to get
-% reference displacements from test.out, and returns per-DOF relative errors
-% for all free DOFs of the original (non-discretized) nodes.
+% reference displacements from test.out, and returns per-DOF errors for all
+% free DOFs of the original (non-discretized) nodes.
 %
 % Inputs:
 %   sections   - sections.id
@@ -14,7 +14,8 @@ function [errors, matlabDispl, oofemDispl] = linearFemTestFn(sections, nodes, nd
 %   loads      - loads.x/y/z/rx/ry/rz.nodes/value
 %
 % Outputs:
-%   errors      - Relative errors per free DOF [%] (absolute for near-zero ref)
+%   absErrors   - Absolute errors per free DOF [m or rad] (all DOFs)
+%   relErrors   - Relative errors per free DOF [%] (NaN when reference is near-zero)
 %   matlabDispl - MATLAB free-DOF displacements of original nodes (column vector)
 %   oofemDispl  - OOFEM free-DOF displacements of original nodes (column vector)
 %
@@ -104,16 +105,17 @@ for n = 1:nnodes
     end
 end
 
-%% COMPUTE ERRORS (relative %, or absolute for near-zero reference)
+%% COMPUTE ERRORS (absolute [m or rad] for all DOFs; relative [%] only when reference is non-zero)
 tol = 1e-15;  % threshold below which reference is considered zero
-errors = zeros(nodes.ndofs, 1);
+absErrors = zeros(nodes.ndofs, 1);
+relErrors = NaN(nodes.ndofs, 1);
 for i = 1:nodes.ndofs
+    absErrors(i) = abs(matlabDispl(i) - oofemDisplFree(i));
     ref = abs(oofemDisplFree(i));
     if ref > tol
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i)) / ref * 100;
-    else
-        errors(i) = abs(matlabDispl(i) - oofemDisplFree(i));  % absolute [m or rad]
+        relErrors(i) = absErrors(i) / ref * 100;
     end
+    % relErrors(i) remains NaN when ref <= tol (near-zero reference)
 end
 
 oofemDispl = oofemDisplFree;
