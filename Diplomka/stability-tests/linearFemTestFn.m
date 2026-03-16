@@ -104,6 +104,7 @@ oofemForces   = parseOofemInternalForcesFn(testOutFile, elements.nelement); % (1
 % MATLAB code numbers: iterate node 1..nnodes, DOF 1..6, assign codes to free DOFs
 matlabDispl = zeros(nodes.ndofs, 1);
 oofemDisplFree = zeros(nodes.ndofs, 1);
+isTranslation = false(nodes.ndofs, 1);  % true for translational DOFs (d=1,2,3)
 idx = 0;
 for n = 1:nnodes
     for d = 1:6
@@ -111,13 +112,22 @@ for n = 1:nnodes
             idx = idx + 1;
             matlabDispl(idx)    = matlabAll(idx);
             oofemDisplFree(idx) = oofemDisplAll(n, d);
+            isTranslation(idx)  = (d <= 3);
         end
     end
 end
 
-%% COMPUTE ERRORS (normalise by global max displacement to avoid near-zero blow-up)
-globalMaxDispl = max(abs(oofemDisplFree)) + 1e-30;
-errors = abs(matlabDispl - oofemDisplFree) / globalMaxDispl * 100;
+%% COMPUTE ERRORS (per-DOF-type normalisation: separate maxima for translations [m] and rotations [rad])
+% This avoids meaningless percentages caused by mixing units.
+maxTrans = max(abs(oofemDisplFree(isTranslation)));
+maxRot   = max(abs(oofemDisplFree(~isTranslation)));
+% Tolerance fallback: if all values are near-zero (or no DOFs of that type), use a small number
+if isempty(maxTrans) || maxTrans < 1e-30, maxTrans = 1e-30; end
+if isempty(maxRot)   || maxRot   < 1e-30, maxRot   = 1e-30; end
+
+errors = zeros(nodes.ndofs, 1);
+errors(isTranslation)  = abs(matlabDispl(isTranslation)  - oofemDisplFree(isTranslation))  / maxTrans * 100;
+errors(~isTranslation) = abs(matlabDispl(~isTranslation) - oofemDisplFree(~isTranslation)) / maxRot   * 100;
 
 oofemDispl = oofemDisplFree;
 
