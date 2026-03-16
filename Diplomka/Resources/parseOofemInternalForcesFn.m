@@ -42,7 +42,9 @@ while ~feof(fid)
 
     % Read "  local end forces  ..." line
     if expectForces && contains(line, 'local end forces')
-        vals = sscanf(line(strfind(line, 'local end forces') + length('local end forces') : end), '%f');
+        idx = strfind(line, 'local end forces');
+        idx = idx(1);
+        vals = sscanf(line(idx + length('local end forces') : end), '%f');
         if numel(vals) >= 12
             forces(:, currentElement) = vals(1:12);
         end
