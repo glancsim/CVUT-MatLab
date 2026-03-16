@@ -121,16 +121,30 @@ errors = abs(matlabDispl - oofemDisplFree) / globalMaxDispl * 100;
 
 oofemDispl = oofemDisplFree;
 
-%% COMPUTE FORCE ERRORS (normalise by element's max |force| to avoid near-zero blow-up)
+%% COMPUTE FORCE ERRORS – separate normalisation for forces [N] and moments [N·m]
+% Rows 1-3 and 7-9 are Fx,Fy,Fz at each end (forces, unit N).
+% Rows 4-6 and 10-12 are Mx,My,Mz at each end (moments, unit N·m).
+forceRows   = [1 2 3 7 8 9];
+momentRows  = [4 5 6 10 11 12];
+
 forceErrors = zeros(12, elements.nelement);
-globalMaxForce = max(abs(oofemForces(:))) + 1e-30;
+
+% Global scale per group – used as fallback when a per-element group is near-zero
+globalForceScale  = max(max(abs(oofemForces(forceRows,  :)))) + 1e-30;
+globalMomentScale = max(max(abs(oofemForces(momentRows, :)))) + 1e-30;
+
 for e = 1:elements.nelement
-    elemRef = max(abs(oofemForces(:, e)));
-    if elemRef < 1e-6 * globalMaxForce
-        elemRef = globalMaxForce;  % fall back to global scale for near-zero elements
+    elemForceScale  = max(abs(oofemForces(forceRows,  e)));
+    elemMomentScale = max(abs(oofemForces(momentRows, e)));
+
+    if elemForceScale  < 1e-6 * globalForceScale
+        elemForceScale  = globalForceScale;
     end
-    for d = 1:12
-        forceErrors(d, e) = abs(localEndForces(d, e) - oofemForces(d, e)) / elemRef * 100;
+    if elemMomentScale < 1e-6 * globalMomentScale
+        elemMomentScale = globalMomentScale;
     end
+
+    forceErrors(forceRows,  e) = abs(localEndForces(forceRows,  e) - oofemForces(forceRows,  e)) / elemForceScale  * 100;
+    forceErrors(momentRows, e) = abs(localEndForces(momentRows, e) - oofemForces(momentRows, e)) / elemMomentScale * 100;
 end
 end
