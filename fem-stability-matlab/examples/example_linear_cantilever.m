@@ -78,14 +78,14 @@ loads.rz.nodes = [];  loads.rz.value = [];
 
 %% RESULTS
 % --------------------------------------------------------------------------
-% The only free DOFs here are 5 (uy of node 2) and 6 (rz of node 2).
-% DOF ordering: node 2 free DOFs in order [ux, uy, uz, rx, ry, rz] → free ones only.
-% With full fixity at node 1: free DOFs are uy,uz,rx,ry,rz (indices 2..6 of node 2).
-% displacements.global contains them in code-number order.
+% Node 1 is fully fixed → 0 free DOFs.
+% Node 2 is fully free → 6 free DOFs in order [ux, uy, uz, rx, ry, rz].
+% displacements.global contains the free DOFs in this code-number order.
 
-% Tip displacement in y (should be the 2nd free DOF of node 2)
-% The code numbers for node 2 free DOFs start after node 1 (which has 0 free DOFs).
-delta_y_FEM = displacements.global(1);   % first free DOF = uy of node 2
+% Tip displacement in y (uy of node 2 = 2nd free DOF)
+% The code numbers for node 2 free DOFs start immediately (node 1 has 0 free DOFs).
+delta_y_FEM = displacements.global(2);   % second free DOF = uy of node 2
+
 
 % Analytical solution
 delta_y_exact = abs(P) * 5^3 / (3 * sections.E * sections.Iy);
