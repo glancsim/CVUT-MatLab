@@ -14,13 +14,6 @@
 
 function [XY]=XYtoRotBeamsFn(beams,angles)
     for b = 1:beams.nbeams
-        theta = deg2rad(angles(b));
-        Rx = [
-            1, 0, 0;
-            0, cos(theta), -sin(theta);
-            0, sin(theta), cos(theta)
-        ];
-
         % Normalizace vektoru X
         K = beams.vertex(b,:) / norm(beams.vertex(b,:));
         % Úhel otočení (v radianech)
