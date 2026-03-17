@@ -87,8 +87,8 @@ loads.rz.nodes = [];  loads.rz.value = [];
 delta_y_FEM = displacements.global(2);   % second free DOF = uy of node 2
 
 
-% Analytical solution
-delta_y_exact = abs(P) * 5^3 / (3 * sections.E * sections.Iy);
+% Analytical solution (Euler-Bernoulli cantilever, load in global y → bending about z)
+delta_y_exact = abs(P) * 5^3 / (3 * sections.E * sections.Iz);
 
 fprintf('\n');
 fprintf('=== Cantilever Beam — Linear Analysis Results ===\n\n');
