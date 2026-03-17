@@ -1,4 +1,4 @@
-% Výpočet kritického břemene z matice tuhos ti a matice počátečních napětí
+% Výpočet kritického břemene z matice tuhosti a matice počátečních napětí
 %
 % In: 
 %   geometricMatrix.global =   globální matice počátečních napětí       
