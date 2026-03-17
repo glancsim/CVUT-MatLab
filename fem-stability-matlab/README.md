@@ -231,8 +231,7 @@ The 10 eigenvalues of smallest absolute value are returned by `criticalLoadFn` u
 ## Requirements
 
 - MATLAB R2019b or later
-- No additional toolboxes required for the solver
-- Statistics and Machine Learning Toolbox — only needed for `boxplot` in `run_all_tests.m` (optional visualisation)
+- No additional toolboxes required (all solver and test scripts, including visualisation in `run_all_tests.m`, use base MATLAB functions)
 
 ---
 
