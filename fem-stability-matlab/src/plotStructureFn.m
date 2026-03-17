@@ -16,7 +16,7 @@ function plotStructureFn(nodes, beams, loads, kinematic)
 %     Modrá  šipka    — podpora (omezený posun), šipka míří K uzlu
 %     Zelená šipka    — podpora (omezené pootočení), šipka míří K uzlu
 %     Červená šipka   — silové zatížení, šipka vychází Z uzlu + popisek [N]
-%     Červená 2× šipka— momentové zatížení (dvě paralelní) + popisek [N·m]
+%     Fialová 2× šipka— momentové zatížení (dvě paralelní) + popisek [N·m]
 
 figure; hold on;
 
@@ -107,7 +107,7 @@ if ~isempty(allF) && max(abs(allF)) > 0
 end
 
 % =========================================================
-%  ZATÍŽENÍ — MOMENTY (červená, dvojitá šipka = dvě paralelní)
+%  ZATÍŽENÍ — MOMENTY (fialová, dvojitá šipka = dvě paralelní)
 % =========================================================
 allM = [loads.rx.value; loads.ry.value; loads.rz.value];
 h_moments = [];
@@ -127,14 +127,14 @@ if ~isempty(allM) && max(abs(allM)) > 0
                          val * scale_m * u(1), ...
                          val * scale_m * u(2), ...
                          val * scale_m * u(3), ...
-                         0, 'r', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
+                         0, 'm', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
             if isempty(h_moments), h_moments = hh; end
         end
         for k = 1:numel(nds)
             text(xn(k) + val(k)*scale_m*u(1), ...
                  yn(k) + val(k)*scale_m*u(2), ...
                  zn(k) + val(k)*scale_m*u(3), ...
-                 sprintf('%.4g N·m', val(k)), 'Color', 'r', 'FontSize', 8);
+                 sprintf('%.4g N·m', val(k)), 'Color', 'm', 'FontSize', 8);
         end
     end
 end
