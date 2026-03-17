@@ -83,6 +83,8 @@ loads.rx.nodes = [];   loads.rx.value = [];
 loads.ry.nodes = [];   loads.ry.value = [];
 loads.rz.nodes = [];   loads.rz.value = [];
 
+plotStructureFn(nodes, beams, loads, kinematic) 
+
 %% STABILITY ANALYSIS
 % --------------------------------------------------------------------------
 Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
