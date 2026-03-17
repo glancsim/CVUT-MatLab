@@ -1,0 +1,111 @@
+test.out
+Linear stability Test 1
+LinearStability nroot 10 rtolv 1.e-8 nmodules 1
+errorcheck
+domain 3dShell
+OutputManager tstep_all dofman_all element_all
+ndofman 41 nelem 20 ncrosssect 2 nmat 1 nbc 15 nic 0 nltf 1  nset 17
+#Nodes
+node 1 coords 3    0.0 0.0 0.0
+node 2 coords 3    4.0 0.0 0.0
+node 3 coords 3    4.0 0.0 5.0
+node 4 coords 3    0.4 0.0 0.0
+node 5 coords 3    0.8 0.0 0.0
+node 6 coords 3    1.2000000000000002 0.0 0.0
+node 7 coords 3    1.6 0.0 0.0
+node 8 coords 3    2.0 0.0 0.0
+node 9 coords 3    2.4000000000000004 0.0 0.0
+node 10 coords 3    2.8000000000000003 0.0 0.0
+node 11 coords 3    3.2 0.0 0.0
+node 12 coords 3    3.6 0.0 0.0
+node 13 coords 3    4.0 0.0 0.5
+node 14 coords 3    4.0 0.0 1.0
+node 15 coords 3    4.0 0.0 1.5
+node 16 coords 3    4.0 0.0 2.0
+node 17 coords 3    4.0 0.0 2.5
+node 18 coords 3    4.0 0.0 3.0
+node 19 coords 3    4.0 0.0 3.5
+node 20 coords 3    4.0 0.0 4.0
+node 21 coords 3    4.0 0.0 4.5
+#Reference nodes
+node 22 coords 3    0.0 1.0 0.0
+node 23 coords 3    0.4 1.0 0.0
+node 24 coords 3    0.8 1.0 0.0
+node 25 coords 3    1.2000000000000002 1.0 0.0
+node 26 coords 3    1.6 1.0 0.0
+node 27 coords 3    2.0 1.0 0.0
+node 28 coords 3    2.4000000000000004 1.0 0.0
+node 29 coords 3    2.8000000000000003 1.0 0.0
+node 30 coords 3    3.2 1.0 0.0
+node 31 coords 3    3.6 1.0 0.0
+node 32 coords 3    4.0 -1.0 0.0
+node 33 coords 3    4.0 -1.0 0.5
+node 34 coords 3    4.0 -1.0 1.0
+node 35 coords 3    4.0 -1.0 1.5
+node 36 coords 3    4.0 -1.0 2.0
+node 37 coords 3    4.0 -1.0 2.5
+node 38 coords 3    4.0 -1.0 3.0
+node 39 coords 3    4.0 -1.0 3.5
+node 40 coords 3    4.0 -1.0 4.0
+node 41 coords 3    4.0 -1.0 4.5
+#Beams
+Beam3d 1   nodes 2    1 4    refnode 22
+Beam3d 2   nodes 2    4 5    refnode 23
+Beam3d 3   nodes 2    5 6    refnode 24
+Beam3d 4   nodes 2    6 7    refnode 25
+Beam3d 5   nodes 2    7 8    refnode 26
+Beam3d 6   nodes 2    8 9    refnode 27
+Beam3d 7   nodes 2    9 10    refnode 28
+Beam3d 8   nodes 2    10 11    refnode 29
+Beam3d 9   nodes 2    11 12    refnode 30
+Beam3d 10   nodes 2    12 2    refnode 31
+Beam3d 11   nodes 2    2 13    refnode 32
+Beam3d 12   nodes 2    13 14    refnode 33
+Beam3d 13   nodes 2    14 15    refnode 34
+Beam3d 14   nodes 2    15 16    refnode 35
+Beam3d 15   nodes 2    16 17    refnode 36
+Beam3d 16   nodes 2    17 18    refnode 37
+Beam3d 17   nodes 2    18 19    refnode 38
+Beam3d 18   nodes 2    19 20    refnode 39
+Beam3d 19   nodes 2    20 21    refnode 40
+Beam3d 20   nodes 2    21 3    refnode 41
+#Sections
+SimpleCS 1  area 0.000753   Iy 1.24e-07    Iz 4.63e-07    Ik 9.22e-09  beamShearCoeff 1.e30 material 1  set 1
+SimpleCS 2  area 0.00048   Iy 4.64e-08    Iz 1.74e-07    Ik 4.07e-09  beamShearCoeff 1.e30 material 1  set 2
+#Materials
+IsoLE 1 d 1.  E 210000000000.0 n 0.3 tAlpha 1.2e-5
+#Boundary conditions
+NodalLoad 1 loadTimeFunction 1 dofs 1 1 Components 1 -0.5 set 3
+NodalLoad 2 loadTimeFunction 1 dofs 1 2 Components 1 0.2 set 4
+NodalLoad 3 loadTimeFunction 1 dofs 1 3 Components 1 1 set 5
+BoundaryCondition 4 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 6
+BoundaryCondition 5 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 7
+BoundaryCondition 6 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 8
+BoundaryCondition 7 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 9
+BoundaryCondition 8 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 10
+BoundaryCondition 9 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 11
+BoundaryCondition 10 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 12
+BoundaryCondition 11 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 13
+BoundaryCondition 12 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 14
+BoundaryCondition 13 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 15
+BoundaryCondition 14 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 16
+BoundaryCondition 15 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 17
+ConstantFunction 1 f(t) 1.
+#Sets
+Set 1 elementranges {(1 10)}
+Set 2 elementranges {(11 20)}
+Set 3 nodes 1 2
+Set 4 nodes 1 2
+Set 5 nodes 1 2
+Set 6 nodes 1 1
+Set 7 nodes 1 3
+Set 8 nodes 1 1
+Set 9 nodes 1 3
+Set 10 nodes 1 1
+Set 11 nodes 1 3
+Set 12 nodes 1 1
+Set 13 nodes 1 3
+Set 14 nodes 1 1
+Set 15 nodes 1 3
+Set 16 nodes 1 1
+Set 17 nodes 1 3

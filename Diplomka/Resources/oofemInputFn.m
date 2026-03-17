@@ -70,8 +70,14 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
     end
     oofem.sections = disc_section;
 
-    % Load discretization
-   
+    % Load discretization — pre-initialize all fields so Python never sees missing keys
+    disc_loads.X  = zeros(0, 2);
+    disc_loads.Y  = zeros(0, 2);
+    disc_loads.Z  = zeros(0, 2);
+    disc_loads.RX = zeros(0, 2);
+    disc_loads.RY = zeros(0, 2);
+    disc_loads.RZ = zeros(0, 2);
+
     for l = 1:size(loads.x.nodes, 1)
         if isempty(loads.x.nodes)
             disc_loads.X(l, :) = [[],[]];    
