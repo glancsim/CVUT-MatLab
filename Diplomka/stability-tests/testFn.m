@@ -21,21 +21,27 @@ function [errors, h, sortedValues] = testFn(sections, nodes, ndisc, kinematic, b
 %% NASTAVENÍ PRŮŘEZŮ
 % --------------------------------------------------------------------------
 
-crossSectionsSet.import = importdata("../sectionsSet.mat");
-crossSectionsSet.A = table2array(crossSectionsSet.import.L(:,"A"));
-crossSectionsSet.Iz = table2array(crossSectionsSet.import.L(:,"I_y"));
-crossSectionsSet.Iy = table2array(crossSectionsSet.import.L(:,"I_z"));
-crossSectionsSet.Ip = table2array(crossSectionsSet.import.L(:,"I_t"));
+if isfield(sections, 'A')
+    % Vlastní průřezy — přímo ze struktury sections (debug / trubkové sekce)
+    sections_out = sections;
+else
+    % Průřezy z databáze sectionsSet.mat (standardní cesta)
+    crossSectionsSet.import = importdata("../sectionsSet.mat");
+    crossSectionsSet.A = table2array(crossSectionsSet.import.L(:,"A"));
+    crossSectionsSet.Iz = table2array(crossSectionsSet.import.L(:,"I_y"));
+    crossSectionsSet.Iy = table2array(crossSectionsSet.import.L(:,"I_z"));
+    crossSectionsSet.Ip = table2array(crossSectionsSet.import.L(:,"I_t"));
 
-sections_out.id = sections.id;
+    sections_out.id = sections.id;
 
-for i = 1:size(sections_out.id, 1)
-    sections_out.A(i, 1)  = crossSectionsSet.A(sections_out.id(i));
-    sections_out.Iy(i, 1) = crossSectionsSet.Iy(sections_out.id(i));
-    sections_out.Iz(i, 1) = crossSectionsSet.Iz(sections_out.id(i));
-    sections_out.Ix(i, 1) = crossSectionsSet.Ip(sections_out.id(i));
-    sections_out.E(i, 1)  = 210*10^9;
-    sections_out.v(i, 1)  = 0.3;
+    for i = 1:size(sections_out.id, 1)
+        sections_out.A(i, 1)  = crossSectionsSet.A(sections_out.id(i));
+        sections_out.Iy(i, 1) = crossSectionsSet.Iy(sections_out.id(i));
+        sections_out.Iz(i, 1) = crossSectionsSet.Iz(sections_out.id(i));
+        sections_out.Ix(i, 1) = crossSectionsSet.Ip(sections_out.id(i));
+        sections_out.E(i, 1)  = 210*10^9;
+        sections_out.v(i, 1)  = 0.3;
+    end
 end
 
 nangles = 90;  % Předpokládaná hodnota (není v inputu)
