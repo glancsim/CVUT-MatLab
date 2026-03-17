@@ -71,6 +71,7 @@ if nargin >= 4 && ~isempty(kinematic)
                      repmat(u(2)*arrow_len, size(nds)), ...
                      repmat(u(3)*arrow_len, size(nds)), ...
                      0, 'g', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
+        hh.LineStyle = '--';
         if isempty(h_sup_r), h_sup_r = hh; end
     end
 
