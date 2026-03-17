@@ -23,7 +23,6 @@ figure; hold on;
 % --- Charakteristický rozměr ---
 L_char    = max([range(nodes.x); range(nodes.y); range(nodes.z); 1]);
 arrow_len = 0.15 * L_char;
-eps_off   = 0.02 * L_char;
 margin    = 0.15 * L_char;
 
 uvecs = {[1 0 0], [0 1 0], [0 0 1]};
@@ -107,29 +106,32 @@ if ~isempty(allF) && max(abs(allF)) > 0
 end
 
 % =========================================================
-%  ZATÍŽENÍ — MOMENTY (fialová, dvojitá šipka = dvě paralelní)
+%  ZATÍŽENÍ — MOMENTY (fialová, dvojitá šipka "------>>")
+%  Dvě quiver šipky podél stejné osy, druhá o head_gap kratší → dvě špičky za sebou
 % =========================================================
 allM = [loads.rx.value; loads.ry.value; loads.rz.value];
 h_moments = [];
-perp = {[0 1 0], [0 0 1], [1 0 0]};   % perpendikula pro příčný offset dvojité šipky
 if ~isempty(allM) && max(abs(allM)) > 0
-    scale_m = arrow_len / max(abs(allM));
-    dirs_m  = {'rx', 'ry', 'rz'};
+    scale_m  = arrow_len / max(abs(allM));
+    head_gap = 0.12 * arrow_len;   % vzdálenost mezi oběma špičkami
+    dirs_m   = {'rx', 'ry', 'rz'};
     for d = 1:3
         nds = loads.(dirs_m{d}).nodes;
         if isempty(nds), continue; end
         val = loads.(dirs_m{d}).value;
         u   = uvecs{d};
-        p   = perp{d};
         xn  = nodes.x(nds); yn = nodes.y(nds); zn = nodes.z(nds);
-        for sgn = [-1 1]
-            hh = quiver3(xn + sgn*eps_off*p(1), yn + sgn*eps_off*p(2), zn + sgn*eps_off*p(3), ...
-                         val * scale_m * u(1), ...
-                         val * scale_m * u(2), ...
-                         val * scale_m * u(3), ...
-                         0, 'm', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
-            if isempty(h_moments), h_moments = hh; end
-        end
+        % Přední šipka (delší) — tvoří vnější šipku >>
+        hh = quiver3(xn, yn, zn, ...
+                     val * scale_m * u(1), val * scale_m * u(2), val * scale_m * u(3), ...
+                     0, 'm', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
+        if isempty(h_moments), h_moments = hh; end
+        % Zadní šipka (kratší o head_gap) — tvoří vnitřní šipku >
+        quiver3(xn, yn, zn, ...
+                (val * scale_m - sign(val) * head_gap) .* u(1), ...
+                (val * scale_m - sign(val) * head_gap) .* u(2), ...
+                (val * scale_m - sign(val) * head_gap) .* u(3), ...
+                0, 'm', 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
         for k = 1:numel(nds)
             text(xn(k) + val(k)*scale_m*u(1), ...
                  yn(k) + val(k)*scale_m*u(2), ...
