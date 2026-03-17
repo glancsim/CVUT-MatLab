@@ -1,0 +1,155 @@
+test.out
+Linear stability Test 1
+LinearStability nroot 10 rtolv 1.e-8 nmodules 1
+errorcheck
+domain 3dShell
+OutputManager tstep_all dofman_all element_all
+ndofman 61 nelem 30 ncrosssect 3 nmat 1 nbc 21 nic 0 nltf 1  nset 24
+#Nodes
+node 1 coords 3    0.0 0.0 0.0
+node 2 coords 3    0.0 0.0 6.0
+node 3 coords 3    6.0 0.0 6.0
+node 4 coords 3    6.0 0.0 0.0
+node 5 coords 3    0.0 0.0 0.6
+node 6 coords 3    0.0 0.0 1.2
+node 7 coords 3    0.0 0.0 1.7999999999999998
+node 8 coords 3    0.0 0.0 2.4
+node 9 coords 3    0.0 0.0 3.0
+node 10 coords 3    0.0 0.0 3.5999999999999996
+node 11 coords 3    0.0 0.0 4.2
+node 12 coords 3    0.0 0.0 4.8
+node 13 coords 3    0.0 0.0 5.3999999999999995
+node 14 coords 3    0.6 0.0 6.0
+node 15 coords 3    1.2 0.0 6.0
+node 16 coords 3    1.7999999999999998 0.0 6.0
+node 17 coords 3    2.4 0.0 6.0
+node 18 coords 3    3.0 0.0 6.0
+node 19 coords 3    3.5999999999999996 0.0 6.0
+node 20 coords 3    4.2 0.0 6.0
+node 21 coords 3    4.8 0.0 6.0
+node 22 coords 3    5.3999999999999995 0.0 6.0
+node 23 coords 3    6.0 0.0 5.4
+node 24 coords 3    6.0 0.0 4.8
+node 25 coords 3    6.0 0.0 4.2
+node 26 coords 3    6.0 0.0 3.6
+node 27 coords 3    6.0 0.0 3.0
+node 28 coords 3    6.0 0.0 2.4000000000000004
+node 29 coords 3    6.0 0.0 1.7999999999999998
+node 30 coords 3    6.0 0.0 1.2000000000000002
+node 31 coords 3    6.0 0.0 0.6000000000000005
+#Reference nodes
+node 32 coords 3    0.0 -1.0 0.0
+node 33 coords 3    0.0 -1.0 0.6
+node 34 coords 3    0.0 -1.0 1.2
+node 35 coords 3    0.0 -1.0 1.7999999999999998
+node 36 coords 3    0.0 -1.0 2.4
+node 37 coords 3    0.0 -1.0 3.0
+node 38 coords 3    0.0 -1.0 3.5999999999999996
+node 39 coords 3    0.0 -1.0 4.2
+node 40 coords 3    0.0 -1.0 4.8
+node 41 coords 3    0.0 -1.0 5.3999999999999995
+node 42 coords 3    0.0 1.0 6.0
+node 43 coords 3    0.6 1.0 6.0
+node 44 coords 3    1.2 1.0 6.0
+node 45 coords 3    1.7999999999999998 1.0 6.0
+node 46 coords 3    2.4 1.0 6.0
+node 47 coords 3    3.0 1.0 6.0
+node 48 coords 3    3.5999999999999996 1.0 6.0
+node 49 coords 3    4.2 1.0 6.0
+node 50 coords 3    4.8 1.0 6.0
+node 51 coords 3    5.3999999999999995 1.0 6.0
+node 52 coords 3    6.0 1.0 6.0
+node 53 coords 3    6.0 1.0 5.4
+node 54 coords 3    6.0 1.0 4.8
+node 55 coords 3    6.0 1.0 4.2
+node 56 coords 3    6.0 1.0 3.6
+node 57 coords 3    6.0 1.0 3.0
+node 58 coords 3    6.0 1.0 2.4000000000000004
+node 59 coords 3    6.0 1.0 1.7999999999999998
+node 60 coords 3    6.0 1.0 1.2000000000000002
+node 61 coords 3    6.0 1.0 0.6000000000000005
+#Beams
+Beam3d 1   nodes 2    1 5    refnode 32
+Beam3d 2   nodes 2    5 6    refnode 33
+Beam3d 3   nodes 2    6 7    refnode 34
+Beam3d 4   nodes 2    7 8    refnode 35
+Beam3d 5   nodes 2    8 9    refnode 36
+Beam3d 6   nodes 2    9 10    refnode 37
+Beam3d 7   nodes 2    10 11    refnode 38
+Beam3d 8   nodes 2    11 12    refnode 39
+Beam3d 9   nodes 2    12 13    refnode 40
+Beam3d 10   nodes 2    13 2    refnode 41
+Beam3d 11   nodes 2    2 14    refnode 42
+Beam3d 12   nodes 2    14 15    refnode 43
+Beam3d 13   nodes 2    15 16    refnode 44
+Beam3d 14   nodes 2    16 17    refnode 45
+Beam3d 15   nodes 2    17 18    refnode 46
+Beam3d 16   nodes 2    18 19    refnode 47
+Beam3d 17   nodes 2    19 20    refnode 48
+Beam3d 18   nodes 2    20 21    refnode 49
+Beam3d 19   nodes 2    21 22    refnode 50
+Beam3d 20   nodes 2    22 3    refnode 51
+Beam3d 21   nodes 2    3 23    refnode 52
+Beam3d 22   nodes 2    23 24    refnode 53
+Beam3d 23   nodes 2    24 25    refnode 54
+Beam3d 24   nodes 2    25 26    refnode 55
+Beam3d 25   nodes 2    26 27    refnode 56
+Beam3d 26   nodes 2    27 28    refnode 57
+Beam3d 27   nodes 2    28 29    refnode 58
+Beam3d 28   nodes 2    29 30    refnode 59
+Beam3d 29   nodes 2    30 31    refnode 60
+Beam3d 30   nodes 2    31 4    refnode 61
+#Sections
+SimpleCS 1  area 0.00139   Iy 4.37e-07    Iz 1.66e-06    Ik 3.04e-08  beamShearCoeff 1.e30 material 1  set 1
+SimpleCS 2  area 0.00139   Iy 4.37e-07    Iz 1.66e-06    Ik 3.04e-08  beamShearCoeff 1.e30 material 1  set 2
+SimpleCS 3  area 0.00139   Iy 4.37e-07    Iz 1.66e-06    Ik 3.04e-08  beamShearCoeff 1.e30 material 1  set 3
+#Materials
+IsoLE 1 d 1.  E 210000000000.0 n 0.3 tAlpha 1.2e-5
+#Boundary conditions
+NodalLoad 1 loadTimeFunction 1 dofs 1 1 Components 1 -0.5 set 4
+NodalLoad 2 loadTimeFunction 1 dofs 1 3 Components 1 -1 set 5
+NodalLoad 3 loadTimeFunction 1 dofs 1 3 Components 1 -1 set 6
+BoundaryCondition 4 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 7
+BoundaryCondition 5 loadTimeFunction 1 dofs 1 1 values 1 0.0 set 8
+BoundaryCondition 6 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 9
+BoundaryCondition 7 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 10
+BoundaryCondition 8 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 11
+BoundaryCondition 9 loadTimeFunction 1 dofs 1 2 values 1 0.0 set 12
+BoundaryCondition 10 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 13
+BoundaryCondition 11 loadTimeFunction 1 dofs 1 3 values 1 0.0 set 14
+BoundaryCondition 12 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 15
+BoundaryCondition 13 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 16
+BoundaryCondition 14 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 17
+BoundaryCondition 15 loadTimeFunction 1 dofs 1 4 values 1 0.0 set 18
+BoundaryCondition 16 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 19
+BoundaryCondition 17 loadTimeFunction 1 dofs 1 5 values 1 0.0 set 20
+BoundaryCondition 18 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 21
+BoundaryCondition 19 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 22
+BoundaryCondition 20 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 23
+BoundaryCondition 21 loadTimeFunction 1 dofs 1 6 values 1 0.0 set 24
+ConstantFunction 1 f(t) 1.
+#Sets
+Set 1 elementranges {(1 10)}
+Set 2 elementranges {(11 20)}
+Set 3 elementranges {(21 30)}
+Set 4 nodes 1 2
+Set 5 nodes 1 2
+Set 6 nodes 1 3
+Set 7 nodes 1 1
+Set 8 nodes 1 4
+Set 9 nodes 1 1
+Set 10 nodes 1 2
+Set 11 nodes 1 3
+Set 12 nodes 1 4
+Set 13 nodes 1 1
+Set 14 nodes 1 4
+Set 15 nodes 1 1
+Set 16 nodes 1 2
+Set 17 nodes 1 3
+Set 18 nodes 1 4
+Set 19 nodes 1 1
+Set 20 nodes 1 4
+Set 21 nodes 1 1
+Set 22 nodes 1 2
+Set 23 nodes 1 3
+Set 24 nodes 1 4

@@ -38,13 +38,13 @@ beams.angles    = [0; 0];    % angle of section
 %% ZATÍŽENÍ
 % Zatížení v uzlu 2 – kombinace osového tlaku + příčných sil (prostorová odezva)
 loads.x.nodes = [2];         % node indices with x-direction forces
-loads.x.value = [0.5000];    % vodorovná síla podél X (ohýbá svislý prut)
+loads.x.value = [-0.5000];   % tlaková síla podél X (tlačí uzel 2 k vetknutí uzlu 1)
 
 loads.y.nodes = [2];         % node indices with y-direction forces
-loads.y.value = [-0.2000];   % příčná síla podél Y (prostorové zatížení)
+loads.y.value = [0.2000];    % příčná síla podél Y (prostorové zatížení)
 
 loads.z.nodes = [2];         % node indices with z-direction forces
-loads.z.value = [-1.0000];   % svislá tlaková síla Fz (axialní v prutu 2)
+loads.z.value = [1.0000];    % svislá tlaková síla Fz (tlačí uzel 2 k vetknutí uzlu 3)
 
 loads.rx.nodes = [];         % node indices with rx-direction moments
 loads.rx.value = [];
