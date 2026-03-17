@@ -167,12 +167,12 @@ beams.nodesHead = [1];  beams.nodesEnd = [2];
 beams.sections  = [1];  beams.angles   = [0];
 
 %% Loads — 1 N axial compression at tip
-loads.x.nodes = [];  loads.x.value = [];
-loads.y.nodes = [];  loads.y.value = [];
-loads.z.nodes = [];  loads.z.value = [];
-loads.rx.nodes = []; loads.rx.value = [];
-loads.ry.nodes = []; loads.ry.value = [];
-loads.rz.nodes = [2]; loads.rz.value = [-1];
+loads.x.nodes = [2];  loads.x.value = [-1];
+loads.y.nodes = [];   loads.y.value = [];
+loads.z.nodes = [];   loads.z.value = [];
+loads.rx.nodes = [];  loads.rx.value = [];
+loads.ry.nodes = [];  loads.ry.value = [];
+loads.rz.nodes = [];  loads.rz.value = [];
 
 %% Run analyses
 [displ, forces] = linearSolverFn(sections, nodes, 10, kinematic, beams, loads);
