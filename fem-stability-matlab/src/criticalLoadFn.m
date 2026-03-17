@@ -15,6 +15,8 @@ eigeinValues=diag(eigeinValues);
 [Min,Pos]=min(abs(eigeinValues));
 Results.values = eigeinValues;
 Results.vectors = eigenVectors;
+Results.criticalLoad = Min;
+Results.criticalModeIndex = Pos;
 
 
 
