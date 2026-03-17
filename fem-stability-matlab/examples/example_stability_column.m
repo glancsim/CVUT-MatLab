@@ -52,18 +52,18 @@ ndisc = 20;   % elements per beam (higher = more accurate eigenvalues)
 
 %% BOUNDARY CONDITIONS (pinned-pinned column)
 % --------------------------------------------------------------------------
-% Node 1 (bottom): fix all translations, fix rotations about x and y.
-%                  Allow rotation about z (pin in x-y plane).
-% Node 2 (top)   : fix all translations, fix rotations about x and y.
-%                  Allow rotation about z (pin in x-y plane).
-% Both ends are free to rotate about the beam axis (no torsion restraint).
+% Node 1 (bottom): fix translations in x, y, and z (remove rigid-body motion).
+%                  Leave all rotations free (pin support).
+% Node 2 (top)   : fix translations in x and y.
+%                  Leave all rotations free (pin support).
+% Both ends are free to rotate in bending and torsion (no rotational restraint).
 
-kinematic.x.nodes  = [1; 2];
-kinematic.y.nodes  = [1; 2];
-kinematic.z.nodes  = [1];     % fix axial displacement only at base
-kinematic.rx.nodes = [1; 2];
-kinematic.ry.nodes = [1; 2];
-kinematic.rz.nodes = [];      % no rotational restraint about z (pinned)
+kinematic.x.nodes  = [1; 2];  % fix lateral translation in x at both ends
+kinematic.y.nodes  = [1; 2];  % fix lateral translation in y at both ends
+kinematic.z.nodes  = [1];     % fix axial displacement only at base to prevent rigid-body motion
+kinematic.rx.nodes = [];      % no rotational restraint about x (pinned)
+kinematic.ry.nodes = [];      % no rotational restraint about y (pinned)
+kinematic.rz.nodes = [];      % no torsional restraint about z (pinned)
 
 %% BEAMS
 % --------------------------------------------------------------------------
