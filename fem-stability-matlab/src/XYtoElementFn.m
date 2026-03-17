@@ -10,7 +10,7 @@
 
 
 function [XY]=XYtoElementFn(beams)
-    XY = zeros();
+    XY = zeros(sum(beams.disc), 3);
     pos = 0;
 for p=1:beams.nbeams        
     for s=1:beams.disc(p)
