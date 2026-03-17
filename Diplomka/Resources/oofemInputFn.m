@@ -78,28 +78,17 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
     disc_loads.RY = zeros(0, 2);
     disc_loads.RZ = zeros(0, 2);
 
-    for l = 1:size(loads.x.nodes, 1)
-        if isempty(loads.x.nodes)
-            disc_loads.X(l, :) = [[],[]];    
-        else
-            disc_loads.X(l, :) = [loads.x.nodes(l), loads.x.value(l)];
-        end
+    % Populate discrete loads when present; keep 0x2 arrays when empty
+    if ~isempty(loads.x.nodes)
+        disc_loads.X = [loads.x.nodes(:), loads.x.value(:)];
     end
 
-    for l = 1:size(loads.y.nodes, 1)
-        if isempty(loads.y.nodes)
-            disc_loads.Y(l, :) = [[],[]];    
-        else
-            disc_loads.Y(l, :) = [loads.y.nodes(l), loads.y.value(l)];
-        end
+    if ~isempty(loads.y.nodes)
+        disc_loads.Y = [loads.y.nodes(:), loads.y.value(:)];
     end
     
-    for l = 1:size(loads.z.nodes, 1)
-        if isempty(loads.z.nodes)
-            disc_loads.Z(l, :) = [[],[]];    
-        else
-            disc_loads.Z(l, :) = [loads.z.nodes(l), loads.z.value(l)];
-        end
+    if ~isempty(loads.z.nodes)
+        disc_loads.Z = [loads.z.nodes(:), loads.z.value(:)];
     end
 
     for l = 1:size(loads.rx.nodes, 1)
