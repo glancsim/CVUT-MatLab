@@ -49,7 +49,26 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
     end
     oofem.beams = disc_beam;
     oofem.refNode = disc_XY;
-    
+
+    % Kloubová uvolnění: dofstocondense pro OOFEM Beam3d
+    % DOFy 4,5,6 = rotace na hlavovém konci; 10,11,12 = rotace na patním konci
+    n_total = sum(beams.disc);
+    disc_release = zeros(n_total, 12);
+    if isfield(beams, 'releases')
+        pos = 0;
+        for p = 1:beams.nbeams
+            n_disc = beams.disc(p);
+            if beams.releases(p, 1)
+                disc_release(pos+1,      [4 5 6])    = 1;
+            end
+            if beams.releases(p, 2)
+                disc_release(pos+n_disc, [10 11 12]) = 1;
+            end
+            pos = pos + n_disc;
+        end
+    end
+    oofem.releases = disc_release;
+
     % Initialize section discretization
     % Build per-beam sectionProp so oofem.py correctly maps set p -> cross-section p.
     % (oofem.py assigns set p to SimpleCS p; without this, beams sharing a section type

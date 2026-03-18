@@ -129,6 +129,9 @@ for j = 1:psv
 end
 
 K_tuhost=E_el*K_tuhost;
+if isfield(elements,'releases') && any(elements.releases(cp,:))
+    K_tuhost=releaseCondenseFn(K_tuhost,elements.releases(cp,:));
+end
 localStiffnessMatrix{cp}=K_tuhost;
 K_tuhost=T_t*K_tuhost*T;
 
@@ -148,4 +151,17 @@ end
 end
 stiffnesMatrix.global = globalStiffnessMatrix;
 stiffnesMatrix.local = localStiffnessMatrix;
+end
+
+function K = releaseCondenseFn(K, rel)
+% Statická kondenzace uvolněných rotačních DOFů (kloubový konec).
+%   rel(1) = true → kloub na hlavě (DOFy 4,5,6 lokálně)
+%   rel(2) = true → kloub na patě  (DOFy 10,11,12 lokálně)
+    r = [];
+    if rel(1), r = [r, 4, 5, 6];    end
+    if rel(2), r = [r, 10, 11, 12]; end
+    s = setdiff(1:12, r);
+    K_cond = K(s,s) - K(s,r) * (K(r,r) \ K(r,s));
+    K = zeros(12,12);
+    K(s,s) = K_cond;
 end

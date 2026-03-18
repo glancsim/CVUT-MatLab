@@ -95,6 +95,20 @@ beams.codeNumbers = codeNumbersFn(beams, nodes);
 beams.XY = XYtoRotBeamsFn(beams, beams.angles);
 
 elements = discretizationBeamsFn(beams, nodes);
+
+% Propagace kloubových spojení na diskretizované elementy
+% (uvolnění platí jen pro první/poslední element každého prutu)
+elements.releases = zeros(sum(beams.disc), 2);
+if isfield(beams, 'releases')
+    pos = 0;
+    for p = 1:beams.nbeams
+        c = beams.disc(p);
+        elements.releases(pos+1, 1) = beams.releases(p, 1);  % kloub na hlavě
+        elements.releases(pos+c, 2) = beams.releases(p, 2);  % kloub na patě
+        pos = pos + c;
+    end
+end
+
 elements.XY = XYtoElementFn(beams);
 elements.sections = sectionToElementFn(sections_out, beams);
 elements.ndofs = max(max(elements.codeNumbers));
