@@ -1,0 +1,15 @@
+# OOFEM runner — temporary files generated during analysis runs
+fem-stability-matlab/tests/oofem/eigen.mat
+fem-stability-matlab/tests/oofem/input.mat
+fem-stability-matlab/tests/oofem/test.in
+fem-stability-matlab/tests/oofem/test.out*
+
+# Diplomka legacy OOFEM temp files
+Diplomka/stability-tests/*/eigen.mat
+Diplomka/stability-tests/*/input.mat
+
+# run_all_tests output folder
+fem-stability-matlab/tests/results/
+
+# Helper scripts (one-time use)
+fem-stability-matlab/tests/gen_ref_*.m
