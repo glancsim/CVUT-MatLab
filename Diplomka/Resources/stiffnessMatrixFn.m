@@ -154,12 +154,14 @@ stiffnesMatrix.local = localStiffnessMatrix;
 end
 
 function K = releaseCondenseFn(K, rel)
-% Statická kondenzace uvolněných rotačních DOFů (kloubový konec).
-%   rel(1) = true → kloub na hlavě (DOFy 4,5,6 lokálně)
-%   rel(2) = true → kloub na patě  (DOFy 10,11,12 lokálně)
+% Statická kondenzace uvolněných ohybových DOFů (kloubový konec).
+%   rel(1) = true → kloub na hlavě (DOFy 5,6 = My, Mz lokálně)
+%   rel(2) = true → kloub na patě  (DOFy 11,12 = My, Mz lokálně)
+%
+% Torzní moment (DOF 4 / 10) se NEUVOLŇUJE — kloub přenáší kroucení.
     r = [];
-    if rel(1), r = [r, 4, 5, 6];    end
-    if rel(2), r = [r, 10, 11, 12]; end
+    if rel(1), r = [r, 5, 6];    end
+    if rel(2), r = [r, 11, 12]; end
     s = setdiff(1:12, r);
     K_cond = K(s,s) - K(s,r) * (K(r,r) \ K(r,s));
     K = zeros(12,12);

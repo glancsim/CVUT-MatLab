@@ -59,10 +59,10 @@ function oofem = oofemInputFn(nodes, beams, loads, kinematic, sections, filename
         for p = 1:beams.nbeams
             n_disc = beams.disc(p);
             if beams.releases(p, 1)
-                disc_release(pos+1,      [4 5 6])    = 1;
+                disc_release(pos+1,      [5 6])    = 1;
             end
             if beams.releases(p, 2)
-                disc_release(pos+n_disc, [10 11 12]) = 1;
+                disc_release(pos+n_disc, [11 12]) = 1;
             end
             pos = pos + n_disc;
         end
