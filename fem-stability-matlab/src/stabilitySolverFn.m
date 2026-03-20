@@ -143,6 +143,20 @@ beams.XY          = XYtoRotBeamsFn(beams, beams.angles);
 % ELEMENT SETUP — discretize beams, expand section properties
 %--------------------------------------------------------------------------
 elements          = discretizationBeamsFn(beams, nodes);
+
+% Propagate hinge releases to individual elements
+% (release applies only to the first / last element of each beam)
+elements.releases = zeros(sum(beams.disc), 2);
+if isfield(beams, 'releases')
+    pos = 0;
+    for p = 1:beams.nbeams
+        c = beams.disc(p);
+        elements.releases(pos+1, 1) = beams.releases(p, 1);  % head hinge
+        elements.releases(pos+c, 2) = beams.releases(p, 2);  % tail hinge
+        pos = pos + c;
+    end
+end
+
 elements.XY       = XYtoElementFn(beams);
 elements.sections = sectionToElementFn(sections, beams);
 elements.ndofs    = max(max(elements.codeNumbers));
