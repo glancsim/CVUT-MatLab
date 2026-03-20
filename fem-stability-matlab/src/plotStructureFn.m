@@ -38,6 +38,29 @@ h_beams = plot3([nodes.x(beams.nodesHead) nodes.x(beams.nodesEnd)]', ...
 h_nodes = scatter3(nodes.x, nodes.y, nodes.z, 40, 'k', 'filled');
 
 % =========================================================
+%  KLOUBY (beams.releases) — prázdný kruh ○ na uvolněném konci
+% =========================================================
+h_hinges = [];
+if isfield(beams, 'releases') && any(any(beams.releases))
+    for p = 1:size(beams.nodesHead, 1)
+        if beams.releases(p, 1)
+            scatter3(nodes.x(beams.nodesHead(p)), nodes.y(beams.nodesHead(p)), ...
+                     nodes.z(beams.nodesHead(p)), 100, 'w', 'filled');
+            hh = scatter3(nodes.x(beams.nodesHead(p)), nodes.y(beams.nodesHead(p)), ...
+                          nodes.z(beams.nodesHead(p)), 100, 'k', 'o', 'LineWidth', 2);
+            if isempty(h_hinges), h_hinges = hh; end
+        end
+        if beams.releases(p, 2)
+            scatter3(nodes.x(beams.nodesEnd(p)), nodes.y(beams.nodesEnd(p)), ...
+                     nodes.z(beams.nodesEnd(p)), 100, 'w', 'filled');
+            hh = scatter3(nodes.x(beams.nodesEnd(p)), nodes.y(beams.nodesEnd(p)), ...
+                          nodes.z(beams.nodesEnd(p)), 100, 'k', 'o', 'LineWidth', 2);
+            if isempty(h_hinges), h_hinges = hh; end
+        end
+    end
+end
+
+% =========================================================
 %  PODPORY (kinematic)
 % =========================================================
 h_sup_t = []; h_sup_r = [];
@@ -154,6 +177,7 @@ xlabel('x [m]'); ylabel('y [m]'); zlabel('z [m]');
 % Legenda — jen existující prvky
 leg_h = [h_beams(1), h_nodes];
 leg_l = {'Pruty', 'Uzly'};
+if ~isempty(h_hinges),  leg_h(end+1) = h_hinges;  leg_l{end+1} = 'Kloub';              end
 if ~isempty(h_sup_t),   leg_h(end+1) = h_sup_t;   leg_l{end+1} = 'Podpora – posun';     end
 if ~isempty(h_sup_r),   leg_h(end+1) = h_sup_r;   leg_l{end+1} = 'Podpora – pootočení'; end
 if ~isempty(h_forces),  leg_h(end+1) = h_forces;  leg_l{end+1} = 'Síla';                end
