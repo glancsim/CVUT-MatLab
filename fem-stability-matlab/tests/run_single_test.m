@@ -104,12 +104,11 @@ else
     ref     = load(refFile, 'eigenvalues');
     refEigenvalues = ref.eigenvalues;
 
-    posValues = sort(sortedValues(sortedValues > 0));
-    refValues = sort(refEigenvalues(refEigenvalues > 0));
+    posValues = sort(sortedValues(sortedValues > 0));  posValues = posValues(:);
+    refValues = sort(refEigenvalues(refEigenvalues > 0)); refValues = refValues(:);
     n         = min(length(posValues), length(refValues));
 
     errors = abs(refValues(1:n) - posValues(1:n)) ./ refValues(1:n) * 100;
-    errors = errors(:);
 end
 
 end
