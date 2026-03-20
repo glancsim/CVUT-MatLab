@@ -1,12 +1,15 @@
-function [errors, sortedValues] = run_single_test(testDir)
-% run_single_test  Run one stability test and compare against stored reference.
+function [errors, sortedValues] = run_single_test(testDir, useOofem)
+% run_single_test  Run one stability test and compare against reference.
 %
 % Loads the test definition from  testDir/test_input.m, resolves cross-section
 % properties from sectionsSet.mat, calls stabilitySolverFn to compute critical
-% load multipliers, and compares them against the pre-computed OOFEM reference
-% values stored in  testDir/reference_eigenvalues.mat.
+% load multipliers, and compares them against a reference.
 %
-% No external solver (OOFEM, Python) is required.
+% By default the reference is the pre-computed OOFEM values stored in
+% testDir/reference_eigenvalues.mat (no external solver required).
+%
+% When useOofem=true the comparison is done live against OOFEM via
+% oofemTestFn — requires Python + oofem binary in tests/oofem/.
 %
 % INPUTS:
 %   testDir - (char) Absolute or relative path to the test directory.
@@ -24,11 +27,22 @@ function [errors, sortedValues] = run_single_test(testDir)
 %   sortedValues - (10 x 1) All eigenvalues from stabilitySolverFn, sorted
 %                  by ascending absolute value.
 %
+% INPUTS:
+%   testDir  - (char) Path to test directory (must contain test_input.m and
+%              reference_eigenvalues.mat).
+%   useOofem - (logical, optional) If true, compare against live OOFEM run
+%              instead of reference_eigenvalues.mat. Default: false.
+%
 % EXAMPLE:
 %   [errors, vals] = run_single_test(fullfile(pwd, 'Test 1'));
-%   fprintf('Mean error: %.3f %%\n', mean(errors));
+%   fprintf('Mean error (ref): %.3f %%\n', mean(errors));
 %
-% See also: run_all_tests, stabilitySolverFn
+%   % Live OOFEM comparison (requires Python + oofem binary):
+%   [errors, vals] = run_single_test(fullfile(pwd, 'Test 1'), true);
+%
+% See also: run_all_tests, stabilitySolverFn, oofemTestFn
+
+if nargin < 2, useOofem = false; end
 
 %% LOAD TEST INPUT
 % The test_input.m file sets:  sections.id, nodes, ndisc, kinematic, beams, loads
@@ -79,19 +93,23 @@ end
 Results = stabilitySolverFn(resolvedSections, nodes, ndisc, kinematic, beams, loads);
 sortedValues = Results.values;   % already sorted by stabilitySolverFn
 
-%% LOAD REFERENCE EIGENVALUES (pre-computed by OOFEM)
-refFile = fullfile(testDir, 'reference_eigenvalues.mat');
-ref     = load(refFile, 'eigenvalues');
-refEigenvalues = ref.eigenvalues;
+%% COMPARE EIGENVALUES
+if useOofem
+    %-- Live OOFEM comparison -------------------------------------------
+    % Runs oofem.py in tests/oofem/, requires Python + oofem binary.
+    [~, errors] = oofemTestFn(nodes, beams, loads, kinematic, resolvedSections, sortedValues);
+else
+    %-- Reference comparison (no external tools needed) -----------------
+    refFile = fullfile(testDir, 'reference_eigenvalues.mat');
+    ref     = load(refFile, 'eigenvalues');
+    refEigenvalues = ref.eigenvalues;
 
-%% COMPUTE ERRORS
-% Compare only positive eigenvalues (buckling under the given load direction).
-% Both MATLAB and OOFEM sets are sorted ascending before comparison.
-posValues = sort(sortedValues(sortedValues > 0));
-refValues = sort(refEigenvalues(refEigenvalues > 0));
-n         = min(length(posValues), length(refValues));
+    posValues = sort(sortedValues(sortedValues > 0));
+    refValues = sort(refEigenvalues(refEigenvalues > 0));
+    n         = min(length(posValues), length(refValues));
 
-errors = abs(refValues(1:n) - posValues(1:n)) ./ refValues(1:n) * 100;
-errors = errors(:);
+    errors = abs(refValues(1:n) - posValues(1:n)) ./ refValues(1:n) * 100;
+    errors = errors(:);
+end
 
 end
