@@ -1,4 +1,4 @@
-function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads)
+function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, solver)
 % stabilitySolverFn  Linear buckling (stability) analysis of a 3D beam frame.
 %
 % Performs a two-stage FEM analysis to determine critical load multipliers
@@ -190,7 +190,15 @@ endForces.local = EndForcesFn( ...
 %--------------------------------------------------------------------------
 % STAGE 2: STABILITY ANALYSIS — geometric matrix and eigenvalue problem
 %--------------------------------------------------------------------------
-geometricMatrix = geometricMatrixFn(elements, transformationMatrix, endForces);
+if nargin < 7
+    solver = 'oofem';   % default hodnota
+end
+
+if solver == "mc-guire"
+    geometricMatrix = geometricMatrixMcGuireFn(elements, transformationMatrix, endForces);
+else
+    geometricMatrix = geometricMatrixFn(elements, transformationMatrix, endForces);
+end
 
 Results = criticalLoadFn(stiffnesMatrix, geometricMatrix);
 [Results.values, Results.vectors] = sortValuesVectorFn( ...
