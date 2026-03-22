@@ -53,40 +53,49 @@ cleanupObj = onCleanup(@() cd(oldDir));  % always restore working dir
 
 run('test_input.m');   % defines: sections, nodes, ndisc, kinematic, beams, loads
 
-%% RESOLVE CROSS-SECTION PROPERTIES FROM LIBRARY
-% test_input.m provides only section indices (sections.id).
-% We look up the actual geometric properties in sectionsSet.mat.
-%
-% sectionsSet.mat contains a table  L  with columns:
-%   A    — cross-sectional area [m^2]
-%   I_y  — second moment of area (stored as Iz in MATLAB, intentional swap)
-%   I_z  — second moment of area (stored as Iy in MATLAB, intentional swap)
-%   I_t  — torsional moment of inertia [m^4]
+%% RESOLVE CROSS-SECTION PROPERTIES
+% Two modes:
+%   (a) Direct — test_input.m already defines sections.A, .Iy, .Iz, .Ix, .E, .v
+%   (b) Library — test_input.m provides sections.id; properties looked up from
+%       sectionsSet.mat (table L with columns A, I_y, I_z, I_t)
 
-sectionsFile = fullfile(fileparts(mfilename('fullpath')), 'sectionsSet.mat');
-cs = importdata(sectionsFile);
+if isfield(sections, 'A')
+    % (a) Direct properties — use as-is, fill defaults if missing
+    resolvedSections = sections;
+    if ~isfield(resolvedSections, 'E'), resolvedSections.E = 210e9; end
+    if ~isfield(resolvedSections, 'v'), resolvedSections.v = 0.3;   end
+else
+    % (b) Library lookup via sections.id
+    % sectionsSet.mat contains a table  L  with columns:
+    %   A    — cross-sectional area [m^2]
+    %   I_y  — second moment of area (stored as Iz, intentional swap)
+    %   I_z  — second moment of area (stored as Iy, intentional swap)
+    %   I_t  — torsional moment of inertia [m^4]
+    sectionsFile = fullfile(fileparts(mfilename('fullpath')), 'sectionsSet.mat');
+    cs = importdata(sectionsFile);
 
-sections_full.A  = table2array(cs.L(:, 'A'));
-sections_full.Iz = table2array(cs.L(:, 'I_y'));  % intentional swap (see above)
-sections_full.Iy = table2array(cs.L(:, 'I_z'));  % intentional swap
-sections_full.Ix = table2array(cs.L(:, 'I_t'));
+    sections_full.A  = table2array(cs.L(:, 'A'));
+    sections_full.Iz = table2array(cs.L(:, 'I_y'));  % intentional swap
+    sections_full.Iy = table2array(cs.L(:, 'I_z'));  % intentional swap
+    sections_full.Ix = table2array(cs.L(:, 'I_t'));
 
-nsec = size(sections.id, 1);
-resolvedSections.A  = zeros(nsec, 1);
-resolvedSections.Iy = zeros(nsec, 1);
-resolvedSections.Iz = zeros(nsec, 1);
-resolvedSections.Ix = zeros(nsec, 1);
-resolvedSections.E  = zeros(nsec, 1);
-resolvedSections.v  = zeros(nsec, 1);
+    nsec = size(sections.id, 1);
+    resolvedSections.A  = zeros(nsec, 1);
+    resolvedSections.Iy = zeros(nsec, 1);
+    resolvedSections.Iz = zeros(nsec, 1);
+    resolvedSections.Ix = zeros(nsec, 1);
+    resolvedSections.E  = zeros(nsec, 1);
+    resolvedSections.v  = zeros(nsec, 1);
 
-for i = 1:nsec
-    id = sections.id(i);
-    resolvedSections.A(i)  = sections_full.A(id);
-    resolvedSections.Iy(i) = sections_full.Iy(id);
-    resolvedSections.Iz(i) = sections_full.Iz(id);
-    resolvedSections.Ix(i) = sections_full.Ix(id);
-    resolvedSections.E(i)  = 210e9;   % [Pa]  steel
-    resolvedSections.v(i)  = 0.3;     % [-]   Poisson's ratio
+    for i = 1:nsec
+        id = sections.id(i);
+        resolvedSections.A(i)  = sections_full.A(id);
+        resolvedSections.Iy(i) = sections_full.Iy(id);
+        resolvedSections.Iz(i) = sections_full.Iz(id);
+        resolvedSections.Ix(i) = sections_full.Ix(id);
+        resolvedSections.E(i)  = 210e9;
+        resolvedSections.v(i)  = 0.3;
+    end
 end
 
 %% RUN STABILITY ANALYSIS
