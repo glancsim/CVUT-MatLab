@@ -3,12 +3,17 @@ function [nodes, beams] = trussGeneratorFn(x_bot, x_top, h, varargin)
 %
 % Creates a planar truss in the X-Z plane (y = 0) with rigid (frame) joints.
 % All members are Euler-Bernoulli beam elements — moment continuity at every
-% node. Bottom chord lies at z = 0, top chord at z = h.
+% node. Bottom chord lies at z = 0, top chord at z = h (flat) or z = h(i)
+% (variable — e.g. gabled / pitched roof shape).
 %
 % INPUTS:
-%   x_bot     - [m]  x-coordinates of bottom chord nodes   (n_b × 1)
-%   x_top     - [m]  x-coordinates of top chord nodes      (n_t × 1)
-%   h         - [m]  Truss height (constant)
+%   x_bot     - [m]  x-coordinates of bottom chord nodes          (n_b × 1)
+%   x_top     - [m]  x-coordinates of top chord nodes             (n_t × 1)
+%   h         - [m]  Top chord height:
+%                      scalar  → constant height (flat top chord)
+%                      vector  → z-coordinate for each top node   (n_t × 1)
+%                                e.g. gabled shape:
+%                                  h = h_max*(1 - abs(2*x_top/L - 1))
 %
 % OPTIONAL name-value pairs:
 %   'Topology'  - Web member layout:
@@ -27,9 +32,14 @@ function [nodes, beams] = trussGeneratorFn(x_bot, x_top, h, varargin)
 %            Assign actual section properties in stabilitySolverFn call.
 %
 % USAGE EXAMPLE:
-%   % 5-panel Pratt truss, 12 m span, 2 m height
-%   x = linspace(0, 12, 7);                 % 7 nodes per chord
+%   % 5-panel Pratt truss, 12 m span, flat top (h = 2 m)
+%   x = linspace(0, 12, 7);
 %   [nodes, beams] = trussGeneratorFn(x, x, 2, 'Topology', 'pratt', 'Plot', true);
+%
+%   % Sedlová (gabled) příhrada — vrchol uprostřed, h_max = 2 m
+%   x = linspace(0, 12, 7);
+%   h_vec = 2 * (1 - abs(2*x/12 - 1));     % lineární sedlo: 0→2→0
+%   [nodes, beams] = trussGeneratorFn(x, x, h_vec, 'Topology', 'pratt', 'Plot', true);
 %
 %   sections.A  = 6e-4;  sections.E = 210e9;  sections.v = 0.3;
 %   sections.Iy = 5e-8;  sections.Iz = 5e-8;  sections.Ix = 1e-7;
@@ -74,9 +84,7 @@ doPlot     = p.Results.Plot;
 %--------------------------------------------------------------------------
 x_bot = x_bot(:);
 x_top = x_top(:);
-if h <= 0
-    error('trussGeneratorFn: h must be positive.');
-end
+h     = h(:);
 
 n_b = numel(x_bot);
 n_t = numel(x_top);
@@ -84,15 +92,29 @@ if n_b < 2 || n_t < 2
     error('trussGeneratorFn: need at least 2 nodes on each chord.');
 end
 
+% Resolve z-coordinates of top chord
+if isscalar(h)
+    if h <= 0, error('trussGeneratorFn: scalar h must be positive.'); end
+    z_top = h * ones(n_t, 1);
+else
+    if numel(h) ~= n_t
+        error('trussGeneratorFn: vector h must have the same length as x_top (%d).', n_t);
+    end
+    if any(h < 0)
+        error('trussGeneratorFn: all h values must be >= 0.');
+    end
+    z_top = h;
+end
+
 %--------------------------------------------------------------------------
 % Build node list
 %   Nodes 1..n_b      — bottom chord  (z = 0)
-%   Nodes n_b+1..end  — top chord     (z = h)
+%   Nodes n_b+1..end  — top chord     (z = z_top)
 %--------------------------------------------------------------------------
 n_nodes  = n_b + n_t;
-nodes.x  = [x_bot;    x_top];
+nodes.x  = [x_bot; x_top];
 nodes.y  = zeros(n_nodes, 1);
-nodes.z  = [zeros(n_b,1); h * ones(n_t,1)];
+nodes.z  = [zeros(n_b, 1); z_top];
 
 %--------------------------------------------------------------------------
 % Chord members
@@ -195,10 +217,57 @@ for ip = 1 : n_pan
 end
 
 %--------------------------------------------------------------------------
-% Assemble beams struct
+% Merge coincident nodes (e.g. gabled top chord endpoints at z=0)
+%
+% Build a canonical index map: remap(i) = node to use instead of i.
+% Two nodes are coincident when their x,y,z positions match within tol.
 %--------------------------------------------------------------------------
-all_head = [head_b; head_t; head_w];
-all_end  = [end_b;  end_t;  end_w];
+pos   = [nodes.x, nodes.y, nodes.z];   % n_nodes × 3
+remap = (1:n_nodes)';                   % identity by default
+node_tol = 1e-9 * (max(max(pos)) - min(min(pos)) + 1);
+
+for i = 1:n_nodes
+    if remap(i) ~= i, continue; end     % already remapped
+    for j = i+1:n_nodes
+        if norm(pos(i,:) - pos(j,:)) < node_tol
+            remap(j) = i;               % j is merged into i
+        end
+    end
+end
+
+% Apply remap to beam connectivity
+all_head = remap([head_b; head_t; head_w]);
+all_end  = remap([end_b;  end_t;  end_w]);
+
+% Remove zero-length beams (head == end after merge)
+valid    = all_head ~= all_end;
+all_head = all_head(valid);
+all_end  = all_end(valid);
+
+% Remove duplicate beams (same pair regardless of direction)
+beam_pairs = sort([all_head, all_end], 2);
+[~, ui]    = unique(beam_pairs, 'rows', 'stable');
+all_head   = all_head(ui);
+all_end    = all_end(ui);
+
+% Compact node list — remove nodes that were merged away
+kept      = unique(remap);           % canonical node indices kept
+n_compact = numel(kept);
+reindex   = zeros(n_nodes, 1);
+reindex(kept) = 1:n_compact;
+
+nodes.x = nodes.x(kept);
+nodes.y = nodes.y(kept);
+nodes.z = nodes.z(kept);
+
+all_head = reindex(all_head);
+all_end  = reindex(all_end);
+
+n_merged = n_nodes - n_compact;
+if n_merged > 0
+    fprintf('  (merged %d coincident node(s))\n', n_merged);
+end
+
 n_beams  = numel(all_head);
 
 beams.nodesHead = all_head;
@@ -214,7 +283,8 @@ fprintf('trussGeneratorFn: %s truss generated\n', upper(topology));
 fprintf('  Nodes  : %d  (%d bottom + %d top)\n', n_nodes, n_b, n_t);
 fprintf('  Beams  : %d  (%d bottom chord + %d top chord + %d web)\n', ...
         n_beams, n_b-1, n_t-1, numel(head_w));
-fprintf('  Span   : %.3g m   Height: %.3g m\n', max(x_all)-min(x_all), h);
+fprintf('  Span   : %.3g m   Height: %.3g – %.3g m\n', ...
+        max(x_all)-min(x_all), min(z_top), max(z_top));
 
 %--------------------------------------------------------------------------
 % Optional plot (needs plotStructureFn on path)
