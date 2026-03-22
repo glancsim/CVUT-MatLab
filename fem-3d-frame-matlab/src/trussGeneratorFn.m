@@ -74,7 +74,7 @@ addParameter(p, 'Angles',    0,       @isnumeric);
 addParameter(p, 'Plot',      false,   @islogical);
 parse(p, varargin{:});
 
-topology   = lower(string(p.Results.Topology));
+topology   = lower(char(p.Results.Topology));
 secIdx     = p.Results.Sections;
 rollAngle  = p.Results.Angles;
 doPlot     = p.Results.Plot;
