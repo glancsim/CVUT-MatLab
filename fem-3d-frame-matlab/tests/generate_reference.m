@@ -32,28 +32,36 @@ run('test_input.m');  % sections, nodes, ndisc, kinematic, beams, loads
 cd(oldDir);
 
 %% Resolve cross-sections
-sectionsFile = fullfile(scriptsDir, 'sectionsSet.mat');
-cs = importdata(sectionsFile);
-sections_full.A  = table2array(cs.L(:, 'A'));
-sections_full.Iz = table2array(cs.L(:, 'I_y'));
-sections_full.Iy = table2array(cs.L(:, 'I_z'));
-sections_full.Ix = table2array(cs.L(:, 'I_t'));
+if isfield(sections, 'A')
+    % Direct properties — use as-is, fill defaults if missing
+    resolvedSections = sections;
+    if ~isfield(resolvedSections, 'E'), resolvedSections.E = 210e9; end
+    if ~isfield(resolvedSections, 'v'), resolvedSections.v = 0.3;   end
+else
+    % Library lookup via sections.id
+    sectionsFile = fullfile(scriptsDir, 'sectionsSet.mat');
+    cs = importdata(sectionsFile);
+    sections_full.A  = table2array(cs.L(:, 'A'));
+    sections_full.Iz = table2array(cs.L(:, 'I_y'));
+    sections_full.Iy = table2array(cs.L(:, 'I_z'));
+    sections_full.Ix = table2array(cs.L(:, 'I_t'));
 
-nsec = size(sections.id, 1);
-resolvedSections.A  = zeros(nsec, 1);
-resolvedSections.Iy = zeros(nsec, 1);
-resolvedSections.Iz = zeros(nsec, 1);
-resolvedSections.Ix = zeros(nsec, 1);
-resolvedSections.E  = zeros(nsec, 1);
-resolvedSections.v  = zeros(nsec, 1);
-for i = 1:nsec
-    id = sections.id(i);
-    resolvedSections.A(i)  = sections_full.A(id);
-    resolvedSections.Iy(i) = sections_full.Iy(id);
-    resolvedSections.Iz(i) = sections_full.Iz(id);
-    resolvedSections.Ix(i) = sections_full.Ix(id);
-    resolvedSections.E(i)  = 210e9;
-    resolvedSections.v(i)  = 0.3;
+    nsec = size(sections.id, 1);
+    resolvedSections.A  = zeros(nsec, 1);
+    resolvedSections.Iy = zeros(nsec, 1);
+    resolvedSections.Iz = zeros(nsec, 1);
+    resolvedSections.Ix = zeros(nsec, 1);
+    resolvedSections.E  = zeros(nsec, 1);
+    resolvedSections.v  = zeros(nsec, 1);
+    for i = 1:nsec
+        id = sections.id(i);
+        resolvedSections.A(i)  = sections_full.A(id);
+        resolvedSections.Iy(i) = sections_full.Iy(id);
+        resolvedSections.Iz(i) = sections_full.Iz(id);
+        resolvedSections.Ix(i) = sections_full.Ix(id);
+        resolvedSections.E(i)  = 210e9;
+        resolvedSections.v(i)  = 0.3;
+    end
 end
 
 %% Enrich beams struct for oofemInputFn

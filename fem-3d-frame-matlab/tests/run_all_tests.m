@@ -1,15 +1,16 @@
 %% run_all_tests.m
 % ==========================================================================
-%  STABILITY TESTS — Run all 11 validation tests (no OOFEM required)
+%  STABILITY TESTS — Run all 12 validation tests (no OOFEM required)
 % ==========================================================================
 %
-% Runs stabilitySolverFn on each of the 11 test cases and compares the
+% Runs stabilitySolverFn on each of the 12 test cases and compares the
 % computed critical-load multipliers against pre-computed reference
 % eigenvalues stored in  tests/Test N/reference_eigenvalues.mat.
 %
 % Tests 10–11 cover internal hinges (beams.releases):
 %   Test 10 — portal frame with one pinned beam end
 %   Test 11 — portal frame with both beam ends pinned (sway-prevented)
+% Test 12 — Torri benchmark (2D planar frame with diagonal bracing)
 %
 % No external software (OOFEM, Python) is needed.
 %
@@ -37,7 +38,7 @@ addpath(srcDir);
 addpath(scriptsDir);                             % for run_single_test
 
 baseDir   = scriptsDir;
-numTests  = 11;
+numTests  = 12;
 numModes  = 10;   % number of eigenvalues per test
 
 %% INITIALISE
