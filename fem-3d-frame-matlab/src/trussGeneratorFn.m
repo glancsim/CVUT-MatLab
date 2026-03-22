@@ -268,8 +268,28 @@ n_beams  = numel(all_head);
 
 beams.nodesHead = all_head;
 beams.nodesEnd  = all_end;
-beams.sections  = secIdx  * ones(n_beams, 1);
-beams.angles    = rollAngle * ones(n_beams, 1);
+
+% Sections: allow scalar or per-beam vector
+if isscalar(secIdx)
+    beams.sections = repmat(secIdx, n_beams, 1);
+elseif isvector(secIdx) && numel(secIdx) == n_beams
+    beams.sections = secIdx(:);  % ensure column
+else
+    error('trussGeneratorFn:InvalidSections', ...
+          ['"Sections" must be a scalar or a vector with length equal to ', ...
+           'the number of beams (%d).'], n_beams);
+end
+
+% Angles: allow scalar or per-beam vector
+if isscalar(rollAngle)
+    beams.angles = repmat(rollAngle, n_beams, 1);
+elseif isvector(rollAngle) && numel(rollAngle) == n_beams
+    beams.angles = rollAngle(:);  % ensure column
+else
+    error('trussGeneratorFn:InvalidAngles', ...
+          ['"Angles" must be a scalar or a vector with length equal to ', ...
+           'the number of beams (%d).'], n_beams);
+end
 beams.nbeams    = n_beams;
 
 %--------------------------------------------------------------------------
