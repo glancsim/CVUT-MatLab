@@ -223,17 +223,13 @@ end
 % Two nodes are coincident when their x,y,z positions match within tol.
 %--------------------------------------------------------------------------
 pos   = [nodes.x, nodes.y, nodes.z];   % n_nodes × 3
-remap = (1:n_nodes)';                   % identity by default
 node_tol = 1e-9 * (max(max(pos)) - min(min(pos)) + 1);
 
-for i = 1:n_nodes
-    if remap(i) ~= i, continue; end     % already remapped
-    for j = i+1:n_nodes
-        if norm(pos(i,:) - pos(j,:)) < node_tol
-            remap(j) = i;               % j is merged into i
-        end
-    end
-end
+% Vectorized coincident-node merging:
+% Quantize coordinates using node_tol and group identical rows.
+pos_q = round(pos ./ node_tol);
+[~, ~, remap] = unique(pos_q, 'rows');
+remap = remap(:);                       % ensure column vector
 
 % Apply remap to beam connectivity
 all_head = remap([head_b; head_t; head_w]);
