@@ -17,12 +17,13 @@ Projekt implementuje FEM analýzu nosníkových a příhradových konstrukcí v 
 | `Diplomka/` | obsolete | původní kód diplomové práce, regresní testy 1–12 |
 
 > **`Diplomka/` je obsolete** — slouží jen pro archivaci a regresní testy (Tests 1–12 s OOFEM verifikací).
+> **Dříve `fem-stability-matlab/`** — přejmenováno na `fem-3d-frame-matlab/` v commit `26102bd` (2026-03-22).
 
 ---
 
 ## Datové struktury (MATLAB structs)
 
-### `nodes` — uzly
+### `nodes` — uzly (fem-3d-frame-matlab)
 
 ```matlab
 nodes.x       % (nnodes×1) souřadnice x [m]
@@ -33,7 +34,7 @@ nodes.ndofs   % (scalar) počet volných DOFů celkem
 nodes.nnodes  % (scalar) počet uzlů
 ```
 
-### `beams` — pruty
+### `beams` — pruty (fem-3d-frame-matlab)
 
 ```matlab
 beams.nodesHead  % (nbeams×1) index počátečního uzlu
@@ -88,14 +89,26 @@ loads.rz.nodes; loads.rz.value  % moment rz [N·m]
 
 ## Hlavní vstupní funkce (`fem-3d-frame-matlab/src/`)
 
-| Funkce | Vstup | Výstup |
-|--------|-------|--------|
-| `linearSolverFn(sections, nodes, ndisc, kinematic, beams, loads)` | — | `displacements`, `endForces` |
-| `stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads)` | — | `Results.values`, `Results.vectors` |
+| Funkce | Výstup |
+|--------|--------|
+| `linearSolverFn(sections, nodes, ndisc, kinematic, beams, loads)` | `displacements`, `endForces` |
+| `stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads [, solver])` | `Results.values`, `Results.vectors` |
 
 `endForces.local` (12 × nelement): řádky 1–6 = nodesHead, 7–12 = nodesEnd. Složky: N, Vy, Vz, Mx, My, Mz v lokálních souřadnicích prutu.
 
 Obě funkce propagují `beams.releases` na `elements.releases` interně — není třeba nic dalšího.
+
+### Volitelný parametr `solver` v `stabilitySolverFn`
+
+```matlab
+Results = stabilitySolverFn(..., 'oofem')     % default — geometricMatrixFn (axiální složka)
+Results = stabilitySolverFn(..., 'mc-guire')  % geometricMatrixMcGuireFn (N + My + Mz)
+```
+
+- `'oofem'` (default): geometrická matice pouze z osových sil N — jednodušší, ověřena OOFEM
+- `'mc-guire'`: dle McGuire — zahrnuje příspěvky ohybových momentů My, Mz; složitější ale obecnější
+
+Umístění: `fem-3d-frame-matlab/src/geometricMatrixMcGuireFn.m`
 
 ---
 
@@ -122,17 +135,19 @@ test_input.m → testFn()
 
 ---
 
-## Klíčové funkce
+## Klíčové funkce (fem-3d-frame-matlab)
 
 ### `stiffnessMatrixFn(elements, transformationMatrix)`
 
 Sestavuje globální matici tuhosti. Lokální 12×12 matice ze čtyř 6×6 bloků (K11, K12, K21, K22) pro 3D Euler-Bernoulli prut. Kódová čísla 0 = vetknutý DOF (přeskočí se při assemblování).
 
-**Statická kondenzace (klouby):** Pokud `elements.releases(cp,:)` obsahuje 1, zavolá se `releaseCondenseFn` po násobení E, před transformací. Uvolněné rotační DOFy (4,5,6 = hlava; 10,11,12 = pata) se kondenzují ven. `stiffnesMatrix.local{cp}` se ukládá po kondenzaci → `EndForcesFn` vrátí 0 pro uvolněné momenty.
+**Statická kondenzace (klouby):** Pokud `elements.releases(cp,:)` obsahuje 1, zavolá se `releaseCondenseFn` po násobení E, před transformací. Uvolněné rotační DOFy **(5,6 = hlava; 11,12 = pata)** — jen ohybové momenty, ne torzní (DOF 4/10 zůstává). `stiffnesMatrix.local{cp}` se ukládá po kondenzaci → `EndForcesFn` vrátí 0 pro uvolněné momenty.
 
-### `geometricMoofemFn(...)`
+### `geometricMatrixFn(...)` a `geometricMatrixMcGuireFn(...)`
 
-Geometrická matice pro analýzu stability. Osová síla: `N = (-F(1,cp) + F(7,cp)) / 2`. Kg_local symmetrizována, transformována: `T' * Kg * T`. Používá pouze axiální složku — pootočení průřezu neovlivňuje výsledek stability (Iy=Iz → trubkové průřezy fungují stejně).
+Geometrická matice pro analýzu stability.
+- `geometricMatrixFn`: osová síla `N = (-F(1,cp) + F(7,cp)) / 2`. Kg_local symetrizována, transformována `T' * Kg * T`.
+- `geometricMatrixMcGuireFn`: navíc zahrnuje ohybové momenty My, Mz dle McGuire.
 
 ### `codeNumbersFn(beams, nodes)`
 
@@ -140,11 +155,11 @@ Přiřadí globální kódová čísla volným DOFům (postupné číslování j
 
 ### `discretizationBeamsFn(beams, nodes)`
 
-Diskretizuje pruty na elementy. **Pozor:** při různých hodnotách `disc` pro jednotlivé pruty může být chyba (používá `c` z poslední iterace vnější smyčky pro indexaci — funguje jen pokud mají všechny pruty stejné `disc`).
+Diskretizuje pruty na elementy. **Pozor:** při různých hodnotách `disc` pro jednotlivé pruty může být chyba (funguje jen pokud mají všechny pruty stejné `disc`).
 
 ### `XYtoRotBeamsFn(beams, angles)`
 
-Počítá referenční vektor `XY` pro každý prut z `beams.angles` (pootočení průřezu). Výstup `beams.XY (nbeams×3)`.
+Počítá referenční vektor `XY` pro každý prut z `beams.angles`. Výstup `beams.XY (nbeams×3)`.
 
 ### `oofemInputFn(nodes, beams, loads, kinematic, sections, filename)`
 
@@ -154,11 +169,115 @@ Generuje `input.mat` pro Python runner. Klíčové výstupy: `oofem.nodes`, `oof
 - Průřezy se přiřazují per-beam (ne per-type) — opraveno pro správnou verifikaci Test 9
 - Prázdná pole zatížení (loads.y.nodes=[]) se inicializují jako `zeros(0,2)` předem → Python nekrachuje
 
+### `trussGeneratorFn(x_bot, x_top, h, ...)` — generátor příhrad
+
+Umístění: `fem-3d-frame-matlab/src/trussGeneratorFn.m`
+
+Generuje `nodes` a `beams` připravené pro `stabilitySolverFn`. Konstrukce v rovině XZ (y=0).
+
+```matlab
+[nodes, beams] = trussGeneratorFn(x_bot, x_top, h)
+[nodes, beams] = trussGeneratorFn(x_bot, x_top, h, 'Topology', 'pratt', 'Plot', true)
+```
+
+**Parametry:**
+- `x_bot` — x-souřadnice uzlů dolního pásu (n_b×1)
+- `x_top` — x-souřadnice uzlů horního pásu (n_t×1)
+- `h` — výška horního pásu:
+  - **skalár** → plochý horní pás (konstantní výška)
+  - **vektor (n_t×1)** → proměnná výška, např. sedlový tvar:
+    ```matlab
+    h_vec = h_max * (1 - abs(2*x/L - 1));   % lineární sedlo
+    h_par = h_max * (1 - (2*x/L - 1).^2);  % parabolické sedlo
+    ```
+- `'Topology'`: `'pratt'` (default), `'howe'`, `'warren'`, `'vierendeel'`
+- `'Sections'`: index průřezu pro všechny pruty (default: 1)
+- `'Angles'`: pootočení průřezu [deg] (default: 0)
+- `'Plot'`: `true/false` — zobrazit plotStructureFn (default: false)
+
+**Slučování shodných uzlů (automatické):**
+Po sestavení uzlů funkce detekuje koincidentní uzly (tolerance 1e-9 × rozsah) a sloučí je.
+Klíčové pro sedlový tvar — krajní uzly horního pásu (z=0) splývají s dolním pásem.
+Sloučení zabrání singularitě K matice. Duplikátní a nulové pruty jsou automaticky odstraněny.
+
+---
+
+## Modul `fem-truss-2d-matlab`
+
+Lineární statika 2D příhrad (pin-jointed, axiální síly pouze). **Bez diskretizace** — každý fyzický prut = 1 element.
+
+### Datové struktury (liší se od 3D modulu!)
+
+```matlab
+% members (místo beams) — 2 DOFy na uzel (ux, uz)
+members.nodesHead   % (nmembers×1)
+members.nodesEnd    % (nmembers×1)
+members.sections    % (nmembers×1) — 1-based index průřezu
+members.nmembers    % (scalar) — nastavit před voláním nebo nastaví linearSolverFn
+
+% nodes — pouze x a z (žádné y)
+nodes.x    % (nnodes×1)
+nodes.z    % (nnodes×1)
+nodes.dofs % (nnodes×2) logical: col1=ux, col2=uz  (nastaví linearSolverFn)
+
+% kinematic — pouze x.nodes a z.nodes (ne y, rx, ry, rz)
+% loads     — pouze x.nodes/value a z.nodes/value
+
+% sections — skalár nebo vektor (stejné pro všechny pruty nebo per-type)
+sections.A   % [m²]
+sections.E   % [Pa]
+```
+
+### Hlavní funkce
+
+```matlab
+[displacements, endForces] = linearSolverFn(sections, nodes, kinematic, members, loads)
+% POZOR: jiná signatura než 3D modul (není ndisc, není y-koordinát)
+```
+
+**Výstupy:**
+- `displacements.global` — sparse vektor (ndofs×1); použít `full()` při výpisu
+- `endForces.local` — (4×nmembers): **řádek 1 = N** [N], kladné = tah, záporné = tlak
+
+### Zdrojové soubory (`fem-truss-2d-matlab/src/`)
+
+| Funkce | Popis |
+|--------|-------|
+| `memberVertexFn(members, nodes)` | (nmembers×2) [Δx, Δz] |
+| `codeNumbersFn(members, nodes)` | (nmembers×4) kódová čísla: [ux_h, uz_h, ux_e, uz_e] |
+| `transformationMatrixFn(elements)` | 4×4 T matice + délky; T=[c,s,0,0; -s,c,0,0; 0,0,c,s; 0,0,-s,c] |
+| `stiffnessMatrixFn(elements, T)` | Globální K (sparse), k_local=EA/L·diag([1,0,-1,0]) |
+| `EndForcesFn(K, f, T, elements)` | Řeší K·u=f; N=EA/L·(u_end_axial−u_head_axial) |
+| `plotTrussFn(nodes, members, loads, kinematic)` | 2D vizualizace s podporami a zatížením |
+
+### Testy (`fem-truss-2d-matlab/tests/`)
+
+| Test | Popis | Reference |
+|------|-------|-----------|
+| Test 1 | Symetrická 3-prutová příhrada, Fz=−1000 N na vrcholu | Analyticky: N1=N2=−707.1 N, N3=500 N |
+| Test 2 | Prattova příhrada (4 pole, 8 uzlů, 13 prutů), Fz=−10 kN | FEM reference (staticky určitá → exaktní) |
+| Test 3 | 3-prutová příhrada s diagonálou, Fx=10 000 N | Analyticky: N1=7500, N2=10 000, N3=−12 500 N |
+
+```matlab
+% Spuštění testů
+cd 'fem-truss-2d-matlab/tests'
+generate_references   % 1× před prvním spuštěním
+run_all_tests         % spustí testy 1–3
+```
+
+**Tolerance:** 0.001 % (FEM je exaktní pro staticky určité příhrady).
+
+### Záludnosti (fem-truss-2d-matlab)
+
+- `sections.A` a `.E` jsou skaláry → `sections.A(members.sections)` funguje (MATLAB indexace)
+- `elements.sections` se přepisuje ze struct indexů na struct vlastností (`struct()`) v `linearSolverFn` — nutné, jinak dot-indexing error
+- `displacements.global` je sparse — vždy `full(displacements.global)` pro výpis/indexaci
+- Znaménková konvence: **N > 0 = tah**, N < 0 = tlak; uloženo v `endForces.local(1,:)`
+- DOF pořadí: [ux, uz] — **liší se od 3D modulu** kde je [ux, uy, uz, rx, ry, rz]
+
 ---
 
 ## Kloubová spojení (beams.releases)
-
-Přidáno v `feat: kloubove/ramove spoje prutu`.
 
 ```matlab
 beams.releases = false(nbeams, 2);
@@ -168,10 +287,72 @@ beams.releases(4, 1) = true;   % prut 4, hlavový konec = kloub
 
 **Jak funguje:**
 - Chybějící pole = zpětně kompatibilní (vše rámové)
-- Kloubový konec = nulové momenty (DOFy 4,5,6 nebo 10,11,12 lokálně)
+- Kloubový konec = nulové momenty (ohybové DOFy **5,6** = hlava; **11,12** = pata lokálně)
+- Torzní moment (DOF 4/10) se **neuvolňuje** — kloub přenáší kroucení
 - Metoda: statická kondenzace K_cond = K(s,s) − K(s,r)·K(r,r)⁻¹·K(r,s)
 - Uvolnění platí jen pro 1. element (hlava) a poslední element (pata) každého prutu
 - OOFEM: zapisuje `dofstocondense N d1...dN` do Beam3d elementu v test.in
+
+> **Historická chyba:** commit `d63124c` omylem vrátil `releaseCondenseFn` na DOFy [4,5,6]/[10,11,12].
+> Opraveno v `0f43846` — správné jsou **[5,6]/[11,12]** (jen ohyb, ne torze).
+
+---
+
+## Vizualizace
+
+### `plotStructureFn` (fem-3d-frame-matlab)
+
+Umístění: `fem-3d-frame-matlab/src/plotStructureFn.m`
+
+```matlab
+plotStructureFn(nodes, beams, loads)
+plotStructureFn(nodes, beams, loads, kinematic)
+```
+
+| Prvek | Barva | Styl |
+|-------|-------|------|
+| Pruty | Černá | plná čára |
+| Uzly | Černá | vyplněný kruh |
+| Kloub (beams.releases) | Černá | prázdný kruh ○ |
+| Podpora – posun | Modrá | plná šipka → uzel |
+| Podpora – pootočení | Zelená | čárkovaná šipka - - → uzel |
+| Síla | Červená | šipka + popisek [N] |
+| Moment | Fialová | dvojitá šipka ------>> + popisek [N·m] |
+
+### `plotTrussFn` (fem-truss-2d-matlab)
+
+Umístění: `fem-truss-2d-matlab/src/plotTrussFn.m` — 2D verze (plot místo plot3).
+
+### `plotModeShapeFn` ← **NAPLÁNOVÁNO, ZATÍM NEIMPLEMENTOVÁNO**
+
+Umístění: `fem-3d-frame-matlab/src/plotModeShapeFn.m` (soubor NEEXISTUJE)
+
+Plán: `C:\Users\simon\.claude\plans\clever-hopping-fiddle.md`
+
+```matlab
+plotModeShapeFn(nodes, beams, kinematic, Results)
+```
+
+Algoritmus (z plánu):
+1. Rekonstrukce `nodes.dofs` z `kinematic`
+2. Mapování `Results.vectors(:,1)` → uzlové posuny přes `codeNumbersFn`
+3. Hermitovská interpolace podél každého prutu (30 bodů, shape functions N1–N4)
+4. Barevné kódování příčného posunu: zelená→žlutá→červená (`surface` trick)
+5. Animace: 40 snímků × `sin()` fáze × scaleFactor → ~25 fps, Ctrl+C ukončí
+6. Auto-škálování: 15 % L_char / max posun translačních DOFů
+
+---
+
+## Benchmarky a příklady
+
+### Torri benchmark
+
+Umístění: `fem-3d-frame-matlab/examples/example_stability_torri.m`
+
+Klasický benchmark pro stabilitu nosníkových konstrukcí.
+- 5 uzlů, 6 prutů; trubka r_outer=0.04 m, r_inner=0.035 m, ocel E=210 GPa
+- Uzly 1 a 3 vetknuty (x, y, z, rz); zatížení Fz=−1000 N na uzlu 5
+- ndisc=16; výstup: lambda_cr (lambda1, lambda2)
 
 ---
 
@@ -198,30 +379,7 @@ Každý test má vlastní kopii: `oofem` binárky, `oofem.py` skriptu a `oofem.c
 
 ### Srovnání vlastních čísel
 
-`oofemTestFn` porovnává jen kladná vlastní čísla seřazená vzestupně. Chyba se počítá zvlášť pro translační a rotační DOFy (normalizace po max). Testy 6 a 7 mají nenulové chyby jen na vyšších módech (≥6) — akceptovatelné (FEM méně přesný pro vyšší módy).
-
----
-
-## Vizualizace: plotStructureFn
-
-Umístění: `fem-3d-frame-matlab/src/plotStructureFn.m`
-
-```matlab
-plotStructureFn(nodes, beams, loads)
-plotStructureFn(nodes, beams, loads, kinematic)
-```
-
-| Prvek | Barva | Styl |
-|-------|-------|------|
-| Pruty | Černá | plná čára |
-| Uzly | Černá | vyplněný kruh |
-| Kloub (beams.releases) | Černá | prázdný kruh ○ |
-| Podpora – posun | Modrá | plná šipka → uzel |
-| Podpora – pootočení | Zelená | čárkovaná šipka - - → uzel |
-| Síla | Červená | šipka + popisek [N] |
-| Moment | Fialová | dvojitá šipka ------>> + popisek [N·m] |
-
-Délky šipek: 15 % `L_char` (= max rozpětí konstrukce). Škálování zatížení: lineárně na arrow_len.
+`oofemTestFn` porovnává jen kladná vlastní čísla seřazená vzestupně. Testy 6 a 7 mají nenulové chyby jen na vyšších módech (≥6) — akceptovatelné.
 
 ---
 
@@ -235,21 +393,21 @@ test_input;
 [errors, h, sv] = testFn(sections, nodes, ndisc, kinematic, beams, loads);
 ```
 
-### Testy 1–12
+### Testy 1–12 (Diplomka)
 
 - **Testy 1–5:** základní geometrie, chyby ~0 %
 - **Test 6:** chyby jen módy ≥6 (max ~28 %) — akceptovatelné
 - **Test 7:** chyby jen módy ≥6 (max ~47 %) — akceptovatelné
 - **Test 8:** 0 %
 - **Test 9:** byl 114 % → opraveno opravou průřezů per-beam v oofemInputFn → 0 %
-- **Testy 10–12:** přidány, fungovaly po zkopírování oofem binárky a opravě:
-  - Empty Y loads: inicializace `disc_loads.Y = zeros(0,2)` předem
-  - Float node numbers v Set: přetypování přes `int()`
+- **Testy 10–12:** přidány; 10–11 = portálový rám s klouby, 12 = Torri benchmark
 
-### Diagnostické skripty
+### fem-3d-frame-matlab testy (Tests 1–12)
 
-- `Test 9/diag_test9_h1.m` — 4 scénáře (trubkové/originální, angle 0/45)
-- `Test 9/diag_test9_h2.m` — 3 scénáře (4 sloupce, diagonální prut, svislý prut)
+```matlab
+cd 'fem-3d-frame-matlab/tests'
+run_all_tests   % spustí testy 1–12 vs OOFEM
+```
 
 ---
 
@@ -258,16 +416,16 @@ test_input;
 ```
 test_input.m
   ↓ sections, nodes, ndisc, kinematic, beams, loads
-testFn.m
-  ↓ volá Resources/*.m
-  ↓ oofemTestFn → oofemInputFn → input.mat → oofem.py → eigen.mat
-  ↓ returns: errors, h, sortedValues
+stabilitySolverFn / linearSolverFn
+  ↓ volá src/*.m
+  ↓ (stability) → oofemTestFn → oofemInputFn → input.mat → oofem.py → eigen.mat
+  ↓ returns: Results nebo displacements/endForces
 ```
 
 ### Kritické závislosti
 
 - `stiffnessMatrixFn` potřebuje `elements.releases` (nebo ho ignoruje pokud chybí)
-- `geometricMoofemFn` bere lokální síly z `EndForcesFn` — závisí na správné K matici
+- `geometricMatrixFn` bere lokální síly z `EndForcesFn` — závisí na správné K matici
 - `oofemInputFn` generuje `oofem.sectionProp` per-beam (ne per-type!) — klíčové pro správnost
 
 ---
@@ -282,8 +440,30 @@ testFn.m
 ### Větve
 
 - `main` — stabilní verze
-- `claude/fervent-agnesi` — aktuální vývojová větev (releases, vizualizace, opravy)
-- `feat/plot-structure-fn` — sloučena do main (plotStructureFn)
+- `claude/fervent-agnesi` — aktuální vývojová větev
+- `feat/plot-structure-fn` — sloučena do main
+
+---
+
+## Chronologie změn
+
+| Datum | Commit | Popis |
+|-------|--------|-------|
+| 2026-03-23 | `d2df4f3` | `trussGeneratorFn` — sedlový horní pás (h jako vektor) + auto-slučování shodných uzlů |
+| 2026-03-22 | `fedf4f3` | `trussGeneratorFn` — generátor rámové příhradové konstrukce (Pratt/Howe/Warren/Vierendeel) |
+| 2026-03-22 | `3402cb2` | Test 12 (Torri benchmark) v fem-3d-frame-matlab + podpora přímých průřezů v run_single_test |
+| 2026-03-22 | `26102bd` | Přejmenování `fem-stability-matlab` → `fem-3d-frame-matlab`; nový modul `fem-truss-2d-matlab`; plán `plotModeShapeFn` |
+| 2026-03-22 | `04a8ed4` | Přidání příkladu Torri benchmark (`example_stability_torri.m`) |
+| 2026-03-22 | `df23cae` | Přidání `geometricMatrixMcGuireFn` (druhý solver) |
+| 2026-03-22 | `073ab71` | Volitelný parametr `solver` v `stabilitySolverFn` |
+| 2026-03-20 | `0f43846` | Testy 10–11 pro vnitřní klouby + **oprava `releaseCondenseFn`** (DOFy 5,6/11,12 — jen ohyb) |
+| 2026-03-20 | `d63124c` | Oprava `geometricMatrixFn` a `run_single_test` — testy 1–9 prochází |
+| 2026-03-20 | `af06f84` | Momentové zatížení vykresleno čárkovaně v `plotStructureFn` |
+| 2026-03-20 | `7befdcc` | Kloub uvolňuje jen ohybové momenty (My, Mz), ne torzní |
+| 2026-03-20 | `7a16ead` | Migrace OOFEM infrastruktury do `fem-stability-matlab` (nyní `fem-3d-frame-matlab`) |
+| 2026-03-20 | `ab39492` | CLAUDE.md — Diplomka označena obsolete, popis `linearSolverFn` |
+| 2026-03-20 | `8357d73` | `linearSolverFn` s klouby + čistý příklad s vnitřními silami |
+| 2026-03-20 | `80cc975` | Příklad kloubového spoje + `releases` v `stabilitySolverFn` |
 
 ---
 
@@ -295,6 +475,14 @@ testFn.m
 
 3. **Prázdné loads pole**: `loads.y.nodes = []` → for-smyčka 0× → `disc_loads.Y` nikdy nepřiřazena → Python ValueError. Fix: `disc_loads.Y = zeros(0,2)` před smyčkami.
 
-4. **`discretizationBeamsFn` bug s různými disc**: funkce používá `c` z poslední iterace pro indexaci elementů — funguje jen pokud `ndisc` je stejné pro všechny pruty (což `testFn` zajišťuje: `beams.disc = ones(nr,1)*ndisc`).
+4. **`discretizationBeamsFn` bug s různými disc**: funguje jen pokud `ndisc` je stejné pro všechny pruty.
 
-5. **Kloubový test (Test 9 byl 114 %)**: příčinou byl bug v oofemInputFn s průřezy, ne samotná geometrie/klouby. Po opravě 0 %.
+5. **Kloubový test (Test 9 byl 114 %)**: příčinou byl bug v oofemInputFn s průřezy, ne klouby. Po opravě 0 %.
+
+6. **`releaseCondenseFn` regrese**: commit `d63124c` omylem uvolňoval torzní DOF (4/10). Správné jsou DOFy 5,6/11,12 (jen ohyb).
+
+7. **`elements.sections` konflikt v fem-truss-2d-matlab**: `elements = members` kopíruje `members.sections` (numeric array); pak `elements.sections.A = ...` → dot-indexing error. Fix: `secIdx = members.sections; elements.sections = struct(); elements.sections.A = sections.A(secIdx)`.
+
+8. **Sedlový horní pás — koincidentní uzly**: krajní uzly horního pásu s z=0 splývají s dolním pásem → singulární K. Fix: automatické slučování uzlů v `trussGeneratorFn`.
+
+9. **`displacements.global` je sparse**: vždy `full()` před indexací nebo výpisem.
