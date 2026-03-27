@@ -30,8 +30,8 @@ beams.nodesEnd  = [2; 4; 2; 4; 4; 5; 5];
 beams.sections  = [1; 2; 3; 4; 5; 6; 7];
 beams.angles    = [0; 0; 0; 0; 0; 0; 0];
 
-idx = [3 5];
-% idx = [];
+% idx = [3 5];
+idx = [];
 
 beams.nodesHead(idx) = [];
 beams.nodesEnd(idx)  = [];
@@ -55,7 +55,7 @@ ndisc = 8;
 
 %% STABILITY ANALYSIS
 % --------------------------------------------------------------------------
-Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "oofem");
+Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "mc-guire", 1e-9);
 
 posId = find(Results.values > 0);
 posVals = Results.values(posId);
