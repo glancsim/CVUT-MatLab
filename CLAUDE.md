@@ -92,7 +92,7 @@ loads.rz.nodes; loads.rz.value  % moment rz [N·m]
 | Funkce | Výstup |
 |--------|--------|
 | `linearSolverFn(sections, nodes, ndisc, kinematic, beams, loads)` | `displacements`, `endForces` |
-| `stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads [, solver])` | `Results.values`, `Results.vectors` |
+| `stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads [, solver [, relaxParam]])` | `Results.values`, `Results.vectors` |
 
 `endForces.local` (12 × nelement): řádky 1–6 = nodesHead, 7–12 = nodesEnd. Složky: N, Vy, Vz, Mx, My, Mz v lokálních souřadnicích prutu.
 
@@ -109,6 +109,33 @@ Results = stabilitySolverFn(..., 'mc-guire')  % geometricMatrixMcGuireFn (N + My
 - `'mc-guire'`: dle McGuire — zahrnuje příspěvky ohybových momentů My, Mz; složitější ale obecnější
 
 Umístění: `fem-3d-frame-matlab/src/geometricMatrixMcGuireFn.m`
+
+### Volitelný parametr `relaxParam` v `stabilitySolverFn`
+
+```matlab
+Results = stabilitySolverFn(..., 'oofem', 1e-8)   % relaxace s ε = 1e-8
+Results = stabilitySolverFn(..., 'oofem', 0)       % bez relaxace (default)
+```
+
+**Účel:** regularizace K matice pro konstrukce s pruty s prakticky nulovým průřezem (topologická optimalizace).
+
+**Matematická formulace** (Evgrafov 2005, rovnice 19–20):
+```
+Klasická stability: (K + λcr·Kg)·φ = 0
+Relaxovaná:        (K + λcr·Kg + ε·I)·φ = 0
+```
+
+kde `ε = relaxParam * max(diag(K))`.
+
+**Co ε·I dělá:**
+- `K + ε·I` je vždy pozitivně definitní → žádný RCOND warning v EndForcesFn
+- Pro velké pruty: ε je zanedbatelné → výsledky prakticky nezměněny
+- Pro malé pruty (EI ≈ 0): ε dominuje → jejich kritické zatížení je extrémně velké → neovlivní globální módy
+- Cholesky v `criticalLoadFn` vždy uspěje
+
+**Kdy použít:** při přítomnosti prutů s `r_outer ≈ 0` nebo `A ≈ 0` (např. výsledky topologické optimalizace kde průřezy jdou plynule k nule). Typická hodnota: `1e-7` až `1e-10`.
+
+**Implementace:** `stabilitySolverFn.m`, řádky 196–207 — regularizace se provede před `EndForcesFn` i před eigenvalue problémem.
 
 ---
 
@@ -449,6 +476,8 @@ stabilitySolverFn / linearSolverFn
 
 | Datum | Commit | Popis |
 |-------|--------|-------|
+| 2026-03-27 | `01e036e` | `stabilitySolverFn` — relaxační parametr dle Evgrafov (2005), `K_reg = K + ε·I` |
+| 2026-03-27 | `3973a00` | `criticalLoadFn` — Cholesky-transformace → spolehlivý eigenvalue solver |
 | 2026-03-23 | `d2df4f3` | `trussGeneratorFn` — sedlový horní pás (h jako vektor) + auto-slučování shodných uzlů |
 | 2026-03-22 | `fedf4f3` | `trussGeneratorFn` — generátor rámové příhradové konstrukce (Pratt/Howe/Warren/Vierendeel) |
 | 2026-03-22 | `3402cb2` | Test 12 (Torri benchmark) v fem-3d-frame-matlab + podpora přímých průřezů v run_single_test |
@@ -486,3 +515,5 @@ stabilitySolverFn / linearSolverFn
 8. **Sedlový horní pás — koincidentní uzly**: krajní uzly horního pásu s z=0 splývají s dolním pásem → singulární K. Fix: automatické slučování uzlů v `trussGeneratorFn`.
 
 9. **`displacements.global` je sparse**: vždy `full()` před indexací nebo výpisem.
+
+10. **Malé pruty → singulární K + lokální boulení**: pruty s `r_outer ≈ 0` způsobují `RCOND ≈ 1e-24` v `EndForcesFn` a zaplaví eigenvalue výsledky lokálními módy. Fix: `stabilitySolverFn(..., 'oofem', 1e-8)` — relaxační parametr přidá `ε·I` ke K (Evgrafov 2005).
