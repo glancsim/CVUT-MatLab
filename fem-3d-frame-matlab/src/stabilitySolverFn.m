@@ -1,4 +1,4 @@
-function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, solver)
+function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, solver, relaxParam)
 % stabilitySolverFn  Linear buckling (stability) analysis of a 3D beam frame.
 %
 % Performs a two-stage FEM analysis to determine critical load multipliers
@@ -71,8 +71,15 @@ function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams,
 %     .rz.nodes - Node indices with moment about global z-axis     (n x 1)
 %     .rz.value - [N*m] Moment magnitudes                         (n x 1)
 %               Use empty arrays [] for directions with no load.
-%   solver    - "oofem"
-%             - "mc-guire"  
+%   solver    - "oofem"    (default) — geometric matrix from axial force only
+%             - "mc-guire" — geometric matrix including moment contributions
+%
+%   relaxParam - (scalar, optional) Relaxation parameter for the stiffness
+%               matrix regularization (Evgrafov 2005). Adds ε·I to the
+%               global stiffness matrix where ε = relaxParam * max(diag(K)).
+%               This makes K positive definite even when members with near-
+%               zero cross-sections are present (topology optimization).
+%               Default: 0 (no relaxation).  Typical value: 1e-7 to 1e-10.
 %
 % OUTPUTS:
 %   Results   - (struct) Stability analysis results, sorted by ascending
@@ -181,10 +188,23 @@ endForces.global = sparse(elements.ndofs, 1);
 endForces.global(1:max(max(beams.codeNumbers))) = f;
 
 %--------------------------------------------------------------------------
+% OPTIONAL ARGUMENTS — defaults
+%--------------------------------------------------------------------------
+if nargin < 7, solver = "oofem"; end
+if nargin < 8, relaxParam = 0;  end
+
+%--------------------------------------------------------------------------
 % STAGE 1: LINEAR ANALYSIS — solve K * u = f, compute internal forces
 %--------------------------------------------------------------------------
 transformationMatrix = transformationMatrixFn(elements);
 stiffnesMatrix       = stiffnessMatrixFn(elements, transformationMatrix);
+
+% Relaxation (Evgrafov 2005): K_reg = K + ε·I
+% Regularizes K to be positive definite even with near-zero members.
+if relaxParam > 0
+    epsilon = relaxParam * max(abs(diag(stiffnesMatrix.global)));
+    stiffnesMatrix.global = stiffnesMatrix.global + epsilon * speye(elements.ndofs);
+end
 
 endForces.local = EndForcesFn( ...
     stiffnesMatrix, endForces, transformationMatrix, elements);
@@ -192,9 +212,6 @@ endForces.local = EndForcesFn( ...
 %--------------------------------------------------------------------------
 % STAGE 2: STABILITY ANALYSIS — geometric matrix and eigenvalue problem
 %--------------------------------------------------------------------------
-if nargin < 7
-    solver = "oofem";   % default hodnota
-end
 
 if solver == "mc-guire"
     geometricMatrix = geometricMatrixMcGuireFn(elements, transformationMatrix, endForces);
