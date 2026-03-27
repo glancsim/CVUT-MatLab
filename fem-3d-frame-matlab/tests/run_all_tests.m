@@ -23,7 +23,7 @@
 %   errors_summary.txt   — text report with per-mode errors for all tests
 %   errors_table.xlsx    — Excel table (requires MATLAB Spreadsheet toolbox)
 %   all_tests_results.mat — MATLAB workspace with all numeric results
-%   errors_overview.png  — heatmap + boxplot overview figure
+%   errors_overview.png  — heatmap + bar chart overview figure
 %
 % See also: run_single_test, stabilitySolverFn, linearSolverFn
 % ==========================================================================
