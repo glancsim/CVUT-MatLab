@@ -1,236 +1,211 @@
-function plotModeShapeFn(nodes, beams, kinematic, Results)
-% plotModeShapeFn  Animated 3D visualization of the critical buckling mode.
+function plotModeShapeFn(nodes, beams, kinematic, Results, modeNum)
+% plotModeShapeFn  Animate a buckling mode shape from stabilitySolverFn.
 %
-% Displays the critical buckling mode shape as a smooth animated curve over
-% the undeformed structure. The deformed shape is colour-coded by transverse
-% displacement magnitude (green = zero → yellow → red = maximum).
-% The animation oscillates sinusoidally until the figure is closed.
-%
-% INPUTS:
-%   nodes     - (struct) Node geometry
-%     .x, .y, .z  - [m]  Node coordinates       (nnodes×1 each)
-%
-%   beams     - (struct) Beam topology
-%     .nodesHead  - Start node index             (nbeams×1)
-%     .nodesEnd   - End node index               (nbeams×1)
-%     .angles     - [deg] Cross-section roll     (nbeams×1, optional)
-%
-%   kinematic - (struct) Kinematic boundary conditions
-%     .x.nodes, .y.nodes, .z.nodes   - Fixed translation node indices
-%     .rx.nodes, .ry.nodes, .rz.nodes - Fixed rotation node indices
-%
-%   Results   - (struct) Output of stabilitySolverFn
-%     .values           - Critical load multipliers (sorted)  (10×1)
-%     .vectors          - Buckling mode shapes                (ndofs×10)
+% Displays the selected mode shape as an animated oscillation overlaid on
+% the original (undeformed) structure. The deformed shape is colour-coded
+% by transverse displacement magnitude (green → yellow → red).
+% The animation stops automatically after 10 seconds.
 %
 % USAGE:
-%   Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
-%   plotModeShapeFn(nodes, beams, kinematic, Results);
-%   % Press Ctrl+C or close the figure to stop the animation.
+%   plotModeShapeFn(nodes, beams, kinematic, Results)
+%   plotModeShapeFn(nodes, beams, kinematic, Results, modeNum)
+%
+% INPUTS:
+%   nodes     - Node geometry struct (.x, .y, .z)
+%   beams     - Beam topology struct (.nodesHead, .nodesEnd, .angles, ...)
+%   kinematic - Boundary conditions struct (.x.nodes, .y.nodes, ...)
+%   Results   - Output of stabilitySolverFn (.values, .vectors)
+%   modeNum   - (optional) Index into Results.values/vectors (1-based).
+%               Default: mode with smallest absolute eigenvalue.
+%
+% NOTES:
+%   - Animation runs for up to 10 s then stops automatically.
+%   - Press Ctrl+C to stop early.
+%   - Displacement is scaled so the maximum transverse deformation is
+%     15 % of the characteristic length of the structure.
 %
 % See also: stabilitySolverFn, plotStructureFn
 %
-% (c) S. Glanc, 2025
-
-N_PLOT   = 30;   % interpolation points per beam
-N_FRAMES = 40;   % animation frames per full oscillation cycle
-FPS      = 25;   % target playback frame rate [Hz]
+% (c) S. Glanc, 2026
 
 %--------------------------------------------------------------------------
-% 1. SETUP — reconstruct nodes.dofs and beam geometry
+% 1. Mode selection
+%--------------------------------------------------------------------------
+if nargin < 5 || isempty(modeNum)
+    [~, modeNum] = min(abs(Results.values));
+end
+
+lambda = Results.values(modeNum);
+phi    = Results.vectors(:, modeNum);
+
+%--------------------------------------------------------------------------
+% 2. Reconstruct nodes.dofs from kinematic
 %--------------------------------------------------------------------------
 nnodes     = numel(nodes.x);
 nodes.dofs = true(nnodes, 6);
-nodes.dofs(kinematic.x.nodes,  1) = false;
-nodes.dofs(kinematic.y.nodes,  2) = false;
-nodes.dofs(kinematic.z.nodes,  3) = false;
-nodes.dofs(kinematic.rx.nodes, 4) = false;
-nodes.dofs(kinematic.ry.nodes, 5) = false;
-nodes.dofs(kinematic.rz.nodes, 6) = false;
+if ~isempty(kinematic.x.nodes),  nodes.dofs(kinematic.x.nodes,  1) = false; end
+if ~isempty(kinematic.y.nodes),  nodes.dofs(kinematic.y.nodes,  2) = false; end
+if ~isempty(kinematic.z.nodes),  nodes.dofs(kinematic.z.nodes,  3) = false; end
+if ~isempty(kinematic.rx.nodes), nodes.dofs(kinematic.rx.nodes, 4) = false; end
+if ~isempty(kinematic.ry.nodes), nodes.dofs(kinematic.ry.nodes, 5) = false; end
+if ~isempty(kinematic.rz.nodes), nodes.dofs(kinematic.rz.nodes, 6) = false; end
+nodes.ndofs  = sum(nodes.dofs(:));
 nodes.nnodes = nnodes;
 
-nbeams           = numel(beams.nodesHead);
-beams.nbeams     = nbeams;
-beams.vertex     = beamVertexFn(beams, nodes);
+%--------------------------------------------------------------------------
+% 3. Beam properties
+%--------------------------------------------------------------------------
+beams.nbeams      = numel(beams.nodesHead);
+beams.vertex      = beamVertexFn(beams, nodes);
 beams.codeNumbers = codeNumbersFn(beams, nodes);
-
-if ~isfield(beams, 'angles')
-    beams.angles = zeros(nbeams, 1);
-end
-beams.XY = XYtoRotBeamsFn(beams, beams.angles);
+beams.XY          = XYtoRotBeamsFn(beams, beams.angles);
 
 %--------------------------------------------------------------------------
-% 2. SELECT critical mode — eigenvalue with smallest absolute value
+% 4. Auto-scale factor (15 % of characteristic length)
 %--------------------------------------------------------------------------
-[~, posIdx] = min(abs(Results.values));
-lambda_cr   = Results.values(posIdx);
-eigvec    = full(Results.vectors(:, posIdx));
+L_char = max([range(nodes.x), range(nodes.y), range(nodes.z), 1]);
 
-%--------------------------------------------------------------------------
-% 3. MAP eigenvector entries → nodal displacements (nnodes × 6)
-%--------------------------------------------------------------------------
-u_nodes = zeros(nnodes, 6);
-for b = 1:nbeams
-    hn = beams.nodesHead(b);
-    en = beams.nodesEnd(b);
-    for d = 1:6
-        k = beams.codeNumbers(b, d);
-        if k > 0,  u_nodes(hn, d) = eigvec(k);  end
-        k = beams.codeNumbers(b, d + 6);
-        if k > 0,  u_nodes(en, d) = eigvec(k);  end
-    end
-end
-
-%--------------------------------------------------------------------------
-% 4. AUTO-SCALE — max nodal translation = 15 % of bounding box
-%--------------------------------------------------------------------------
-L_char = max([max(nodes.x)-min(nodes.x), ...
-              max(nodes.y)-min(nodes.y), ...
-              max(nodes.z)-min(nodes.z), 1]);
-
-u_mag = sqrt(u_nodes(:,1).^2 + u_nodes(:,2).^2 + u_nodes(:,3).^2);
-u_max = max(u_mag);
-if u_max < eps
-    warning('plotModeShapeFn: mode shape has zero displacement.');
-    scaleFactor = 1;
+trans_codes = beams.codeNumbers(:, [1,2,3,7,8,9]);
+trans_codes = trans_codes(trans_codes > 0);
+if isempty(trans_codes)
+    maxDisp = 1;
 else
-    scaleFactor = 0.15 * L_char / u_max;
+    maxDisp = max(abs(phi(trans_codes)));
 end
+if maxDisp < eps, maxDisp = 1; end
+scaleFactor = 0.15 * L_char / maxDisp;
 
 %--------------------------------------------------------------------------
-% 5. HERMITIAN INTERPOLATION along each beam
-%
-% For each beam, compute:
-%   coords_undef (3 × N_PLOT) — undeformed centreline
-%   disp_unit    (3 × N_PLOT) — displacement at scale = 1
-%   transv_mag   (1 × N_PLOT) — local transverse magnitude (for colour)
+% 5. Pre-compute Hermite-interpolated mode shape for each beam
 %--------------------------------------------------------------------------
-xi = linspace(0, 1, N_PLOT);   % parametric coordinate along beam
-N1 = 1 - 3*xi.^2 + 2*xi.^3;   % Hermite shape functions
-N2 = xi .* (1 - xi).^2;
-N3 = 3*xi.^2 - 2*xi.^3;
-N4 = xi.^2 .* (xi - 1);
+N_PTS = 30;
+xi = linspace(0, 1, N_PTS);
+H1 = 1 - 3*xi.^2 + 2*xi.^3;
+H3 = 3*xi.^2 - 2*xi.^3;
 
-cu  = zeros(3, N_PLOT, nbeams);   % undeformed
-cd  = zeros(3, N_PLOT, nbeams);   % unit displacement (global)
-ct  = zeros(1, N_PLOT, nbeams);   % transverse magnitude
+x0_all = zeros(beams.nbeams, N_PTS);
+y0_all = zeros(beams.nbeams, N_PTS);
+z0_all = zeros(beams.nbeams, N_PTS);
+du_all = zeros(3, N_PTS, beams.nbeams);
+c_all  = zeros(beams.nbeams, N_PTS);
 
-for b = 1:nbeams
+for b = 1:beams.nbeams
+    % DOF extraction (0-code → constrained → zero displacement)
+    codes    = beams.codeNumbers(b, :);
+    u_global = zeros(12, 1);
+    for k = 1:12
+        if codes(k) > 0, u_global(k) = phi(codes(k)); end
+    end
+
+    % Local rotation matrix (same logic as transformationMatrixFn)
+    vx = beams.vertex(b, :);
+    Lb = norm(vx);
+    Cx = vx / Lb;
+    Cz_r = cross(Cx, beams.XY(b, :));
+    Cz   = Cz_r / norm(Cz_r);
+    Cy_r = cross(Cz, Cx);
+    Cy   = Cy_r / norm(Cy_r);
+    t    = [Cx; Cy; Cz];          % 3×3
+    T    = blkdiag(t, t, t, t);   % 12×12
+
+    % Local displacements
+    u_loc = T * u_global;
+    ux1=u_loc(1); uy1=u_loc(2); uz1=u_loc(3);
+    thy1=u_loc(5); thz1=u_loc(6);
+    ux2=u_loc(7); uy2=u_loc(8); uz2=u_loc(9);
+    thy2=u_loc(11); thz2=u_loc(12);
+
+    % Hermite shape functions
+    H2 = Lb*(xi - 2*xi.^2 + xi.^3);
+    H4 = Lb*(-xi.^2 + xi.^3);
+
+    ux_loc = (1-xi)*ux1 + xi*ux2;
+    uy_loc = H1*uy1 + H2*thz1 + H3*uy2 + H4*thz2;
+    uz_loc = H1*uz1 - H2*thy1 + H3*uz2 - H4*thy2;
+
+    % Back to global coordinates (translation only)
+    u_interp = t' * [ux_loc; uy_loc; uz_loc];   % 3×N_PTS
+
+    % Base positions along undeformed beam
     hn = beams.nodesHead(b);
-    en = beams.nodesEnd(b);
+    x0_all(b,:) = nodes.x(hn) + xi * vx(1);
+    y0_all(b,:) = nodes.y(hn) + xi * vx(2);
+    z0_all(b,:) = nodes.z(hn) + xi * vx(3);
 
-    P1 = [nodes.x(hn); nodes.y(hn); nodes.z(hn)];
-    P2 = [nodes.x(en); nodes.y(en); nodes.z(en)];
-    dP = P2 - P1;
-    L  = norm(dP);
-
-    % Local coordinate system (same logic as transformationMatrixFn)
-    e1  = dP / L;
-    XYv = beams.XY(b, :)';
-    e2  = XYv - dot(XYv, e1) * e1;
-    e2  = e2 / norm(e2);
-    e3  = cross(e1, e2);
-    T3  = [e1, e2, e3]';    % 3×3: rows are local basis vectors
-
-    % Nodal quantities in local coordinates
-    u1  = T3 * u_nodes(hn, 1:3)';   % head translation [ux, uy, uz] local
-    u2  = T3 * u_nodes(en, 1:3)';   % end  translation
-    r1  = T3 * u_nodes(hn, 4:6)';   % head rotation    [rx, ry, rz] local
-    r2  = T3 * u_nodes(en, 4:6)';   % end  rotation
-
-    % Interpolate displacement at each xi in LOCAL coordinates
-    %   axial:         linear interpolation
-    %   transverse y:  cubic Hermite (bending about local z, rotation = rz)
-    %   transverse z:  cubic Hermite (bending about local y, rotation = ry)
-    ux_loc = (1 - xi) * u1(1)  + xi * u2(1);
-    uy_loc = N1 * u1(2)  + N2 * r1(3) * L  + N3 * u2(2)  + N4 * r2(3) * L;
-    uz_loc = N1 * u1(3)  - N2 * r1(2) * L  + N3 * u2(3)  - N4 * r2(2) * L;
-
-    % Transform back to global
-    u_glob = T3' * [ux_loc; uy_loc; uz_loc];   % 3 × N_PLOT
-
-    % Store
-    cu(:, :, b) = P1 + dP * xi;       % undeformed positions
-    cd(:, :, b) = u_glob;              % global displacement (unit scale)
-    ct(:, :, b) = sqrt(uy_loc.^2 + uz_loc.^2);   % transverse magnitude
+    du_all(:,:,b) = u_interp;
+    c_all(b,:)    = sqrt(uy_loc.^2 + uz_loc.^2);
 end
 
-% Normalise colour data to [0, 1]
-ct_max = max(ct(:));
-if ct_max < eps, ct_max = 1; end
-C_norm = ct / ct_max;   % 1 × N_PLOT × nbeams
+% Normalise colour values to [0, 1]
+c_min      = min(c_all(:));
+c_max      = max(c_all(:)) + eps;
+c_norm_all = (c_all - c_min) / (c_max - c_min);
 
 %--------------------------------------------------------------------------
-% 6. FIGURE — static elements
+% 6. Set up figure
 %--------------------------------------------------------------------------
-fig = figure('Name', 'Vlastní tvar stability', 'NumberTitle', 'off');
+fig = figure('Name', sprintf('Mode %d  —  λ = %.4g', modeNum, lambda), ...
+             'Color', 'w');
 ax  = axes('Parent', fig);
 hold(ax, 'on');
 axis(ax, 'equal');
 grid(ax, 'on');
-xlabel(ax, 'x [m]');
-ylabel(ax, 'y [m]');
-zlabel(ax, 'z [m]');
-title(ax, sprintf('Kritický vlastní tvar  |  \\lambda_{cr} = %.4g', lambda_cr));
 view(ax, 3);
+xlabel(ax, 'x [m]');  ylabel(ax, 'y [m]');  zlabel(ax, 'z [m]');
+title(ax, sprintf('Mode %d  —  \\lambda_{cr} = %.4g', modeNum, lambda));
 
-% Colormap: green (0) → yellow (0.5) → red (1)
-nColors = 128;
-cmap = [linspace(0,   1, nColors)', ...
-        linspace(0.75, 0, nColors)', ...
-        zeros(nColors, 1)];
+% Green → yellow → red colormap
+n_col = 64;
+cmap  = [linspace(0,1,n_col)', linspace(1,0.5,n_col)', zeros(n_col,1)];
 colormap(ax, cmap);
 cb = colorbar(ax);
-cb.Label.String = 'Příčný posun [normalizovaný]';
-clim(ax, [0, 1]);
+cb.Label.String = 'Transverse displacement (rel.)';
 
-% Undeformed structure — thin grey lines
-for b = 1:nbeams
-    plot3(ax, cu(1,:,b), cu(2,:,b), cu(3,:,b), ...
-        '-', 'Color', [0.75 0.75 0.75], 'LineWidth', 0.8);
+% Undeformed structure (thin dashed grey)
+for b = 1:beams.nbeams
+    hn = beams.nodesHead(b);  en = beams.nodesEnd(b);
+    plot3(ax, [nodes.x(hn), nodes.x(en)], ...
+              [nodes.y(hn), nodes.y(en)], ...
+              [nodes.z(hn), nodes.z(en)], ...
+          '--', 'Color', [0.65 0.65 0.65], 'LineWidth', 0.8);
 end
 
-% Deformed shape — coloured surface-line objects (one per beam)
-surf_h = gobjects(nbeams, 1);
-for b = 1:nbeams
-    Xd = cu(1,:,b) + scaleFactor * cd(1,:,b);
-    Yd = cu(2,:,b) + scaleFactor * cd(2,:,b);
-    Zd = cu(3,:,b) + scaleFactor * cd(3,:,b);
-    C  = squeeze(C_norm(1,:,b));
-    surf_h(b) = surface(ax, [Xd; Xd], [Yd; Yd], [Zd; Zd], [C; C], ...
-        'EdgeColor', 'interp', 'FaceColor', 'none', 'LineWidth', 2);
+% Preallocate surface handles for the animated deformed shape
+surf_h = gobjects(beams.nbeams, 1);
+for b = 1:beams.nbeams
+    c2 = [c_norm_all(b,:); c_norm_all(b,:)];
+    x2 = [x0_all(b,:); x0_all(b,:)];
+    y2 = [y0_all(b,:); y0_all(b,:)];
+    z2 = [z0_all(b,:); z0_all(b,:)];
+    surf_h(b) = surface(ax, x2, y2, z2, c2, ...
+        'EdgeColor', 'interp', 'FaceColor', 'none', 'LineWidth', 2.5);
 end
-
 drawnow;
 
 %--------------------------------------------------------------------------
-% 7. ANIMATION — sinusoidal oscillation (stops when figure is closed)
+% 7. Animate (max 10 s, 25 fps)
 %--------------------------------------------------------------------------
-fprintf('plotModeShapeFn: animace spuštěna. Zavřete okno nebo stiskněte Ctrl+C.\n');
-try
-    while ishandle(fig)
-        for frame = 1:N_FRAMES
-            if ~ishandle(fig), break; end
-            phase = sin(2 * pi * (frame - 1) / N_FRAMES);   % -1 … +1
+fps       = 25;
+duration  = 10;
+n_frames  = fps * duration;
+frame_dur = 1 / fps;
 
-            for b = 1:nbeams
-                Xd = cu(1,:,b) + scaleFactor * phase * cd(1,:,b);
-                Yd = cu(2,:,b) + scaleFactor * phase * cd(2,:,b);
-                Zd = cu(3,:,b) + scaleFactor * phase * cd(3,:,b);
-                set(surf_h(b), ...
-                    'XData', [Xd; Xd], ...
-                    'YData', [Yd; Yd], ...
-                    'ZData', [Zd; Zd]);
-            end
-            drawnow;
-            pause(1 / FPS);
-        end
+t_start = tic;
+for frame = 1:n_frames
+    if toc(t_start) >= duration, break; end
+    if ~ishandle(fig), break; end   % figure was closed
+
+    sf = sin(2*pi * (frame-1) / n_frames) * scaleFactor;
+
+    for b = 1:beams.nbeams
+        du = du_all(:,:,b);
+        xd = x0_all(b,:) + sf * du(1,:);
+        yd = y0_all(b,:) + sf * du(2,:);
+        zd = z0_all(b,:) + sf * du(3,:);
+        set(surf_h(b), 'XData', [xd; xd], 'YData', [yd; yd], 'ZData', [zd; zd]);
     end
-catch ME
-    if ~strcmp(ME.identifier, 'MATLAB:class:InvalidHandle')
-        rethrow(ME);
-    end
-    % Figure was closed — exit cleanly
+    drawnow;
+    pause(frame_dur);
 end
 
 end
