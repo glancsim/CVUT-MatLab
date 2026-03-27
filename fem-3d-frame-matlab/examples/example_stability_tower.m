@@ -3,28 +3,57 @@ addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src'));
 
 nbricks = 7;   % počet pater
 
-%% PRŮŘEZY — 3 skupiny na patro × nbricks pater = nbricks*3 průřezů
-%   Index sekce = (patro-1)*3 + typ,  kde typ: 1=sloupy, 2=diagonály, 3=příčle
+%% PRŮŘEZY — načtení z databáze sectionsSet.mat
+%   Sloupy + příčle: SHS (čtvercové trubky),  RHS id viz sectionsSet.RHS
+%   Diagonály:       L-profil (otočený 45°),   L   id viz sectionsSet.L
 %
-%   Patro 1: sec 1 (sloupy), sec 2 (diagonály), sec 3 (příčle)
-%   Patro 2: sec 4 (sloupy), sec 5 (diagonály), sec 6 (příčle)
-%   ...
-%
-%   Uprav r_outer/r_inner per sekci libovolně, např.:
-%     r_outer(1:3:end) = 0.05;  r_inner(1:3:end) = 0.044;  % sloupy
-%     r_outer(2:3:end) = 0.03;  r_inner(2:3:end) = 0.026;  % diagonály
-%     r_outer(3:3:end) = 0.025; r_inner(3:3:end) = 0.022;  % příčle
+%   Dostupné RHS (id 1–9):
+%     1=SHS30/30/2,  2=SHS40/40/2.5,  3=SHS50/50/2.5,  4=SHS50/50/3
+%     5=SHS50/50/5,  6=SHS100/100/3,  7=SHS100/100/4,  8=SHS100/100/5
+%     9=SHS100/100/6
+%   Dostupné L (id 10–63, rovnoramenné úhelníky, 54 typů)
+%     10=L20/3, 11=L25/3, 12=L30/3, 14=L35/3, 16=L40/3, ...
 % --------------------------------------------------------------------------
-nsec    = nbricks * 3;
-r_outer = 0.04  * ones(nsec, 1);
-r_inner = 0.035 * ones(nsec, 1);
+id_col   = 4;    % SHS50/50/3.0  — sloupy
+id_brace = 3;    % SHS50/50/2.5  — příčle
+id_diag  = 19;   % L40/4         — diagonály (otočené 45°)
 
-sections.A  = pi    .* (r_outer.^2 - r_inner.^2);
-sections.Iy = pi/4  .* (r_outer.^4 - r_inner.^4);
-sections.Iz = pi/4  .* (r_outer.^4 - r_inner.^4);
-sections.Ix = pi/2  .* (r_outer.^4 - r_inner.^4);
-sections.E  = ones(nsec, 1) * 210e9;
-sections.v  = ones(nsec, 1) * 0.3;
+load(fullfile(fileparts(mfilename('fullpath')), '..', '..', ...
+    'Diplomka', 'towerOptSA', 'sectionsSet.mat'));
+
+% Pomocná funkce: vyber řádek z tabulky podle id
+get_sec = @(tbl, id) tbl(tbl.id == id, :);
+
+col_row   = get_sec(sectionsSet.RHS, id_col);
+brace_row = get_sec(sectionsSet.RHS, id_brace);
+diag_row  = get_sec(sectionsSet.L,   id_diag);
+
+fprintf('Sloupy:    %s  (id=%d)\n', col_row.Typ,   id_col);
+fprintf('Pricky:    %s  (id=%d)\n', brace_row.Typ, id_brace);
+fprintf('Diagonaly: %s  (id=%d, 45 deg)\n', diag_row.Typ, id_diag);
+
+% Sestavení 21 průřezů: (patro-1)*3 + [1=sloup, 2=diag, 3=příčel]
+nsec = nbricks * 3;
+is_col   = (mod((1:nsec)', 3) == 1);
+is_diag  = (mod((1:nsec)', 3) == 2);
+is_brace = (mod((1:nsec)', 3) == 0);
+
+sections.A  = zeros(nsec, 1);
+sections.Iy = zeros(nsec, 1);
+sections.Iz = zeros(nsec, 1);
+sections.Ix = zeros(nsec, 1);
+
+sections.A(is_col)   = col_row.A;    sections.Iy(is_col)   = col_row.I_y;
+sections.Iz(is_col)  = col_row.I_z;  sections.Ix(is_col)   = col_row.I_t;
+
+sections.A(is_diag)  = diag_row.A;   sections.Iy(is_diag)  = diag_row.I_y;
+sections.Iz(is_diag) = diag_row.I_z; sections.Ix(is_diag)  = diag_row.I_t;
+
+sections.A(is_brace)  = brace_row.A;   sections.Iy(is_brace)  = brace_row.I_y;
+sections.Iz(is_brace) = brace_row.I_z; sections.Ix(is_brace)  = brace_row.I_t;
+
+sections.E = ones(nsec, 1) * 210e9;
+sections.v = ones(nsec, 1) * 0.3;
 
 %% UZLY
 width = 2.9;
@@ -57,7 +86,12 @@ modulNodes2 = [9;10;11;12; 5;10;5;9;6;11;6;10;7;12;7;11;8;9;8;12; 10;11;12;9  ];
 beams.nodesEnd = (reshape(kron(modulNodes2', ones(nbricks, 1))', 1, [])' ...
         + repelem((0:nbricks-1)', numel(modulNodes2))*8);
 % beams.nodesEnd = modulNodes2;
+angle_pattern = [zeros(4,1); 45*ones(16,1); zeros(4,1)];   % 24×1: sloupy=0°, diag=45°, příčle=0°
 beams.angles = zeros(numel(beams.nodesHead), 1);
+for i = 1:nbricks
+    idx = (i-1)*24 + (1:24);
+    beams.angles(idx) = angle_pattern;
+end
 
 % Průřezy: vzor na jedno patro [4 sloupy | 16 diagonál | 4 příčle]
 % Sekce (patro i) = (i-1)*3 + [1, 2, 3]
