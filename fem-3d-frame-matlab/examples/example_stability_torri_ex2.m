@@ -2,7 +2,7 @@ clear; close all; clc;
 addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src'));
 
 %% PRŮŘEZ — Trubka, ocel
-r_outer = [5.6793; 5.0566; 0.0001; 4.8887; 0.0001; 6.0175; 4.1126] * 10e-2;
+r_outer = [5.6793; 5.0566; 0.0001; 4.8887; 0.0001; 6.0175; 4.1126] * 1e-2;
 r_inner = r_outer*0.9;
 sections.A  = pi .* (r_outer.^2 - r_inner.^2);           % Plocha [m²]
 sections.Iy = pi/4 * (r_outer.^4 - r_inner.^4);         % Moment setrvačnosti k ose y [m⁴]
