@@ -20,8 +20,8 @@ nodes.z = [0; 0; 2; 2; 0]*2;
 kinematic.x.nodes  = [1; 3];
 kinematic.y.nodes  = [1; 3];
 kinematic.z.nodes  = [1; 3];
-kinematic.rx.nodes = [];
-kinematic.ry.nodes = [];
+kinematic.rx.nodes = [1; 3];
+kinematic.ry.nodes = [1; 3];
 kinematic.rz.nodes = [1; 3];
 
 %% PRUTY
@@ -40,7 +40,7 @@ beams.angles(idx)    = [];
 
 %% REFERENCE LOAD — 1 N axial compression at the top node
 % --------------------------------------------------------------------------
-F_ref = -150*1000;   % [N]  negative = compression along +z
+F_ref = -150e3;   % [N]  negative = compression along +z
 
 loads.x.nodes  = [];   loads.x.value  = [];
 loads.y.nodes  = [];   loads.y.value  = [];
