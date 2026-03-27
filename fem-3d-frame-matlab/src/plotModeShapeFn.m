@@ -1,4 +1,4 @@
-function plotModeShapeFn(nodes, beams, kinematic, Results)
+function plotModeShapeFn(nodes, beams, kinematic, Results, modeNum)
 % plotModeShapeFn  Animated 3D visualization of the critical buckling mode.
 %
 % Displays the critical buckling mode shape as a smooth animated curve over
@@ -22,6 +22,9 @@ function plotModeShapeFn(nodes, beams, kinematic, Results)
 %   Results   - (struct) Output of stabilitySolverFn
 %     .values           - Critical load multipliers (sorted)  (10×1)
 %     .vectors          - Buckling mode shapes                (ndofs×10)
+% 
+%   modeNum   - (optional) Index into Results.values/vectors (1-based).
+%               Default: mode with smallest absolute eigenvalue.
 %
 % USAGE:
 %   Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
@@ -62,9 +65,11 @@ beams.XY = XYtoRotBeamsFn(beams, beams.angles);
 %--------------------------------------------------------------------------
 % 2. SELECT critical mode — eigenvalue with smallest absolute value
 %--------------------------------------------------------------------------
-[~, posIdx] = min(abs(Results.values > 0));
-lambda_cr   = Results.values(posIdx);
-eigvec    = full(Results.vectors(:, posIdx));
+if nargin < 5 || isempty(modeNum)
+    [~, modeNum] = min(abs(Results.values));
+end
+lambda_cr   = Results.values(modeNum);
+eigvec    = full(Results.vectors(:, modeNum));
 
 %--------------------------------------------------------------------------
 % 3. MAP eigenvector entries → nodal displacements (nnodes × 6)

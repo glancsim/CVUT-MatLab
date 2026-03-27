@@ -57,7 +57,9 @@ ndisc = 8;
 % --------------------------------------------------------------------------
 Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "oofem");
 
-posVals = Results.values(Results.values > 0);
+posId = find(Results.values > 0);
+posVals = Results.values(posId);
+
 lambda1 = posVals(1);   % smallest positive critical load multiplier
 lambda2 = posVals(2);
 
@@ -67,4 +69,4 @@ fprintf('  Reference load       : F_ref = %.2f N  (axial compression)\n', abs(F_
 fprintf('\n');
 fprintf('  Critical load       : F_crit = %.2f N  (axial compression)\n', abs(lambda1));
 
-plotModeShapeFn(nodes, beams, kinematic, Results);
+plotModeShapeFn(nodes, beams, kinematic, Results, posId(1));
