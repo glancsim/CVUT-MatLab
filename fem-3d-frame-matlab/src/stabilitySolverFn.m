@@ -71,6 +71,8 @@ function [Results] = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams,
 %     .rz.nodes - Node indices with moment about global z-axis     (n x 1)
 %     .rz.value - [N*m] Moment magnitudes                         (n x 1)
 %               Use empty arrays [] for directions with no load.
+%   solver    - "oofem"
+%             - "mc-guire"  
 %
 % OUTPUTS:
 %   Results   - (struct) Stability analysis results, sorted by ascending
@@ -191,7 +193,7 @@ endForces.local = EndForcesFn( ...
 % STAGE 2: STABILITY ANALYSIS — geometric matrix and eigenvalue problem
 %--------------------------------------------------------------------------
 if nargin < 7
-    solver = 'oofem';   % default hodnota
+    solver = "oofem";   % default hodnota
 end
 
 if solver == "mc-guire"
