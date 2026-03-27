@@ -1,4 +1,4 @@
-function plotStructureFn(nodes, beams, loads, kinematic)
+function plotStructureFn(nodes, beams, loads, kinematic, varargin)
 % PLOTSTRUCTUREFN  3D vizualizace konstrukce, podpor a zatížení.
 %
 %   plotStructureFn(nodes, beams, loads)
@@ -10,6 +10,12 @@ function plotStructureFn(nodes, beams, loads, kinematic)
 %     loads     - struktura: x/y/z.nodes, x/y/z.value (síly [N])
 %                            rx/ry/rz.nodes, rx/ry/rz.value (momenty [N·m])
 %     kinematic - (volitelné) struktura: x/y/z/rx/ry/rz.nodes (podpory)
+%     'Labels'  - (volitelné) true/false — zobrazit čísla uzlů a prutů (default: false)
+%
+%   Příklady:
+%     plotStructureFn(nodes, beams, loads)
+%     plotStructureFn(nodes, beams, loads, kinematic)
+%     plotStructureFn(nodes, beams, loads, kinematic, 'Labels', true)
 %
 %   Barevný kód:
 %     Černá           — pruty a uzly
@@ -17,6 +23,14 @@ function plotStructureFn(nodes, beams, loads, kinematic)
 %     Zelená šipka    — podpora (omezené pootočení), šipka míří K uzlu
 %     Červená šipka   — silové zatížení, šipka vychází Z uzlu + popisek [N]
 %     Fialová 2× šipka— momentové zatížení (dvě paralelní) + popisek [N·m]
+
+% --- Parsování volitelného parametru 'Labels' ---
+showLabels = false;
+for k = 1:2:numel(varargin)
+    if strcmpi(varargin{k}, 'Labels')
+        showLabels = logical(varargin{k+1});
+    end
+end
 
 figure; hold on;
 
@@ -36,6 +50,31 @@ h_beams = plot3([nodes.x(beams.nodesHead) nodes.x(beams.nodesEnd)]', ...
                 'k', 'LineWidth', 1.5);
 
 h_nodes = scatter3(nodes.x, nodes.y, nodes.z, 40, 'k', 'filled');
+
+% =========================================================
+%  ČÍSLA UZLŮ A PRUTŮ (jen pokud 'Labels', true)
+% =========================================================
+if showLabels
+    lbl_off = 0.06 * L_char;
+
+    % Čísla uzlů — modrý tučný text, odsazený od uzlu
+    for n = 1:numel(nodes.x)
+        text(nodes.x(n) + lbl_off, nodes.y(n) + lbl_off, nodes.z(n) + lbl_off, ...
+             sprintf('%d', n), ...
+             'Color', [0.1 0.3 0.9], 'FontSize', 8, 'FontWeight', 'bold');
+    end
+
+    % Čísla prutů — červený tučný text ve středu prutu, bílé pozadí
+    for b = 1:numel(beams.nodesHead)
+        mx = (nodes.x(beams.nodesHead(b)) + nodes.x(beams.nodesEnd(b))) / 2;
+        my = (nodes.y(beams.nodesHead(b)) + nodes.y(beams.nodesEnd(b))) / 2;
+        mz = (nodes.z(beams.nodesHead(b)) + nodes.z(beams.nodesEnd(b))) / 2;
+        text(mx, my, mz, sprintf('%d', b), ...
+             'Color', [0.85 0.1 0.1], 'FontSize', 8, 'FontWeight', 'bold', ...
+             'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+             'BackgroundColor', 'w', 'EdgeColor', [0.85 0.1 0.1], 'Margin', 1);
+    end
+end
 
 % =========================================================
 %  KLOUBY (beams.releases) — prázdný kruh ○ na uvolněném konci
