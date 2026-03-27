@@ -12,9 +12,7 @@ sections.E  = 210e9;      % [Pa]
 sections.v  = 0.3;
 
 %% UZLY
-nodes.x = [0; 2; 0; 2; 4];
-nodes.y = [0; 0; 0; 0; 0];
-nodes.z = [0; 0; 2; 2; 2];
+
 
 %% OKRAJOVÉ PODMÍNKY — vetknuté paty (uzly 1 a 4)
 kinematic.x.nodes  = [1; 3];
@@ -25,10 +23,16 @@ kinematic.ry.nodes = [];
 kinematic.rz.nodes = [1; 3];
 
 %% PRUTY
-beams.nodesHead = [1; 3; 4; 3; 2; 2];
-beams.nodesEnd  = [2; 4; 5; 2; 5; 4];
-beams.sections  = [1; 1; 1; 1; 1; 1];
-beams.angles    = [0; 0; 0; 0; 0; 0];
+L = 12;  n = 7;  h_max = 2;
+x = linspace(0, L, n)';
+
+% Lineární sedlo (střecha) — 0 → h_max → 0
+h_vec = h_max * (1 - abs(2*x/L - 1));
+
+% Parabolické sedlo — hladší průběh
+h_par = h_max * (1 - (2*x/L - 1).^2);
+
+[nodes, beams] = trussGeneratorFn(x, x, h_vec, 'Topology', 'pratt');
 
 %% REFERENCE LOAD — 1 N axial compression at the top node
 % --------------------------------------------------------------------------
@@ -41,7 +45,7 @@ loads.rx.nodes = [];   loads.rx.value = [];
 loads.ry.nodes = [];   loads.ry.value = [];
 loads.rz.nodes = [];   loads.rz.value = [];
 
-% plotStructureFn(nodes, beams, loads, kinematic) 
+plotStructureFn(nodes, beams, loads, kinematic) 
 
 ndisc = 16;
 
