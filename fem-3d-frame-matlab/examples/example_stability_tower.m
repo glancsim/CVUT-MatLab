@@ -1,22 +1,36 @@
 clear; close all; clc;
 addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src'));
 
-%% PRŮŘEZ — Trubka, ocel
-r_outer = 0.04;
-r_inner = 0.035;
-sections.A  = pi * (r_outer^2 - r_inner^2);           % Plocha [m²]
-sections.Iy = pi/4 * (r_outer^4 - r_inner^4);         % Moment setrvačnosti k ose y [m⁴]
-sections.Iz = pi/4 * (r_outer^4 - r_inner^4);         % Moment setrvačnosti k ose z [m⁴]
-sections.Ix = pi/2 * (r_outer^4 - r_inner^4);         % Polární moment (= Iy + Iz) [m⁴]
-sections.E  = 210e9;      % [Pa]
-sections.v  = 0.3;
+nbricks = 7;   % počet pater
+
+%% PRŮŘEZY — 3 skupiny na patro × nbricks pater = nbricks*3 průřezů
+%   Index sekce = (patro-1)*3 + typ,  kde typ: 1=sloupy, 2=diagonály, 3=příčle
+%
+%   Patro 1: sec 1 (sloupy), sec 2 (diagonály), sec 3 (příčle)
+%   Patro 2: sec 4 (sloupy), sec 5 (diagonály), sec 6 (příčle)
+%   ...
+%
+%   Uprav r_outer/r_inner per sekci libovolně, např.:
+%     r_outer(1:3:end) = 0.05;  r_inner(1:3:end) = 0.044;  % sloupy
+%     r_outer(2:3:end) = 0.03;  r_inner(2:3:end) = 0.026;  % diagonály
+%     r_outer(3:3:end) = 0.025; r_inner(3:3:end) = 0.022;  % příčle
+% --------------------------------------------------------------------------
+nsec    = nbricks * 3;
+r_outer = 0.04  * ones(nsec, 1);
+r_inner = 0.035 * ones(nsec, 1);
+
+sections.A  = pi    .* (r_outer.^2 - r_inner.^2);
+sections.Iy = pi/4  .* (r_outer.^4 - r_inner.^4);
+sections.Iz = pi/4  .* (r_outer.^4 - r_inner.^4);
+sections.Ix = pi/2  .* (r_outer.^4 - r_inner.^4);
+sections.E  = ones(nsec, 1) * 210e9;
+sections.v  = ones(nsec, 1) * 0.3;
 
 %% UZLY
 width = 2.9;
 length = 2.9;
 height = 3;
 topHeight = 20;
-nbricks = 7;
 nodes.x = [[0;length;length;0];kron(ones(nbricks,1),[length/2;length;length/2;0;0;length;length;0])];                            % x coordinates of nodes
 nodes.y = [[0;0;width;width];kron(ones(nbricks,1),[0;width/2;width;width/2;0;0;width;width])];                              % y coordinates of nodes
 nodes.z = [0;0;0;0];
@@ -43,9 +57,15 @@ modulNodes2 = [9;10;11;12; 5;10;5;9;6;11;6;10;7;12;7;11;8;9;8;12; 10;11;12;9  ];
 beams.nodesEnd = (reshape(kron(modulNodes2', ones(nbricks, 1))', 1, [])' ...
         + repelem((0:nbricks-1)', numel(modulNodes2))*8);
 % beams.nodesEnd = modulNodes2;
-for i=1:numel(beams.nodesHead)
-    beams.angles(i,1) = 0;
-    beams.sections(i,1) = 1;
+beams.angles = zeros(numel(beams.nodesHead), 1);
+
+% Průřezy: vzor na jedno patro [4 sloupy | 16 diagonál | 4 příčle]
+% Sekce (patro i) = (i-1)*3 + [1, 2, 3]
+pattern = [ones(4,1); 2*ones(16,1); 3*ones(4,1)];   % 24×1
+beams.sections = zeros(numel(beams.nodesHead), 1);
+for i = 1:nbricks
+    idx = (i-1)*24 + (1:24);
+    beams.sections(idx) = (i-1)*3 + pattern;
 end
 
 %% REFERENCE LOAD — 1 N axial compression at the top node
