@@ -14,12 +14,11 @@ nbricks = 7;   % počet pater
 %   Dostupné L (id 10–63, rovnoramenné úhelníky, 54 typů)
 %     10=L20/3, 11=L25/3, 12=L30/3, 14=L35/3, 16=L40/3, ...
 % --------------------------------------------------------------------------
-id_col   = 4;    % SHS50/50/3.0  — sloupy
-id_brace = 3;    % SHS50/50/2.5  — příčle
-id_diag  = 19;   % L40/4         — diagonály (otočené 45°)
+id_col   = 2;    % SHS50/50/3.0  — sloupy
+id_brace = 2;    % SHS50/50/2.5  — příčle
+id_diag  = 54;   % L40/4         — diagonály (otočené 45°)
 
-load(fullfile(fileparts(mfilename('fullpath')), '..', '..', ...
-    'Diplomka', 'towerOptSA', 'sectionsSet.mat'));
+load('sectionsSet.mat');
 
 % Pomocná funkce: vyber řádek z tabulky podle id
 get_sec = @(tbl, id) tbl(tbl.id == id, :);
@@ -121,7 +120,7 @@ ndisc = 5;
 
 %% STABILITY ANALYSIS
 % --------------------------------------------------------------------------
-Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
+Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "oofem", 1e-9);
 
 plotModeShapeFn(nodes, beams, kinematic, Results);
 
