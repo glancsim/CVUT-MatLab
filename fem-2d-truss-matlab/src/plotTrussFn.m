@@ -56,9 +56,10 @@ h_nodes = plot(nodes.x, nodes.z, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6);
 %  NODE AND MEMBER LABELS (only if 'Labels', true)
 % =========================================================
 if showLabels
-    lbl_off = 0.05 * L_char;
+    lbl_x = 0.015 * max(range(nodes.x), 1);
+    lbl_z = 0.06  * max(range(nodes.z), 0.5);
     for n = 1:numel(nodes.x)
-        text(nodes.x(n) + lbl_off, nodes.z(n) + lbl_off, ...
+        text(nodes.x(n) + lbl_x, nodes.z(n) + lbl_z, ...
              sprintf('%d', n), ...
              'Color', [0.1 0.3 0.9], 'FontSize', 8, 'FontWeight', 'bold');
     end
