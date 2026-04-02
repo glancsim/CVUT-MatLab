@@ -13,6 +13,7 @@ Projekt implementuje FEM analýzu nosníkových a příhradových konstrukcí v 
 | Složka | Stav | Účel |
 |--------|------|------|
 | `fem-3d-frame-matlab/` | **aktivní** | 3D nosníkové rámy — `src/`, `tests/`, `examples/` |
+| `fem-2d-frame-matlab/` | **aktivní** | 2D rámové konstrukce — `src/`, `tests/`, `examples/` |
 | `fem-truss-2d-matlab/` | **aktivní** | 2D příhradové konstrukce — `src/`, `tests/`, `examples/` |
 | `Diplomka/` | obsolete | původní kód diplomové práce, regresní testy 1–12 |
 
@@ -226,6 +227,103 @@ Generuje `nodes` a `beams` připravené pro `stabilitySolverFn`. Konstrukce v ro
 Po sestavení uzlů funkce detekuje koincidentní uzly (tolerance 1e-9 × rozsah) a sloučí je.
 Klíčové pro sedlový tvar — krajní uzly horního pásu (z=0) splývají s dolním pásem.
 Sloučení zabrání singularitě K matice. Duplikátní a nulové pruty jsou automaticky odstraněny.
+
+---
+
+## Modul `fem-2d-frame-matlab`
+
+Lineární statika 2D rámových konstrukcí (Euler-Bernoulli, ohyb + osová síla). **S diskretizací** — každý fyzický prut = `ndisc` elementů.
+
+### Datové struktury (liší se od 3D modulu!)
+
+```matlab
+% beams — 3 DOFy na uzel (ux, uz, ry)
+beams.nodesHead   % (nbeams×1)
+beams.nodesEnd    % (nbeams×1)
+beams.sections    % (nbeams×1) — 1-based index průřezu
+beams.releases    % (nbeams×2) VOLITELNÉ: klouby — viz níže
+
+% nodes — pouze x a z (žádné y)
+nodes.x    % (nnodes×1)
+nodes.z    % (nnodes×1)
+
+% kinematic — pouze x.nodes, z.nodes, ry.nodes (ne y, rx, rz)
+% loads     — pouze x.nodes/value, z.nodes/value, ry.nodes/value
+
+% sections
+sections.A   % [m²]
+sections.Iz  % [m⁴]
+sections.E   % [Pa]
+```
+
+### Hlavní funkce
+
+```matlab
+[displacements, endForces] = linearSolverFn(sections, nodes, ndisc, kinematic, beams, loads)
+% POZOR: jiná signatura než příhradový 2D modul (má ndisc, nemá nmembers)
+```
+
+**Výstupy `endForces.local`** — (6 × nelement):
+```
+řádek 1: N   na hlavě [N]   (+ = tah)
+řádek 2: Vz  na hlavě [N]
+řádek 3: My  na hlavě [N·m]
+řádek 4–6: totéž na patě
+```
+
+### Klouby (`beams.releases`)
+
+```matlab
+beams.releases = false(nbeams, 2);
+beams.releases(3, 1) = true;   % kloub na hlavě prutu 3
+beams.releases(2, 2) = true;   % kloub na patě prutu 2
+```
+
+- Uvolňuje se pouze moment `ry` (bending) — osová síla a smyk přenášeny
+- Metoda: statická kondenzace DOF 3 (hlava) nebo DOF 6 (pata) lokální matice
+
+### Zdrojové soubory (`fem-2d-frame-matlab/src/`)
+
+| Funkce | Popis |
+|--------|-------|
+| `beamVertexFn(beams, nodes)` | (nbeams×2) [Δx, Δz] |
+| `codeNumbersFn(beams, nodes)` | (nbeams×6) kódová čísla |
+| `discretizationBeamsFn(beams, nodes)` | elements.codeNumbers, .vertex |
+| `sectionToElementFn(sections, beams)` | A, Iz, E per element |
+| `transformationMatrixFn(elements)` | 6×6 T matice; t=[c,s,0;-s,c,0;0,0,1] |
+| `stiffnessMatrixFn(elements, T)` | Globální K (sparse) + releaseCondenseFn |
+| `EndForcesFn(K, f, T, elements)` | Řeší K·u=f; lokální vnitřní síly |
+| `plotFrameFn(nodes, beams, loads, kinematic)` | 2D vizualizace |
+| `oofemInputFn(nodes, beams, loads, kinematic, sections, filename)` | generuje input.mat pro Python runner (1 Beam2d na prut) |
+| `oofemTestFn(nodes, beams, loads, kinematic, sections)` | spustí OOFEM a porovná posuny uzlů |
+
+### Testy (`fem-2d-frame-matlab/tests/`)
+
+| Test | Popis | Reference |
+|------|-------|-----------|
+| Test 1 | Konzola, Fz=−10 000 N na špičce, L=4 m | Analyticky: uz=FL³/(3EI), My=FL |
+| Test 2 | Nosník vetknutý na obou koncích, Fz=−12 000 N uprostřed, L=6 m | Analyticky: uz=FL³/(192EI) |
+| Test 3 | Portálový rám s kloubem na průvlaku, Fz=−5 000 N | FEM reference + OOFEM |
+
+```matlab
+% Spuštění testů
+cd 'fem-2d-frame-matlab/tests'
+run_all_tests         % spustí testy 1–3 (reference se vygenerují automaticky)
+
+% OOFEM verifikace (vyžaduje WSL + Python 3)
+cd 'fem-2d-frame-matlab/tests/Test 3'
+run_oofem             % porovná výsledky s OOFEM
+```
+
+**Tolerance:** 0.01 %
+
+### OOFEM infrastruktura (`fem-2d-frame-matlab`)
+
+- Binary: `tests/oofem/oofem` (Linux ELF, spouštěn přes WSL — zkopírován z 3D modulu)
+- Python runner: `tests/oofem/oofem.py` — generuje `test.in` (LinearStatic, domain 2dBeam, Beam2d prvky), spustí OOFEM, parsuje `test.out`, uloží `displacements.mat`
+- Mapping souřadnic: naše XZ rovina → OOFEM XZ rovina; naše z → OOFEM z (D_w, DOF 3); naše ry → OOFEM R_v (DOF 5)
+- Každý fyzický prut = 1 element (Euler-Bernoulli je pro bodové zatížení exaktní s ndisc=1)
+- Klouby: `dofstocondense 1 3` (hlava) nebo `dofstocondense 1 6` (pata) — shodné číslování s MATLAB
 
 ---
 

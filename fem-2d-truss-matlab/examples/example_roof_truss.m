@@ -50,8 +50,8 @@ sections.E = [E; E; E];
 %% Supports
 % Pin at node 1 (x=0.59, z=0) — fixes ux and uz
 % Roller at node 12 (x=22.67, z=0) — fixes uz only
-kinematic.x.nodes = [1];
-kinematic.z.nodes = [1; 12];
+kinematic.x.nodes = [13];
+kinematic.z.nodes = [13; 29];
 
 %% Members (55 total)
 % --- Bottom chord (11 members, section 1) ---
@@ -86,6 +86,9 @@ loads.x.nodes = [];  loads.x.value = [];
 loads.z.nodes = (13:29)';
 loads.z.value = -F * ones(17, 1);
 
+%% Plot: geometry with supports and loads
+plotTrussFn(nodes, members, loads, kinematic, 'Labels', true);
+
 %% Solve
 [displacements, endForces] = linearSolverFn(sections, nodes, kinematic, members, loads);
 N = endForces.local(1, :);
@@ -101,54 +104,3 @@ fprintf('  Max compression: N = %8.1f N  (member %d: n%d -> n%d)\n', ...
 fprintf('  Total load:      Fz = %.0f N\n', sum(loads.z.value));
 fprintf('  Max deflection:  uz = %.4f mm\n', ...
     min(full(displacements.global)) * 1000);
-
-%% Plot — colour-coded axial forces
-figure; hold on; axis equal; grid on;
-xlabel('x [m]'); ylabel('z [m]');
-title('Roof truss — axial forces (blue = tension, red = compression)');
-
-Nmax = max(abs(N));
-for p = 1:nm
-    h_n = members.nodesHead(p);
-    e_n = members.nodesEnd(p);
-    t = N(p) / (Nmax + eps);   % -1 to +1
-    if t >= 0
-        col = [1-t, 1-t, 1];   % white -> blue (tension)
-    else
-        col = [1, 1+t, 1+t];   % white -> red (compression)
-    end
-    lw = 1 + 3*abs(t);
-    plot([nodes.x(h_n), nodes.x(e_n)], [nodes.z(h_n), nodes.z(e_n)], ...
-         '-', 'Color', col, 'LineWidth', lw);
-end
-
-% Node dots
-plot(nodes.x, nodes.z, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 4);
-
-% Support symbols
-xr = max(nodes.x) - min(nodes.x);
-zr = max(nodes.z) - min(nodes.z);
-Lc = max([xr, zr, 1]);
-sz = 0.04 * Lc;
-
-% Pin at node 1
-n = 1;
-patch([nodes.x(n)-sz, nodes.x(n)+sz, nodes.x(n)], ...
-      [nodes.z(n)-sz, nodes.z(n)-sz, nodes.z(n)], ...
-      'b', 'FaceColor', [0.6 0.8 1], 'EdgeColor', 'b');
-
-% Roller at node 12
-n = 12;
-patch([nodes.x(n)-sz, nodes.x(n)+sz, nodes.x(n)], ...
-      [nodes.z(n)-sz, nodes.z(n)-sz, nodes.z(n)], ...
-      'b', 'FaceColor', [0.6 0.8 1], 'EdgeColor', 'b');
-line([nodes.x(n)-sz*1.2, nodes.x(n)+sz*1.2], [nodes.z(n)-sz, nodes.z(n)-sz], ...
-     'Color', 'b', 'LineWidth', 2);
-
-% Legend
-text(0, -0.8, sprintf('Blue = tension (max %.0f N)', max(N)), ...
-     'Color', [0 0 0.8], 'FontSize', 9);
-text(0, -1.1, sprintf('Red  = compression (min %.0f N)', min(N)), ...
-     'Color', [0.8 0 0], 'FontSize', 9);
-
-hold off;
