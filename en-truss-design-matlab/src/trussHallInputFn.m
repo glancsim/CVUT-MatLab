@@ -278,9 +278,9 @@ kinematic.z.nodes = [1; nb];
 % Self-weight estimate per Jandera OK 01, kap. 1.4.4:
 %   g = L/76 * sqrt(q_d * d)   [kN/m²]  — upper bound for combo 1
 %   g_min = 0.5 * g            [kN/m²]  — lower bound for combo 2
-g_d    = params.g_roof + params.s_k;
-g_self = L / 76 * sqrt(g_d * params.truss_spacing);
-g_total = params.g_roof + g_self;
+g_d    = params.g_roof + params.s_k + params.g_purlins/params.purlin_spacing;
+g_self = L / 76 * sqrt(g_d * params.truss_spacing) / params.truss_spacing; %[kN/m²]
+g_total = params.g_roof + params.g_purlins/params.purlin_spacing +  g_self;
 g_min   = params.g_roof + 0.5 * g_self;
 
 % Tributary lengths for top chord nodes

@@ -45,20 +45,20 @@ addpath(femDir);
 %   I = pi/64 * (D^4 - d_i^4)
 %   i = sqrt(I/A)
 
-% --- TR 127×4 (horní pás) ---
-D1 = 0.127; t1 = 0.004; di = D1 - 2*t1;
+% --- TR 108×5 (horní pás) ---
+D1 = 0.108; t1 = 0.005; di = D1 - 2*t1;
 A1 = pi/4 * (D1^2 - di^2);          % m²
 I1 = pi/64 * (D1^4 - di^4);         % m⁴
 i1 = sqrt(I1/A1);                    % m
 
-% --- TR 108×6.3 (dolní pás) ---
-D2 = 0.108; t2 = 0.0063; di = D2 - 2*t2;
+% --- TR 159×5.0 (dolní pás) ---
+D2 = 0.159; t2 = 0.0050; di = D2 - 2*t2;
 A2 = pi/4 * (D2^2 - di^2);
 I2 = pi/64 * (D2^4 - di^4);
 i2 = sqrt(I2/A2);
 
-% --- TR 76.1×3.2 (výplňové pruty) ---
-D3 = 0.0761; t3 = 0.0032; di = D3 - 2*t3;
+% --- TR 82.5×3.6 (výplňové pruty) ---
+D3 = 0.0820; t3 = 0.0036; di = D3 - 2*t3;
 A3 = pi/4 * (D3^2 - di^2);
 I3 = pi/64 * (D3^4 - di^4);
 i3 = sqrt(I3/A3);
@@ -78,17 +78,20 @@ sections.D        = [D1; D2; D3];           % [m] vnější průměr
 sections.t        = [t1; t2; t3];           % [m] tloušťka stěny
 
 %% ── Parametry haly ────────────────────────────────────────────────────
-params.span            = 30;      % [m]
+params.span            = 24;      % [m]
 params.slope           = 0.05;    % [-]  5% sklon
 params.purlin_spacing  = 3;       % [m]  rozteč vaznic
-params.h_support       = 2.5;     % [m]  výška v uložení
-params.truss_spacing   = 3;       % [m]  vzdálenost vazníků
+params.h_support       = 1.8;     % [m]  výška v uložení
+params.truss_spacing   = 6.6;       % [m]  vzdálenost vazníků
 params.f_y             = 355e6;   % [Pa] S355
 params.E               = 210e9;   % [Pa]
-params.g_roof          = 0.35;    % [kN/m²] plášť
-params.s_k             = 0.70;    % [kN/m²] sníh
-params.w_suction       = 0.50;    % [kN/m²] sání (>0 = nahoru)
+params.g_roof          = 0.23;    % [kN/m²] plášť
+params.g_purlins       = 0.09;    % [kN/m] vaznice  
+params.s_k             = 0.80;    % [kN/m²] sníh
+params.w_suction       = 0.48;    % [kN/m²] sání (>0 = nahoru)
 params.sections        = sections;
+params.topology        = 'warren_inverted'; 
+params.warren_verticals = true
 
 %% ── Generování geometrie ──────────────────────────────────────────────
 [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(params);
@@ -100,6 +103,11 @@ combos = loadCombinationsFn(loadParams);
 figure('Name', 'Geometrie vazníku — Kombo 1');
 plotTrussFn(nodes, members, combos{1}.loads, kinematic, 'Labels', true)
 title(sprintf('Příhradový vazník %g m — %s', params.span, combos{1}.description));
+axis equal; grid on; xlabel('x [m]'); ylabel('z [m]');
+
+figure('Name', 'Geometrie vazníku — Kombo 2');
+plotTrussFn(nodes, members, combos{2}.loads, kinematic, 'Labels', true)
+title(sprintf('Příhradový vazník %g m — %s', params.span, combos{2}.description));
 axis equal; grid on; xlabel('x [m]'); ylabel('z [m]');
 
 %% ── FEM + Posudek dle EN 1993-1-1 ─────────────────────────────────────
