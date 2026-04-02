@@ -226,7 +226,41 @@ switch lower(params.topology)
             members.nodesEnd  = [botEnd;  topEnd;  diagEnd ];
             members.sections  = [sec_bot; sec_top; sec_diag];
         end
+    % ── WARREN INVERTED ───────────────────────────────────────────────────
+    case 'warren_inverted'
+        % Alternating diagonals, flipped orientation compared to Warren
+        %   Odd  panels: bot[k+1] → top[k]
+        %   Even panels: bot[k]   → top[k+1]
+        diagHead = zeros(n, 1);
+        diagEnd  = zeros(n, 1);
+        for k = 1:n
+            if mod(k, 2) == 1   % odd panel
+                diagHead(k) = k + 1;
+                diagEnd(k)  = nb + k;
+            else                % even panel
+                diagHead(k) = k;
+                diagEnd(k)  = nb + k + 1;
+            end
+        end
+        sec_diag = 3 * ones(n, 1);
 
+        % --- Verticals: always include first and last ----------------------------
+        vIdx_edge = [1; nb];   % supports (always)
+        
+        if params.warren_verticals
+            vIdx = (2 : nb-1)';            % interior nodes
+            vIdx = [vIdx_edge; vIdx];      % all verticals
+        else
+            vIdx = vIdx_edge;              % only edges
+        end
+        
+        vertHead = vIdx;
+        vertEnd  = nb + vIdx;
+        sec_vert = 3 * ones(numel(vIdx), 1);
+        
+        members.nodesHead = [botHead; topHead; vertHead; diagHead];
+        members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
+        members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
     otherwise
         error('trussHallInputFn: unknown topology ''%s''. Use ''pratt'', ''howe'', or ''warren''.', ...
               params.topology);
