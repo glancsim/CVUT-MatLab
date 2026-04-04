@@ -20,7 +20,7 @@ function [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(pa
 %   'mono'   — mono-pitch (pultový šikmý): linearly rising from left
 %              (h_support) to right (h_support + slope * span)
 %
-%   Section groups:  1 = top chord,  2 = bottom chord,  3 = web (diag + vert)
+%   Section groups:  1 = top chord,  2 = bottom chord,  3 = diagonals,  4 = verticals
 %
 % INPUTS:
 %   params  - struct with fields (all optional, defaults shown):
@@ -38,11 +38,13 @@ function [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(pa
 %     .shape            char     Chord shape                   ('saddle')
 %     .warren_verticals logical  Add verticals to Warren truss (false)
 %     .sections         struct   Cross-section properties (required):
-%                                  .A        [m²]   (3×1)
-%                                  .E        [Pa]   (3×1)
-%                                  .I        [m⁴]   (3×1)
-%                                  .i_radius [m]    (3×1)
-%                                  .curve    cell   (3×1) e.g. {'a';'a';'a'}
+%                                  .A        [m²]   (3×1 or 4×1)
+%                                  .E        [Pa]   (3×1 or 4×1)
+%                                  .I        [m⁴]   (3×1 or 4×1)
+%                                  .i_radius [m]    (3×1 or 4×1)
+%                                  .curve    cell   (3×1 or 4×1)
+%                                  Groups: 1=top chord, 2=bottom chord,
+%                                          3=diagonals, 4=verticals
 %
 % OUTPUTS:
 %   nodes     - struct: .x, .z (nnodes×1) [m]
@@ -142,7 +144,7 @@ switch lower(params.topology)
         % Verticals: bot[k] → top[k],  k = 1..nb
         vertHead = (1 : nb)';
         vertEnd  = (nb+1 : 2*nb)';
-        sec_vert = 3 * ones(nb, 1);
+        sec_vert = 4 * ones(nb, 1);
 
         % Diagonals lean toward nearest support (tension under gravity):
         %   Left half  (k=1..nL): bot[k+1] → top[k]
@@ -170,7 +172,7 @@ switch lower(params.topology)
         % Verticals: same as Pratt
         vertHead = (1 : nb)';
         vertEnd  = (nb+1 : 2*nb)';
-        sec_vert = 3 * ones(nb, 1);
+        sec_vert = 4 * ones(nb, 1);
 
         % Diagonals lean away from nearest support (compression under gravity):
         %   Left half  (k=1..nL): bot[k] → top[k+1]
@@ -216,7 +218,7 @@ switch lower(params.topology)
             vIdx     = (2 : nb-1)';   % interior nodes of bottom chord
             vertHead = vIdx;
             vertEnd  = nb + vIdx;
-            sec_vert = 3 * ones(numel(vIdx), 1);
+            sec_vert = 4 * ones(numel(vIdx), 1);
 
             members.nodesHead = [botHead; topHead; vertHead; diagHead];
             members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
@@ -256,7 +258,7 @@ switch lower(params.topology)
         
         vertHead = vIdx;
         vertEnd  = nb + vIdx;
-        sec_vert = 3 * ones(numel(vIdx), 1);
+        sec_vert = 4 * ones(numel(vIdx), 1);
         
         members.nodesHead = [botHead; topHead; vertHead; diagHead];
         members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];

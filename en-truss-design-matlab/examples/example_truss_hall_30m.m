@@ -36,9 +36,10 @@ addpath(femDir);
 
 %% ── Průřezy (zadáme přímo průřezovými charakteristikami) ──────────────
 %
-%  Skupina 1 = horní pás  (TR 127×4)
-%  Skupina 2 = dolní pás  (TR 108×6.3)
-%  Skupina 3 = výplňové pruty (TR 76.1×3.2)
+%  Skupina 1 = horní pás   (TR 108×5)
+%  Skupina 2 = dolní pás   (TR 159×5)
+%  Skupina 3 = diagonály   (TR 82.5×3.6)
+%  Skupina 4 = svislice    (TR 82.5×3.6 — prozatím stejný jako diag.)
 %
 % Vzorce pro CHS:
 %   A = pi/4 * (D^2 - d_i^2),   d_i = D - 2*t
@@ -57,25 +58,32 @@ A2 = pi/4 * (D2^2 - di^2);
 I2 = pi/64 * (D2^4 - di^4);
 i2 = sqrt(I2/A2);
 
-% --- TR 82.5×3.6 (výplňové pruty) ---
+% --- TR 82.5×3.6 (diagonály) ---
 D3 = 0.0820; t3 = 0.0036; di = D3 - 2*t3;
 A3 = pi/4 * (D3^2 - di^2);
 I3 = pi/64 * (D3^4 - di^4);
 i3 = sqrt(I3/A3);
 
+% --- TR 82.5×3.6 (svislice — prozatím stejný jako diagonály) ---
+D4 = D3; t4 = t3; di = D4 - 2*t4;
+A4 = A3;
+I4 = I3;
+i4 = i3;
+
 fprintf('Průřezové charakteristiky:\n');
-fprintf('  TR 127×4:    A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A1*1e4, i1*1e3, D1/t1);
-fprintf('  TR 108×6.3:  A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A2*1e4, i2*1e3, D2/t2);
-fprintf('  TR 76.1×3.2: A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A3*1e4, i3*1e3, D3/t3);
+fprintf('  TR 108×5:    A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A1*1e4, i1*1e3, D1/t1);
+fprintf('  TR 159×5:    A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A2*1e4, i2*1e3, D2/t2);
+fprintf('  TR 82.5×3.6: A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A3*1e4, i3*1e3, D3/t3);
+fprintf('  TR 60.3×3.2: A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A4*1e4, i4*1e3, D4/t4);
 fprintf('  Límit třídy 1 (S355): D/t ≤ %.1f\n', 50*(235/355));
 
-sections.A        = [A1; A2; A3];           % [m²]
-sections.E        = [210e9; 210e9; 210e9];  % [Pa]
-sections.I        = [I1; I2; I3];           % [m⁴]
-sections.i_radius = [i1; i2; i3];           % [m]
-sections.curve    = {'a'; 'a'; 'a'};         % horně válcované CHS → křivka a
-sections.D        = [D1; D2; D3];           % [m] vnější průměr
-sections.t        = [t1; t2; t3];           % [m] tloušťka stěny
+sections.A        = [A1; A2; A3; A4];                  % [m²]
+sections.E        = [210e9; 210e9; 210e9; 210e9];      % [Pa]
+sections.I        = [I1; I2; I3; I4];                  % [m⁴]
+sections.i_radius = [i1; i2; i3; i4];                  % [m]
+sections.curve    = {'a'; 'a'; 'a'; 'a'};               % horně válcované CHS → křivka a
+sections.D        = [D1; D2; D3; D4];                  % [m] vnější průměr
+sections.t        = [t1; t2; t3; t4];                  % [m] tloušťka stěny
 
 %% ── Parametry haly ────────────────────────────────────────────────────
 params.span            = 24;      % [m]
