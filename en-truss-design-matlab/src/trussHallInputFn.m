@@ -77,6 +77,9 @@ if ~isfield(params, 'E'),                 params.E                 = 210e9;  end
 if ~isfield(params, 'g_roof'),            params.g_roof            = 0.35;   end
 if ~isfield(params, 's_k'),               params.s_k               = 0.7;    end
 if ~isfield(params, 'w_suction'),         params.w_suction         = 0.5;    end
+if ~isfield(params, 'v_b'),              params.v_b              = [];      end
+if ~isfield(params, 'terrain_cat'),      params.terrain_cat      = 'II';    end
+if ~isfield(params, 'h_eave'),           params.h_eave           = 0;       end
 if ~isfield(params, 'topology'),          params.topology          = 'pratt'; end
 if ~isfield(params, 'shape'),             params.shape             = 'saddle'; end
 if ~isfield(params, 'warren_verticals'),  params.warren_verticals  = false;  end
@@ -303,6 +306,30 @@ loadParams.n_panels        = n;
 loadParams.sections        = sections;
 loadParams.topology        = params.topology;
 loadParams.shape           = params.shape;
+
+%% --- Wind load (optional — requires v_b) --------------------------------
+% If params.v_b is set, compute q_p and c_pe via windLoadsFn.
+% Ridge height = column height (h_eave) + truss height at midspan.
+if ~isempty(params.v_b)
+    switch lower(params.shape)
+        case 'flat',  h_truss_max = params.h_support;
+        case 'mono',  h_truss_max = params.h_support + params.slope * L;
+        otherwise,    h_truss_max = params.h_support + params.slope * L/2;
+    end
+    h_ridge = params.h_eave + h_truss_max;
+    wind = windLoadsFn(params.v_b, params.terrain_cat, h_ridge, params.slope);
+    loadParams.q_b      = wind.q_b;
+    loadParams.q_p      = wind.q_p;
+    loadParams.c_e      = wind.c_e;
+    loadParams.c_pe_Wt  = wind.c_pe_Wt;
+    loadParams.c_pe_Wl  = wind.c_pe_Wl;
+    loadParams.q_Wt     = wind.q_Wt;
+    loadParams.q_Wl     = wind.q_Wl;
+    loadParams.w_suction = wind.q_Wt;   % backward compat
+    loadParams.v_b       = params.v_b;
+    loadParams.terrain_cat = params.terrain_cat;
+    loadParams.h_ridge   = h_ridge;
+end
 
 fprintf('Vazník: L = %.0f m, a = %.1f m, n = %d panelů  [%s / %s]\n', ...
     L, a, n, upper(params.topology), upper(params.shape));

@@ -1,17 +1,18 @@
 function combos = loadCombinationsFn(loadParams)
 % loadCombinationsFn  Generate ULS load combinations for a hall truss.
 %
-% Two governing combinations for saddle roofs with slope ≤ 20%
-% per Jandera — OK 01, kap. 1.4.4:
+% Five governing combinations for saddle roofs per Jandera — OK 01, kap. 3
+% and EN 1990, Eq. 6.10:
 %
-%   Combo 1:  1.35·G + 1.5·S   (permanent + snow)
-%             → max compression in top chord
+%   KZS 1:  1.35·G + 1.5·S              → max compression in top chord
+%   KZS 2:  1.35·G + 1.5·S + 0.9·Wt    → combined snow + transverse wind
+%   KZS 3:  1.35·G + 1.5·Wt + 0.75·S   → dominant wind + reduced snow
+%   KZS 4:  1.0·Gmin + 1.5·Wt          → uplift — transverse wind suction
+%   KZS 5:  1.0·Gmin + 1.5·Wl          → uplift — longitudinal wind suction
 %
-%   Combo 2:  1.0·G_min + 1.5·W_suction
-%             → wind uplift, possible compression in bottom chord
-%             → G_min = g_roof + 0.5·g_self  (lower dead load estimate)
+% Snow design value:  S = μ₁·sk = 0.8·sk  (EN 1991-1-3, Tab. 5.2, α ≤ 30°)
+% Combination factors: ψ₀,S = 0.5,  ψ₀,W = 0.6
 %
-% Loads are applied as concentrated forces at top chord nodes (purlin locations).
 % Forces are in [N], positive = upward.
 %
 % INPUTS:
@@ -22,55 +23,85 @@ function combos = loadCombinationsFn(loadParams)
 %     .g_total        [kN/m²]  dead load (upper bound)
 %     .g_min          [kN/m²]  dead load (lower bound)
 %     .s_k            [kN/m²]  snow characteristic
-%     .w_suction      [kN/m²]  wind suction characteristic (>0 = upward)
+%     .q_Wt           [kN/m²]  transverse wind uplift (>0 = upward)
+%                              fallback: .w_suction
+%     .q_Wl           [kN/m²]  longitudinal wind uplift (>0 = upward)
+%                              fallback: .w_suction
 %
 % OUTPUTS:
-%   combos  - (2×1) cell array, each element is a struct with:
+%   combos  - (5×1) cell array, each element is a struct with:
 %     .loads        struct compatible with linearSolverFn
 %       .x.nodes, .x.value   (empty — no horizontal loads)
 %       .z.nodes, .z.value   [N] vertical nodal forces
-%     .description  string label
+%     .description  string label (HTML)
 %     .gamma_G      partial factor for permanent action
-%     .gamma_Q      partial factor for variable action
-%     .q_net        [kN/m²]  net distributed load for reference
+%     .gamma_Q      partial factor for leading variable action
+%     .q_G          [kN/m²] dead load component (factored)
+%     .q_S          [kN/m²] snow component (factored, downward positive)
+%     .q_W          [kN/m²] wind component (factored, upward positive)
+%     .q_net        [kN/m²] net downward load (positive = downward)
 %
 % (c) S. Glanc, 2026
 
 b    = loadParams.truss_spacing;   % [m]
-trib = loadParams.trib;            % [m], tributary length per top node
-top  = loadParams.top_nodes;       % node indices
+trib = loadParams.trib;            % [m]
+top  = loadParams.top_nodes;
 
-%% Combo 1: 1.35·G + 1.5·S  (downward)
-q1 = 1.35 * loadParams.g_total + 1.5 * loadParams.s_k;   % [kN/m²]
-Fz1 = -q1 * b * trib * 1e3;   % [N], negative = downward
+% Snow design value: μ₁ = 0.8 per EN 1991-1-3 Tab. 5.2 (saddle, α ≤ 30°)
+mu1 = 0.8;
+s_d = mu1 * loadParams.s_k;       % [kN/m²]
 
-loads1.x.nodes = [];  loads1.x.value = [];
-loads1.z.nodes = top;
-loads1.z.value = Fz1;
+% Wind uplift (fallback to w_suction if computed values not available)
+if isfield(loadParams, 'q_Wt')
+    q_Wt = loadParams.q_Wt;
+elseif isfield(loadParams, 'w_suction')
+    q_Wt = loadParams.w_suction;
+else
+    q_Wt = 0;
+end
 
-c1.loads       = loads1;
-c1.description = '1.35·G + 1.5·S  (stálé + sníh)';
-c1.gamma_G     = 1.35;
-c1.gamma_Q     = 1.5;
-c1.q_net       = q1;
+if isfield(loadParams, 'q_Wl')
+    q_Wl = loadParams.q_Wl;
+elseif isfield(loadParams, 'w_suction')
+    q_Wl = loadParams.w_suction;
+else
+    q_Wl = 0;
+end
 
-%% Combo 2: 1.0·G_min + 1.5·W_suction  (uplift)
-% Net force per unit area (positive = upward):
-%   gravity component: -1.0 * g_min  (downward = negative)
-%   wind suction:      +1.5 * w_suction (upward = positive)
-q2  = -1.0 * loadParams.g_min + 1.5 * loadParams.w_suction;   % [kN/m²]
-Fz2 = q2 * b * trib * 1e3;   % [N], positive if net uplift
+%% Helper — assemble one combo struct -----------------------------------
+    function c = makeCombo(gG, qG, gS, qS, gW, qW, desc)
+        % qG, qS: downward [kN/m²];  qW: upward [kN/m²]
+        q_net = gG*qG + gS*qS - gW*qW;          % net downward [kN/m²]
+        Fz    = -q_net * b .* trib * 1e3;         % [N], negative = downward
+        lds.x.nodes = [];  lds.x.value = [];
+        lds.z.nodes = top;
+        lds.z.value = Fz;
+        c.loads       = lds;
+        c.description = desc;
+        c.gamma_G     = gG;
+        c.gamma_Q     = max([gS, gW]);
+        c.q_G         = gG * qG;
+        c.q_S         = gS * qS;
+        c.q_W         = gW * qW;
+        c.q_net       = q_net;
+    end
 
-loads2.x.nodes = [];  loads2.x.value = [];
-loads2.z.nodes = top;
-loads2.z.value = Fz2;
+%% 5 KZS ----------------------------------------------------------------
+c1 = makeCombo(1.35, loadParams.g_total, 1.50, s_d,  0,    0,    ...
+    '1,35&middot;G + 1,5&middot;S');
 
-c2.loads       = loads2;
-c2.description = '1.0·G_min + 1.5·W  (min stálé + sání)';
-c2.gamma_G     = 1.0;
-c2.gamma_Q     = 1.5;
-c2.q_net       = q2;
+c2 = makeCombo(1.35, loadParams.g_total, 1.50, s_d,  0.90, q_Wt, ...
+    '1,35&middot;G + 1,5&middot;S + 0,9&middot;W<sub>t</sub>');
 
-combos = {c1; c2};
+c3 = makeCombo(1.35, loadParams.g_total, 0.75, s_d,  1.50, q_Wt, ...
+    '1,35&middot;G + 1,5&middot;W<sub>t</sub> + 0,75&middot;S');
+
+c4 = makeCombo(1.00, loadParams.g_min,   0,    0,    1.50, q_Wt, ...
+    '1,0&middot;G<sub>min</sub> + 1,5&middot;W<sub>t</sub>');
+
+c5 = makeCombo(1.00, loadParams.g_min,   0,    0,    1.50, q_Wl, ...
+    '1,0&middot;G<sub>min</sub> + 1,5&middot;W<sub>l</sub>');
+
+combos = {c1; c2; c3; c4; c5};
 
 end
