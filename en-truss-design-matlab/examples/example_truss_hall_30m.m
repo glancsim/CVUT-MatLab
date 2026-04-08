@@ -34,12 +34,17 @@ femDir = fullfile(root, '..', 'fem-2d-truss-matlab', 'src');
 addpath(srcDir);
 addpath(femDir);
 
-%% ── Průřezy (zadáme přímo průřezovými charakteristikami) ──────────────
+%% ── Průřezy (základní skupiny — trussHallInputFn expanduje symetricky) ──
 %
-%  Skupina 1 = horní pás   (TR 108×5)
-%  Skupina 2 = dolní pás   (TR 159×5)
-%  Skupina 3 = diagonály   (TR 82.5×3.6)
-%  Skupina 4 = svislice    (TR 82.5×3.6 — prozatím stejný jako diag.)
+%  Vstupní skupiny (3 nebo 4):
+%    1 = horní pás   (TR 108×5)
+%    2 = dolní pás   (TR 159×5)
+%    3 = diagonály   (TR 82.5×3.6)
+%    4 = svislice    (TR 82.5×3.6 — prozatím stejný jako diag.)
+%
+%  trussHallInputFn automaticky rozšíří na symetrické podskupiny:
+%    sec 3..2+nD = diagonály (každý symetrický pár = vlastní skupina)
+%    sec 2+nD+1..nGroups = svislice (každý symetrický pár = vlastní skupina)
 %
 % Vzorce pro CHS:
 %   A = pi/4 * (D^2 - d_i^2),   d_i = D - 2*t
@@ -95,7 +100,7 @@ params.f_y             = 355e6;   % [Pa] S355
 params.E               = 210e9;   % [Pa]
 params.g_roof          = 0.23;    % [kN/m²] plášť
 params.g_purlins       = 0.09;    % [kN/m] vaznice  
-params.s_k             = 0.80;    % [kN/m²] sníh
+params.s_k             = 1.0;    % [kN/m²] sníh
 params.w_suction       = 0.48;    % [kN/m²] sání (>0 = nahoru)
 params.sections        = sections;
 params.topology        = 'warren_inverted'; 
@@ -104,6 +109,20 @@ params.warren_verticals = true
 %% ── Generování geometrie ──────────────────────────────────────────────
 [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(params);
 nmembers = numel(members.nodesHead);
+
+% Přehled symetrických skupin
+sg = loadParams.sectionGroups;
+fprintf('\nSymetrické skupiny průřezů (%d celkem):\n', sg.nGroups);
+fprintf('  sec 1      = horní pás    (TR %.0f×%.1f)\n', sections.D(1)*1e3, sections.t(1)*1e3);
+fprintf('  sec 2      = dolní pás    (TR %.0f×%.1f)\n', sections.D(2)*1e3, sections.t(2)*1e3);
+for k = 1:sg.nDiag
+    idx = sg.diagIdx(k);
+    fprintf('  sec %2d     = diagonála %d  (TR %.0f×%.1f)\n', idx, k, sections.D(idx)*1e3, sections.t(idx)*1e3);
+end
+for k = 1:sg.nVert
+    idx = sg.vertIdx(k);
+    fprintf('  sec %2d     = svislice %d   (TR %.0f×%.1f)\n', idx, k, sections.D(idx)*1e3, sections.t(idx)*1e3);
+end
 
 %% ── Vizualizace geometrie ─────────────────────────────────────────────
 combos = loadCombinationsFn(loadParams);

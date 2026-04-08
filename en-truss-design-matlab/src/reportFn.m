@@ -166,19 +166,54 @@ w(fid, ['<table><tr><th>Skupina</th><th>Ozna&#269;en&#237;</th>'...
          '<th>D [mm]</th><th>t [mm]</th><th>A [cm&sup2;]</th>'...
          '<th>I [cm<sup>4</sup>]</th><th>i [mm]</th><th>D/t</th>'...
          '<th>T&#345;&#237;da&sup1;</th><th>K&#345;ivka vzp.</th></tr>']);
-sec_names = {'Horn&#237; p&#225;s', 'Doln&#237; p&#225;s', 'V&yacute;pl&#328;'};
-for sg = 1:3
-    D_mm  = sections.D(sg)*1e3;
-    t_mm  = sections.t(sg)*1e3;
+% Build section names dynamically
+nSec = numel(sections.A);
+sec_names = cell(nSec, 1);
+sec_names{1} = 'Horn&#237; p&#225;s';
+sec_names{2} = 'Doln&#237; p&#225;s';
+if isfield(loadParams, 'sectionGroups')
+    sgrp = loadParams.sectionGroups;
+    for k = 1:sgrp.nDiag
+        sec_names{sgrp.diagIdx(k)} = sprintf('Diagon&#225;la %d', k);
+    end
+    for k = 1:sgrp.nVert
+        sec_names{sgrp.vertIdx(k)} = sprintf('Svislice %d', k);
+    end
+else
+    % Fallback for legacy 3-group input
+    for sg = 3:nSec
+        sec_names{sg} = sprintf('V&yacute;pl&#328; %d', sg - 2);
+    end
+end
+
+% Print only unique profiles (merge rows with identical D, t)
+D_all = sections.D * 1e3;   % [mm]
+t_all = sections.t * 1e3;
+profile_key = round(D_all * 100 + t_all, 2);  % unique key per D/t combo
+[uniq_keys, ~, key_idx] = unique(profile_key);
+
+for uk = 1:numel(uniq_keys)
+    grp = find(key_idx == uk);
+    sg  = grp(1);  % representative section
+    D_mm  = D_all(sg);
+    t_mm  = t_all(sg);
     A_cm2 = sections.A(sg)*1e4;
     I_cm4 = sections.I(sg)*1e8;
     i_mm  = sections.i_radius(sg)*1e3;
     dt    = D_mm/t_mm;
-    p1 = find(members.sections == sg, 1);
-    if ~isempty(p1)
-        sc_val  = results.checks{results.governing_combo(p1)}(p1).section_class;
-        cls_str = num2strOrDash(sc_val);
-    else; cls_str = '&mdash;'; end
+    % Section class from any member using this group
+    cls_str = '&mdash;';
+    for gi = 1:numel(grp)
+        p1 = find(members.sections == grp(gi), 1);
+        if ~isempty(p1)
+            sc_val  = results.checks{results.governing_combo(p1)}(p1).section_class;
+            cls_str = num2strOrDash(sc_val);
+            break;
+        end
+    end
+    % Name: list all group names
+    names = sec_names(grp);
+    name_str = strjoin(names, ', ');
     wf(fid, ['<tr><td>%s</td>'...
              '<td style="text-align:center">TR&nbsp;%.0f&times;%.1f</td>'...
              '<td style="text-align:right">%.0f</td>'...
@@ -189,7 +224,7 @@ for sg = 1:3
              '<td style="text-align:right">%.1f</td>'...
              '<td style="text-align:center"><strong>%s</strong></td>'...
              '<td style="text-align:center">%s</td></tr>'], ...
-        sec_names{sg}, D_mm, t_mm, D_mm, t_mm, A_cm2, I_cm4, i_mm, dt, cls_str, sections.curve{sg});
+        name_str, D_mm, t_mm, D_mm, t_mm, A_cm2, I_cm4, i_mm, dt, cls_str, sections.curve{sg});
 end
 w(fid, '</table>');
 wf(fid, '<p class="ref">&sup1; T&#345;&#237;da CHS dle EN 1993-1-1, Tab. 5.2: T&#345;. 1 &rarr; $D/t \\leq 50\\varepsilon^2 = %.1f$, T&#345;. 2 &rarr; $D/t \\leq 70\\varepsilon^2 = %.1f$ &nbsp; ($\\varepsilon = \\sqrt{235/f_y} = %.3f$)</p>', ...
