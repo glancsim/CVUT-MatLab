@@ -20,7 +20,10 @@ function [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(pa
 %   'mono'   — mono-pitch (pultový šikmý): linearly rising from left
 %              (h_support) to right (h_support + slope * span)
 %
-%   Section groups:  1 = top chord,  2 = bottom chord,  3 = diagonals,  4 = verticals
+%   Section groups (input):  1 = top chord, 2 = bottom chord, 3 = diagonals, [4 = verticals]
+%   Symmetric expansion:  diagonals and verticals are automatically split
+%   into symmetric sub-groups (each pair equidistant from midspan = one group).
+%   Output sections has nGroups entries: 1=top, 2=bot, 3..2+nD = diag, 2+nD+1..end = vert.
 %
 % INPUTS:
 %   params  - struct with fields (all optional, defaults shown):
@@ -140,6 +143,11 @@ topEnd   = (nb+2 : 2*nb)';
 sec_top  = 1 * ones(n, 1);
 
 % --- Verticals and diagonals (topology-dependent) ------------------------
+% Each case builds diagHead, diagEnd, vertHead, vertEnd.
+% Section assignment (symmetric groups) is done after the switch.
+vertHead = zeros(0, 1);
+vertEnd  = zeros(0, 1);
+
 switch lower(params.topology)
 
     % ── PRATT ──────────────────────────────────────────────────────────────
@@ -147,7 +155,6 @@ switch lower(params.topology)
         % Verticals: bot[k] → top[k],  k = 1..nb
         vertHead = (1 : nb)';
         vertEnd  = (nb+1 : 2*nb)';
-        sec_vert = 4 * ones(nb, 1);
 
         % Diagonals lean toward nearest support (tension under gravity):
         %   Left half  (k=1..nL): bot[k+1] → top[k]
@@ -164,18 +171,12 @@ switch lower(params.topology)
             diagHead(nL + k) = nL + k;
             diagEnd(nL + k)  = nb + nL + k + 1;
         end
-        sec_diag = 3 * ones(n, 1);
-
-        members.nodesHead = [botHead; topHead; vertHead; diagHead];
-        members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
-        members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
 
     % ── HOWE ───────────────────────────────────────────────────────────────
     case 'howe'
         % Verticals: same as Pratt
         vertHead = (1 : nb)';
         vertEnd  = (nb+1 : 2*nb)';
-        sec_vert = 4 * ones(nb, 1);
 
         % Diagonals lean away from nearest support (compression under gravity):
         %   Left half  (k=1..nL): bot[k] → top[k+1]
@@ -192,11 +193,6 @@ switch lower(params.topology)
             diagHead(nL + k) = nL + k + 1;
             diagEnd(nL + k)  = nb + nL + k;
         end
-        sec_diag = 3 * ones(n, 1);
-
-        members.nodesHead = [botHead; topHead; vertHead; diagHead];
-        members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
-        members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
 
     % ── WARREN ─────────────────────────────────────────────────────────────
     case 'warren'
@@ -214,23 +210,13 @@ switch lower(params.topology)
                 diagEnd(k)  = nb + k;
             end
         end
-        sec_diag = 3 * ones(n, 1);
 
         if params.warren_verticals
-            % Add verticals at interior nodes only (not at supports)
             vIdx     = (2 : nb-1)';   % interior nodes of bottom chord
             vertHead = vIdx;
             vertEnd  = nb + vIdx;
-            sec_vert = 4 * ones(numel(vIdx), 1);
-
-            members.nodesHead = [botHead; topHead; vertHead; diagHead];
-            members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
-            members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
-        else
-            members.nodesHead = [botHead; topHead; diagHead];
-            members.nodesEnd  = [botEnd;  topEnd;  diagEnd ];
-            members.sections  = [sec_bot; sec_top; sec_diag];
         end
+
     % ── WARREN INVERTED ───────────────────────────────────────────────────
     case 'warren_inverted'
         % Alternating diagonals, flipped orientation compared to Warren
@@ -247,32 +233,100 @@ switch lower(params.topology)
                 diagEnd(k)  = nb + k + 1;
             end
         end
-        sec_diag = 3 * ones(n, 1);
 
-        % --- Verticals: always include first and last ----------------------------
-        vIdx_edge = [1; nb];   % supports (always)
-        
+        % Verticals: always include first and last
+        vIdx_edge = [1; nb];
         if params.warren_verticals
-            vIdx = (2 : nb-1)';            % interior nodes
-            vIdx = [vIdx_edge; vIdx];      % all verticals
+            vIdx = [vIdx_edge; (2 : nb-1)'];
         else
-            vIdx = vIdx_edge;              % only edges
+            vIdx = vIdx_edge;
         end
-        
         vertHead = vIdx;
         vertEnd  = nb + vIdx;
-        sec_vert = 4 * ones(numel(vIdx), 1);
-        
-        members.nodesHead = [botHead; topHead; vertHead; diagHead];
-        members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
-        members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
+
     otherwise
         error('trussHallInputFn: unknown topology ''%s''. Use ''pratt'', ''howe'', or ''warren''.', ...
               params.topology);
 end
 
-%% --- Sections (pass through) -------------------------------------------
-sections = params.sections;
+%% --- Symmetric section groups for diagonals and verticals ---------------
+%  Each symmetric pair (equidistant from midspan) gets its own section index.
+%  Numbering: 1=top chord, 2=bottom chord,
+%             3..2+nDiagGroups = diagonal groups (outermost first),
+%             2+nDiagGroups+1..nGroups = vertical groups (outermost first).
+
+% --- Diagonals ---
+mid_x_diag = (nodes.x(diagHead) + nodes.x(diagEnd)) / 2;
+dist_diag  = abs(mid_x_diag - L/2);
+[uniq_dd, ~, grp_diag] = unique(round(dist_diag, 6));
+% Remap so outermost = lowest section index (sec 3)
+[~, sort_dd] = sort(uniq_dd, 'descend');
+remap_d = zeros(numel(uniq_dd), 1);
+remap_d(sort_dd) = (1:numel(sort_dd))';
+sec_diag = 2 + remap_d(grp_diag);
+nDiagGroups = numel(uniq_dd);
+
+% --- Verticals ---
+hasVert = ~isempty(vertHead);
+if hasVert
+    mid_x_vert = (nodes.x(vertHead) + nodes.x(vertEnd)) / 2;
+    dist_vert  = abs(mid_x_vert - L/2);
+    [uniq_dv, ~, grp_vert] = unique(round(dist_vert, 6));
+    [~, sort_dv] = sort(uniq_dv, 'descend');
+    remap_v = zeros(numel(uniq_dv), 1);
+    remap_v(sort_dv) = (1:numel(sort_dv))';
+    sec_vert = 2 + nDiagGroups + remap_v(grp_vert);
+    nVertGroups = numel(uniq_dv);
+else
+    sec_vert = zeros(0, 1);
+    nVertGroups = 0;
+end
+
+nGroups = 2 + nDiagGroups + nVertGroups;
+
+%% --- Assemble members ---------------------------------------------------
+if hasVert
+    members.nodesHead = [botHead; topHead; vertHead; diagHead];
+    members.nodesEnd  = [botEnd;  topEnd;  vertEnd;  diagEnd ];
+    members.sections  = [sec_bot; sec_top; sec_vert; sec_diag];
+else
+    members.nodesHead = [botHead; topHead; diagHead];
+    members.nodesEnd  = [botEnd;  topEnd;  diagEnd ];
+    members.sections  = [sec_bot; sec_top; sec_diag];
+end
+
+%% --- Expand sections to nGroups ----------------------------------------
+%  Input sections has 3 or 4 entries (top, bot, diag, [vert]).
+%  Replicate diagonal properties to groups 3..2+nDiagGroups,
+%  replicate vertical properties to groups 2+nDiagGroups+1..nGroups.
+secIn = params.sections;
+diagSrcIdx = 3;                                        % source for diagonals
+vertSrcIdx = min(numel(secIn.A), 4);                   % source for verticals (4 if exists, else 3)
+
+sections.A        = zeros(nGroups, 1);
+sections.E        = zeros(nGroups, 1);
+sections.I        = zeros(nGroups, 1);
+sections.i_radius = zeros(nGroups, 1);
+sections.curve    = cell(nGroups, 1);
+if isfield(secIn, 'D'), sections.D = zeros(nGroups, 1); end
+if isfield(secIn, 't'), sections.t = zeros(nGroups, 1); end
+
+for sg = 1:nGroups
+    if sg <= 2
+        srcIdx = sg;                     % top/bottom chord
+    elseif sg <= 2 + nDiagGroups
+        srcIdx = diagSrcIdx;             % diagonal group → copy from input sec 3
+    else
+        srcIdx = vertSrcIdx;             % vertical group → copy from input sec 4 (or 3)
+    end
+    sections.A(sg)        = secIn.A(srcIdx);
+    sections.E(sg)        = secIn.E(srcIdx);
+    sections.I(sg)        = secIn.I(srcIdx);
+    sections.i_radius(sg) = secIn.i_radius(srcIdx);
+    sections.curve{sg}    = secIn.curve{srcIdx};
+    if isfield(secIn, 'D'), sections.D(sg) = secIn.D(srcIdx); end
+    if isfield(secIn, 't'), sections.t(sg) = secIn.t(srcIdx); end
+end
 
 %% --- Supports -----------------------------------------------------------
 % Pin at left support (node 1), roller at right support (node nb)
@@ -306,6 +360,11 @@ loadParams.purlin_spacing  = params.purlin_spacing;
 loadParams.bracing_spacing = params.truss_spacing;
 loadParams.n_panels        = n;
 loadParams.sections        = sections;
+loadParams.sectionGroups.nDiag    = nDiagGroups;
+loadParams.sectionGroups.nVert    = nVertGroups;
+loadParams.sectionGroups.diagIdx  = (3 : 2+nDiagGroups);
+loadParams.sectionGroups.vertIdx  = (2+nDiagGroups+1 : nGroups);
+loadParams.sectionGroups.nGroups  = nGroups;
 loadParams.topology        = params.topology;
 loadParams.shape           = params.shape;
 
@@ -335,6 +394,8 @@ end
 
 fprintf('Vazník: L = %.0f m, a = %.1f m, n = %d panelů  [%s / %s]\n', ...
     L, a, n, upper(params.topology), upper(params.shape));
+fprintf('  Průřezové skupiny: %d (2 pásy + %d diag + %d vert)\n', ...
+    nGroups, nDiagGroups, nVertGroups);
 fprintf('  Vlastní tíha (odhad): g = %.3f kN/m²,  g_min = %.3f kN/m²\n', ...
     g_total, g_min);
 
