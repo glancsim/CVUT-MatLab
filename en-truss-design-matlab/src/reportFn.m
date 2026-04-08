@@ -1,4 +1,4 @@
-function reportFn(params, nodes, members, sections, loadParams, results, filename)
+function reportFn(params, nodes, members, sections, kinematic, loadParams, results, filename)
 % reportFn  Generate a self-contained HTML engineering calculation report.
 %
 % Produces a professional HTML file documenting the EN 1993-1-1 design check
@@ -9,7 +9,7 @@ function reportFn(params, nodes, members, sections, loadParams, results, filenam
 %   1. Záhlaví (header)
 %   2. Geometrie vazníku
 %   3. Průřezy
-%   4. Zatížení — char. hodnoty, výpočet sněhu a větru, 5 KZS
+%   4. Zatížení — char. hodnoty, výpočet sněhu a větru, 5 KZS + schémata
 %   5. Vzpěrné délky (Tab. 1.29)
 %   6. Metodika posudku (EN 1993-1-1 formule s citacemi)
 %   7. Ukázka výpočtu — step-by-step pro kritický prut
@@ -21,13 +21,14 @@ function reportFn(params, nodes, members, sections, loadParams, results, filenam
 %   nodes      - struct with .x, .z
 %   members    - struct with .nodesHead, .nodesEnd, .sections
 %   sections   - struct with .A, .E, .I, .i_radius, .curve, .D, .t
+%   kinematic  - struct with .x.nodes, .z.nodes (supports)
 %   loadParams - struct from trussHallInputFn (g_total, g_min, …)
 %   results    - struct from designCheckFn
 %   filename   - output HTML file path (default: 'vaznik_posudek.html')
 %
 % (c) S. Glanc, 2026
 
-if nargin < 7 || isempty(filename)
+if nargin < 8 || isempty(filename)
     filename = 'vaznik_posudek.html';
 end
 
@@ -313,6 +314,26 @@ end
 w(fid, '</table>');
 w(fid, '<p class="ref">q<sub>S</sub>, q<sub>W</sub> jsou v&#253;po&#269;tov&#233; hodnoty v&#269;etn&#283; &gamma; a &psi;. q<sub>W</sub> > 0 = sn&#237;&#382;en&#237; v&yacute;sledn&#233;ho zat&#237;&#382;en&#237; (v&#237;tr zvedá st&#345;echu).</p>');
 
+% --- Obrázky zatěžovacích stavů (KZS) ------------------------------------
+w(fid, '<p><strong>Sch&#233;mata zat&#283;&#382;ovac&#237;ch stav&#367;</strong></p>');
+prevVisible = get(0, 'DefaultFigureVisible');
+set(0, 'DefaultFigureVisible', 'off');
+for ic = 1:ncombos
+    hfig = plotTrussFn(nodes, members, results.combos{ic}.loads, kinematic);
+    title(hfig.CurrentAxes, sprintf('KZS %d: %s', ic, ...
+        strrep(strrep(regexprep(results.combos{ic}.description, '<[^>]+>', ''), ...
+        '&middot;', char(183)), '&nbsp;', ' ')));
+    tmpPng = [tempname '.png'];
+    print(hfig, tmpPng, '-dpng', '-r150');
+    close(hfig);
+    imgBytes = fileread_binary(tmpPng);
+    b64 = base64encode(imgBytes);
+    delete(tmpPng);
+    wf(fid, '<div style="text-align:center;margin:8px 0"><img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;" alt="KZS %d"></div>', ...
+        b64, ic);
+end
+set(0, 'DefaultFigureVisible', prevVisible);
+
 %% ── SECTION 5: Vzpěrné délky ─────────────────────────────────────────
 w(fid, '<h2>4. Vzp&#283;rn&#233; d&#233;lky</h2>');
 wf(fid, '<p class="ref">Pravidla dle Tab.&nbsp;1.29 (Jandera &mdash; OK&nbsp;01). Trubkov&yacute; vazn&#237;k. Vzp&#283;rn&#225; d&#233;lka doln&#237;ho p&#225;su z roviny = vzd&#225;lenost svislych zt&#250;&#382;idel = <strong>%.1f m</strong>.</p>', ...
@@ -595,4 +616,16 @@ function s = translateShape(t)
         case 'mono',    s = 'Pultov&#253;&nbsp;&#353;ikm&#253;';
         otherwise,      s = char(t);
     end
+end
+
+function bytes = fileread_binary(filepath)
+    f = fopen(filepath, 'rb');
+    bytes = fread(f, inf, 'uint8=>uint8')';
+    fclose(f);
+end
+
+function s = base64encode(bytes)
+    encoder = org.apache.commons.codec.binary.Base64;
+    s = char(encoder.encodeBase64(bytes))';
+    s = s(:)';   % ensure row vector
 end

@@ -126,16 +126,14 @@ end
 
 %% ── Vizualizace geometrie ─────────────────────────────────────────────
 combos = loadCombinationsFn(loadParams);
+stripHtml = @(s) regexprep(s, '<[^>]+>', '');   % strip HTML tags
+stripHtml = @(s) strrep(strrep(stripHtml(s), '&middot;', '·'), '&nbsp;', ' ');
 
-figure('Name', 'Geometrie vazníku — Kombo 1');
-plotTrussFn(nodes, members, combos{1}.loads, kinematic, 'Labels', true)
-title(sprintf('Příhradový vazník %g m — %s', params.span, combos{1}.description));
-axis equal; grid on; xlabel('x [m]'); ylabel('z [m]');
+plotTrussFn(nodes, members, combos{1}.loads, kinematic, 'Labels', true);
+title(sprintf('Příhradový vazník %g m — KZS 1: %s', params.span, stripHtml(combos{1}.description)));
 
-figure('Name', 'Geometrie vazníku — Kombo 2');
-plotTrussFn(nodes, members, combos{2}.loads, kinematic, 'Labels', true)
-title(sprintf('Příhradový vazník %g m — %s', params.span, combos{2}.description));
-axis equal; grid on; xlabel('x [m]'); ylabel('z [m]');
+plotTrussFn(nodes, members, combos{4}.loads, kinematic, 'Labels', true);
+title(sprintf('Příhradový vazník %g m — KZS 4: %s', params.span, stripHtml(combos{4}.description)));
 
 %% ── FEM + Posudek dle EN 1993-1-1 ─────────────────────────────────────
 results = designCheckFn(nodes, members, sections, kinematic, loadParams);
@@ -146,7 +144,7 @@ N1 = results.N_Ed(:, 1);   % [kN], Kombo 1
 figure('Name', 'Vnitřní síly — Kombo 1');
 hold on; axis equal; grid on;
 xlabel('x [m]'); ylabel('z [m]');
-title(sprintf('Osové síly N [kN] — %s', combos{1}.description));
+title(sprintf('Osové síly N [kN] — KZS 1: %s', stripHtml(combos{1}.description)));
 
 Nmax = max(abs(N1)) + eps;
 for p = 1:nmembers
@@ -183,5 +181,5 @@ fprintf('\nHotovo. Výsledek posudku: %s\n', results.status);
 
 %% ── HTML report ───────────────────────────────────────────────────────
 reportFile = fullfile(fileparts(mfilename('fullpath')), 'posudek_vaznik_30m.html');
-reportFn(params, nodes, members, sections, loadParams, results, reportFile);
+reportFn(params, nodes, members, sections, kinematic, loadParams, results, reportFile);
 fprintf('Report: %s\n', reportFile);
