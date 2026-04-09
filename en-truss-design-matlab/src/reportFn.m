@@ -480,19 +480,19 @@ w(fid, '</div>');
 w(fid, '<h2 id="s8">7. V&yacute;sledky &mdash; tabulka prut&#367;</h2>');
 w(fid, ['<table>'...
          '<tr><th>#</th><th>Typ</th>'...
-         '<th>N<sub>Ed</sub><br>[kN]</th>'...
-         '<th>KZS</th>'...
+         '<th>N<sub>Ed,tah</sub><br>[kN]</th><th>KZS</th>'...
+         '<th>N<sub>Ed,tlak</sub><br>[kN]</th><th>KZS</th>'...
          '<th>L<sub>cr</sub><br>[m]</th>'...
          '<th>&lambda;&#773;</th>'...
          '<th>&chi;</th>'...
          '<th>N<sub>b,Rd</sub><br>[kN]</th>'...
          '<th>Vyu&#382;it&#237;<br>[&mdash;]</th>'...
+         '<th>KZS<sub>gov</sub></th>'...
          '<th>Status</th></tr>']);
 
 for p = 1:nmembers
     ic  = results.governing_combo(p);
     chk = results.checks{ic}(p);
-    ned = results.N_Ed(p, ic);
     u   = results.util_max(p);
 
     if strcmp(chk.status,'FAIL')
@@ -505,16 +505,36 @@ for p = 1:nmembers
 
     type_cs = translateType(results.classification.type(p));
 
+    % Max tension
+    Nt = results.N_max_tension(p);
+    if Nt > 0
+        tah_str = sprintf('%.1f', Nt);
+        tah_kzs = sprintf('%d', results.ic_tension(p));
+    else
+        tah_str = '&mdash;'; tah_kzs = '&mdash;';
+    end
+    % Max compression
+    Nc = results.N_max_compress(p);
+    if Nc < 0
+        tlak_str = sprintf('%.1f', Nc);
+        tlak_kzs = sprintf('%d', results.ic_compress(p));
+    else
+        tlak_str = '&mdash;'; tlak_kzs = '&mdash;';
+    end
+
     wf(fid, '<tr%s>', row_cls);
     wf(fid, '<td style="text-align:center">%d</td>', p);
     wf(fid, '<td>%s</td>', type_cs);
-    wf(fid, '<td style="text-align:right">%.1f</td>', ned);
-    wf(fid, '<td style="text-align:center">%d</td>', ic);
+    wf(fid, '<td style="text-align:right">%s</td>', tah_str);
+    wf(fid, '<td style="text-align:center">%s</td>', tah_kzs);
+    wf(fid, '<td style="text-align:right">%s</td>', tlak_str);
+    wf(fid, '<td style="text-align:center">%s</td>', tlak_kzs);
     wf(fid, '<td style="text-align:right">%.2f</td>', results.Lcr.governing(p));
     wf(fid, '<td style="text-align:right">%.2f</td>', chk.lambda_bar);
     wf(fid, '<td style="text-align:right">%.3f</td>', chk.chi);
     wf(fid, '<td style="text-align:right">%.1f</td>', chk.N_b_Rd);
     wf(fid, '<td style="text-align:right"><strong>%.3f</strong></td>', u);
+    wf(fid, '<td style="text-align:center"><strong>%d</strong></td>', ic);
     wf(fid, '<td style="text-align:center">%s</td>', chk.status);
     w(fid,  '</tr>');
 end
@@ -523,10 +543,10 @@ w(fid, '</table>');
 % Dynamic footnotes for all combos
 fn_parts = cell(1, ncombos);
 for ic = 1:ncombos
-    fn_parts{ic} = sprintf('&sup%s; = %s', ...
+    fn_parts{ic} = sprintf('KZS %s = %s', ...
         footnoteNum(ic), results.combos{ic}.description);
 end
-wf(fid, '<p class="ref">Barva: b&#237;l&#225; = OK, &#382;lut&#225; = upozorn&#283;n&#237; (util &gt; 0,85), &#269;erven&#225; = NEVYHOVUJE (util &gt; 1,0). KZS = rozhoduj&#237;c&#237; kombinace: &nbsp; %s</p>', ...
+wf(fid, '<p class="ref">Barva: b&#237;l&#225; = OK, &#382;lut&#225; = upozorn&#283;n&#237; (util &gt; 0,85), &#269;erven&#225; = NEVYHOVUJE (util &gt; 1,0). Vyu&#382;it&#237; = max(tah, vzp&#283;r) p&#345;es v&#353;echny KZS. &nbsp; %s</p>', ...
     strjoin(fn_parts, ';&nbsp; '));
 
 %% ── SECTION 9: Souhrn ────────────────────────────────────────────────

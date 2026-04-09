@@ -96,31 +96,46 @@ end
 %% 5. Utilization envelope ------------------------------------------------
 [util_max, gov_combo] = max(util_all, [], 2);
 
+% Max tension and max compression per member (across all combos)
+[N_max_tension, ic_tension]     = max(N_Ed_all, [], 2);   % max positive = tension
+[N_max_compress, ic_compress]   = min(N_Ed_all, [], 2);   % min negative = compression
+
 %% 6. Print result table --------------------------------------------------
 fprintf('\n');
-fprintf('╔══════════════════════════════════════════════════════════════════════════════════╗\n');
-fprintf('║  EN 1993-1-1  —  Posudek příhradového vazníku                                  ║\n');
-fprintf('╠══════╦══════════════╦══════════╦══════════╦═══════╦════════╦═════════╦══════════╣\n');
-fprintf('║  č.  ║  Typ prutu   ║  N_Ed    ║  N_b_Rd  ║   λ̄   ║   χ    ║  Util.  ║  Status  ║\n');
-fprintf('║      ║              ║  [kN]    ║  [kN]    ║       ║        ║         ║          ║\n');
-fprintf('╠══════╬══════════════╬══════════╬══════════╬═══════╬════════╬═════════╬══════════╣\n');
+fprintf('╔══════════════════════════════════════════════════════════════════════════════════════════════════╗\n');
+fprintf('║  EN 1993-1-1  —  Posudek příhradového vazníku                                                  ║\n');
+fprintf('╠══════╦══════════════╦═══════════════╦═══════════════╦══════════╦═══════╦════════╦═══════╦═══════╣\n');
+fprintf('║  č.  ║  Typ prutu   ║  N_Ed,tah     ║  N_Ed,tlak    ║  N_b_Rd  ║   λ̄   ║   χ    ║ Util. ║ Stat. ║\n');
+fprintf('║      ║              ║  [kN]  (KZS)  ║  [kN]  (KZS)  ║  [kN]    ║       ║        ║       ║       ║\n');
+fprintf('╠══════╬══════════════╬═══════════════╬═══════════════╬══════════╬═══════╬════════╬═══════╬═══════╣\n');
 
 for p = 1:nmembers
     ic  = gov_combo(p);
     chk = checks_all{ic}(p);
     type_str = pad(char(classification.type(p)), 12);
-    ned  = N_Ed_all(p, ic);
     stat = chk.status;
     if strcmp(stat, 'FAIL')
-        stat_str = '** FAIL **';
+        stat_str = ' FAIL ';
     else
-        stat_str = '   OK     ';
+        stat_str = '  OK  ';
     end
-    fprintf('║ %4d ║ %s ║ %8.1f ║ %8.1f ║ %5.2f ║ %6.3f ║ %7.3f ║ %s ║\n', ...
-        p, type_str, ned, chk.N_b_Rd, chk.lambda_bar, chk.chi, chk.util_max, stat_str);
+    % Format tension: show value (KZS) or dash if no tension
+    if N_max_tension(p) > 0
+        tah_str = sprintf('%7.1f (%d)', N_max_tension(p), ic_tension(p));
+    else
+        tah_str = '      —      ';
+    end
+    % Format compression
+    if N_max_compress(p) < 0
+        tlak_str = sprintf('%7.1f (%d)', N_max_compress(p), ic_compress(p));
+    else
+        tlak_str = '      —      ';
+    end
+    fprintf('║ %4d ║ %s ║ %13s ║ %13s ║ %8.1f ║ %5.2f ║ %6.3f ║ %5.3f ║ %s ║\n', ...
+        p, type_str, tah_str, tlak_str, chk.N_b_Rd, chk.lambda_bar, chk.chi, chk.util_max, stat_str);
 end
 
-fprintf('╚══════╩══════════════╩══════════╩══════════╩═══════╩════════╩═════════╩══════════╝\n');
+fprintf('╚══════╩══════════════╩═══════════════╩═══════════════╩══════════╩═══════╩════════╩═══════╩═══════╝\n');
 
 n_fail = sum(util_max > 1.0);
 fprintf('\nCelkový výsledek: %d/%d prutů NEVYHOVUJE\n', n_fail, nmembers);
@@ -131,14 +146,18 @@ fprintf('Max. využití: %.3f (prut %d, %s, kombo %d — %s)\n', ...
     combos{gov_combo(find(util_max == max(util_max), 1))}.description);
 
 %% 7. Assemble output -----------------------------------------------------
-results.classification = classification;
-results.Lcr            = Lcr;
-results.N_Ed           = N_Ed_all;
-results.util           = util_all;
-results.util_max       = util_max;
+results.classification  = classification;
+results.Lcr             = Lcr;
+results.N_Ed            = N_Ed_all;
+results.N_max_tension   = N_max_tension;
+results.ic_tension      = ic_tension;
+results.N_max_compress  = N_max_compress;
+results.ic_compress     = ic_compress;
+results.util            = util_all;
+results.util_max        = util_max;
 results.governing_combo = gov_combo;
-results.checks         = checks_all;
-results.combos         = combos;
+results.checks          = checks_all;
+results.combos          = combos;
 results.status         = 'OK';
 if any(util_max > 1.0)
     results.status = 'FAIL';
