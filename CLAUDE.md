@@ -15,6 +15,7 @@ Projekt implementuje FEM analýzu nosníkových a příhradových konstrukcí v 
 | `fem-3d-frame-matlab/` | **aktivní** | 3D nosníkové rámy — `src/`, `tests/`, `examples/` |
 | `fem-2d-frame-matlab/` | **aktivní** | 2D rámové konstrukce — `src/`, `tests/`, `examples/` |
 | `fem-truss-2d-matlab/` | **aktivní** | 2D příhradové konstrukce — `src/`, `tests/`, `examples/` |
+| `en-truss-design-matlab/` | **aktivní** | Posudek příhrad dle EN 1993-1-1 — `src/`, `examples/` |
 | `Diplomka/` | obsolete | původní kód diplomové práce, regresní testy 1–12 |
 
 > **`Diplomka/` je obsolete** — slouží jen pro archivaci a regresní testy (Tests 1–12 s OOFEM verifikací).
@@ -402,6 +403,185 @@ run_all_tests         % spustí testy 1–3
 
 ---
 
+## Modul `en-truss-design-matlab`
+
+Posudek ocelových příhradových vazníků dle EN 1993-1-1 (CHS trubkové průřezy). Využívá FEM solver z `fem-2d-truss-matlab` pro osové síly a provádí kompletní posudek na tah, tlak a vzpěr.
+
+### Architektura
+
+```
+example_truss_hall_30m.m
+  ↓ params (rozpětí, sklon, zatížení, sections 3–4 skupiny)
+trussHallInputFn(params)
+  ↓ nodes, members, sections (expandováno na nGroups), kinematic, loadParams
+designCheckFn(nodes, members, sections, kinematic, loadParams)
+  ↓ memberClassificationFn → bucklingLengthsFn → loadCombinationsFn
+  ↓ pro každý kombo: linearSolverFn (FEM) → sectionCheckFn (EN 1993-1-1)
+  ↓ results (N_Ed, util, status)
+reportFn(params, nodes, members, sections, loadParams, results, filename)
+  ↓ posudek_vaznik_30m.html
+```
+
+### Zdrojové soubory (`en-truss-design-matlab/src/`)
+
+| Funkce | Popis |
+|--------|-------|
+| `trussHallInputFn(params)` | Generátor geometrie + zatěžovacích parametrů pro průmyslovou halu |
+| `designCheckFn(nodes, members, sections, kinematic, loadParams)` | Orchestrátor posudku — FEM + EN 1993-1-1 |
+| `loadCombinationsFn(loadParams)` | 5 KZS dle EN 1990 (Jandera OK-01) |
+| `memberClassificationFn(members, nodes)` | Klasifikace prutů: top\_chord, bottom\_chord, diagonal, vertical |
+| `bucklingLengthsFn(members, nodes, classification, params)` | L\_cr in-plane / out-of-plane dle Tab. 1.29 |
+| `sectionCheckFn(N_Ed, A, i_radius, f_y, L_cr, curve, D, t)` | Posudek průřezu + vzpěr (Cl. 6.2, 6.3.1) |
+| `windLoadsFn(v_b, terrain_cat, h, slope)` | Tlak větru dle EN 1991-1-4 |
+| `reportFn(params, nodes, members, sections, loadParams, results, filename)` | HTML report s MathJax rovnicemi |
+
+### Datové struktury
+
+```matlab
+% params — vstup pro trussHallInputFn
+params.span            % [m] rozpětí
+params.slope           % [-] sklon střechy
+params.purlin_spacing  % [m] rozteč vaznic
+params.h_support       % [m] výška v uložení
+params.truss_spacing   % [m] vzdálenost vazníků
+params.f_y             % [Pa] mez kluzu (355e6 pro S355)
+params.E               % [Pa] modul pružnosti
+params.g_roof          % [kN/m²] střešní plášť
+params.g_purlins       % [kN/m] vaznice
+params.s_k             % [kN/m²] sníh
+params.w_suction       % [kN/m²] sání větru
+params.sections        % struct s 3–4 skupinami (top, bot, diag, [vert])
+params.topology        % 'pratt', 'howe', 'warren', 'warren_inverted'
+params.shape           % 'saddle', 'flat', 'mono'
+params.warren_verticals % logical — přidat svislice do Warren
+
+% sections — vstupní skupiny (3 nebo 4)
+sections.A             % [m²] plocha průřezu
+sections.E             % [Pa] modul pružnosti
+sections.I             % [m⁴] moment setrvačnosti
+sections.i_radius      % [m] poloměr setrvačnosti
+sections.curve         % cell: 'a','b','c','d' — vzpěrná křivka
+sections.D             % [m] vnější průměr CHS
+sections.t             % [m] tloušťka stěny CHS
+```
+
+### Symetrické skupiny průřezů
+
+`trussHallInputFn` automaticky rozdělí diagonály a svislice do **symetrických podskupin** podle vzdálenosti od středu rozpětí. Každý pár prutů (levý + pravý, stejně daleko od středu) dostane vlastní section index.
+
+**Číslování výstupních skupin:**
+
+```
+sec 1                      = horní pás
+sec 2                      = dolní pás
+sec 3 .. 2+nDiagGroups     = diagonály (vnější pár → nejnižší index)
+sec 2+nDiagGroups+1 .. end = svislice  (vnější pár → nejnižší index)
+```
+
+**Příklad pro 8 polí (Warren inverted):**
+- 4 skupiny diagonál: páry (1,8), (2,7), (3,6), (4,5) → sec 3–6
+- 5 skupin svislic: páry (1,9), (2,8), (3,7), (4,6), střed (5) → sec 7–11
+- Celkem: **11 skupin** (2 pásy + 4 diag + 5 vert)
+- `members.sections`: diag = `3 4 5 6 6 5 4 3`, vert = `7 7 8 9 10 11 10 9 8`
+
+**Vstup:** uživatel definuje jen 3–4 základní průřezy (top, bot, diag, [vert]). Funkce je interně expanduje replikací — výstupní `sections` má `nGroups` položek. Uživatel pak může individuálně přepsat libovolnou skupinu.
+
+**Metadata v `loadParams.sectionGroups`:**
+
+```matlab
+loadParams.sectionGroups.nDiag    % počet skupin diagonál
+loadParams.sectionGroups.nVert    % počet skupin svislic
+loadParams.sectionGroups.diagIdx  % vektor indexů: [3, 4, ..., 2+nDiag]
+loadParams.sectionGroups.vertIdx  % vektor indexů: [2+nDiag+1, ..., nGroups]
+loadParams.sectionGroups.nGroups  % celkový počet skupin
+```
+
+**Algoritmus (v `trussHallInputFn`):**
+1. Midpoint x-souřadnice prutu → vzdálenost od L/2
+2. `unique(round(dist, 6))` → symetrické skupiny
+3. Seřazení: vnější = nejnižší section index
+4. Expand: replikace vstupního `sections(3)` do diag skupin, `sections(4)` do vert skupin
+
+### Kombinace zatížení (5 KZS)
+
+| KZS | Vzorec | Zaměření |
+|-----|--------|----------|
+| 1 | 1,35·G + 1,5·S | Max tlak v horním pásu |
+| 2 | 1,35·G + 1,5·S + 0,9·Wt | Sníh + příčný vítr |
+| 3 | 1,35·G + 1,5·Wt + 0,75·S | Vítr dominantní |
+| 4 | 1,0·Gmin + 1,5·Wt | Uplift — příčný vítr |
+| 5 | 1,0·Gmin + 1,5·Wl | Uplift — podélný vítr |
+
+### Vzpěrné délky (Tab. 1.29, Jandera OK-01)
+
+| Typ prutu | L\_cr v rovině | L\_cr z roviny |
+|-----------|---------------|---------------|
+| Horní pás | L\_sys | 0,9 × rozteč vaznic |
+| Dolní pás | L\_sys | rozteč ztužení |
+| Diagonála | 0,9 × L\_sys | 0,75 × L\_sys |
+| Svislice | 0,9 × L\_sys | 0,75 × L\_sys |
+
+Pro CHS (I\_y = I\_z) rozhoduje `max(L_cr_in, L_cr_out)`.
+
+### Posudek průřezu (`sectionCheckFn`)
+
+```matlab
+% Třída průřezu CHS (EN 1993-1-1, Tab. 5.2)
+ε = sqrt(235e6 / f_y);
+Třída 1: D/t ≤ 50·ε²
+Třída 2: D/t ≤ 70·ε²
+Třída 3: D/t ≤ 90·ε²
+
+% Vzpěr (Cl. 6.3.1)
+λ̄ = (L_cr / i) / (π·√(E/f_y))
+Φ = 0,5·(1 + α·(λ̄ − 0,2) + λ̄²)
+χ = min(1 / (Φ + √(Φ² − λ̄²)), 1)
+N_b,Rd = χ·A·f_y / γ_M1
+
+% Využití
+util = max(N_Ed_tah / N_pl_Rd,  |N_Ed_tlak| / N_b_Rd)
+```
+
+### Klasifikace prutů (`memberClassificationFn`)
+
+Pokud `members.sections` existuje:
+- sec 1 → `top_chord`
+- sec 2 → `bottom_chord`
+- sec ≥ 3: úhel > 75° → `vertical`, jinak → `diagonal`
+
+Toto funguje správně i s expandovanými symetrickými skupinami (sec 3–11 se klasifikují podle úhlu).
+
+### HTML report (`reportFn`)
+
+Generuje self-contained HTML s MathJax:
+1. Záhlaví (geometrie, materiál)
+2. Průřezy — **dynamická tabulka** (sloučí řádky se stejným D/t)
+3. Zatížení (5 KZS s citacemi EN 1990)
+4. Vzpěrné délky
+5. Metodika (EN 1993-1-1 rovnice)
+6. Ukázkový výpočet — step-by-step pro kritický prut
+7. Tabulka výsledků (barevně kódovaná)
+8. Souhrn (OK / FAIL)
+
+### Příklady
+
+| Příklad | Popis |
+|---------|-------|
+| `example_truss_hall_30m.m` | Warren inverted, 24m, sedlový, S355, CHS |
+| `example_truss_LLENTAB.m` | Nepravidelná příhrada z LLENTAB exportu |
+
+### Záludnosti (`en-truss-design-matlab`)
+
+1. **`memberClassificationFn` a sections > 2**: sec 1 = top, sec 2 = bottom, vše ostatní klasifikováno podle úhlu — bezpečné pro libovolný počet skupin.
+
+2. **`reportFn` dynamická tabulka průřezů**: sloučí skupiny se stejným D/t do jednoho řádku (nereprodukuje 11 identických řádků, pokud mají stejný profil).
+
+3. **FEM solver vyžaduje `sections.A` a `.E`**: `linearSolverFn` z `fem-2d-truss-matlab` indexuje `sections.A(members.sections(p))` — funguje s libovolným počtem skupin.
+
+4. **Expand sections**: `trussHallInputFn` expanduje vstupní 3–4 skupiny na nGroups replikací. Zdrojový index pro diag = 3, pro vert = 4 (nebo 3 pokud vstup má jen 3 skupiny).
+
+---
+
 ## Kloubová spojení (beams.releases)
 
 ```matlab
@@ -574,6 +754,7 @@ stabilitySolverFn / linearSolverFn
 
 | Datum | Commit | Popis |
 |-------|--------|-------|
+| 2026-04-08 | `26a0ffb` | `trussHallInputFn` — symetrické skupiny průřezů diagonál a svislic; `reportFn` dynamická tabulka |
 | 2026-03-27 | `01e036e` | `stabilitySolverFn` — relaxační parametr dle Evgrafov (2005), `K_reg = K + ε·I` |
 | 2026-03-27 | `3973a00` | `criticalLoadFn` — Cholesky-transformace → spolehlivý eigenvalue solver |
 | 2026-03-23 | `d2df4f3` | `trussGeneratorFn` — sedlový horní pás (h jako vektor) + auto-slučování shodných uzlů |

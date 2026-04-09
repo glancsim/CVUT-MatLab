@@ -217,5 +217,5 @@ fprintf('\nHotovo. Výsledek: %s\n', results.status);
 
 %% ── HTML report ───────────────────────────────────────────────────────
 reportFile = fullfile(fileparts(mfilename('fullpath')), 'posudek_vaznik_LLENTAB.html');
-reportFn(params, nodes, members, sections, loadParams, results, reportFile);
+reportFn(params, nodes, members, sections, kinematic, loadParams, results, reportFile);
 fprintf('Report: %s\n', reportFile);

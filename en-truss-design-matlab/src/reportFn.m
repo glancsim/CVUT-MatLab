@@ -1,4 +1,4 @@
-function reportFn(params, nodes, members, sections, loadParams, results, filename)
+function reportFn(params, nodes, members, sections, kinematic, loadParams, results, filename)
 % reportFn  Generate a self-contained HTML engineering calculation report.
 %
 % Produces a professional HTML file documenting the EN 1993-1-1 design check
@@ -9,7 +9,7 @@ function reportFn(params, nodes, members, sections, loadParams, results, filenam
 %   1. Záhlaví (header)
 %   2. Geometrie vazníku
 %   3. Průřezy
-%   4. Zatížení — char. hodnoty, výpočet sněhu a větru, 5 KZS
+%   4. Zatížení — char. hodnoty, výpočet sněhu a větru, 5 KZS + schémata
 %   5. Vzpěrné délky (Tab. 1.29)
 %   6. Metodika posudku (EN 1993-1-1 formule s citacemi)
 %   7. Ukázka výpočtu — step-by-step pro kritický prut
@@ -21,13 +21,14 @@ function reportFn(params, nodes, members, sections, loadParams, results, filenam
 %   nodes      - struct with .x, .z
 %   members    - struct with .nodesHead, .nodesEnd, .sections
 %   sections   - struct with .A, .E, .I, .i_radius, .curve, .D, .t
+%   kinematic  - struct with .x.nodes, .z.nodes (supports)
 %   loadParams - struct from trussHallInputFn (g_total, g_min, …)
 %   results    - struct from designCheckFn
 %   filename   - output HTML file path (default: 'vaznik_posudek.html')
 %
 % (c) S. Glanc, 2026
 
-if nargin < 7 || isempty(filename)
+if nargin < 8 || isempty(filename)
     filename = 'vaznik_posudek.html';
 end
 
@@ -313,6 +314,26 @@ end
 w(fid, '</table>');
 w(fid, '<p class="ref">q<sub>S</sub>, q<sub>W</sub> jsou v&#253;po&#269;tov&#233; hodnoty v&#269;etn&#283; &gamma; a &psi;. q<sub>W</sub> > 0 = sn&#237;&#382;en&#237; v&yacute;sledn&#233;ho zat&#237;&#382;en&#237; (v&#237;tr zvedá st&#345;echu).</p>');
 
+% --- Obrázky zatěžovacích stavů (KZS) ------------------------------------
+w(fid, '<p><strong>Sch&#233;mata zat&#283;&#382;ovac&#237;ch stav&#367;</strong></p>');
+prevVisible = get(0, 'DefaultFigureVisible');
+set(0, 'DefaultFigureVisible', 'off');
+for ic = 1:ncombos
+    hfig = plotTrussFn(nodes, members, results.combos{ic}.loads, kinematic);
+    title(hfig.CurrentAxes, sprintf('KZS %d: %s', ic, ...
+        strrep(strrep(regexprep(results.combos{ic}.description, '<[^>]+>', ''), ...
+        '&middot;', char(183)), '&nbsp;', ' ')));
+    tmpPng = [tempname '.png'];
+    print(hfig, tmpPng, '-dpng', '-r150');
+    close(hfig);
+    imgBytes = fileread_binary(tmpPng);
+    b64 = base64encode(imgBytes);
+    delete(tmpPng);
+    wf(fid, '<div style="text-align:center;margin:8px 0"><img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;" alt="KZS %d"></div>', ...
+        b64, ic);
+end
+set(0, 'DefaultFigureVisible', prevVisible);
+
 %% ── SECTION 5: Vzpěrné délky ─────────────────────────────────────────
 w(fid, '<h2>4. Vzp&#283;rn&#233; d&#233;lky</h2>');
 wf(fid, '<p class="ref">Pravidla dle Tab.&nbsp;1.29 (Jandera &mdash; OK&nbsp;01). Trubkov&yacute; vazn&#237;k. Vzp&#283;rn&#225; d&#233;lka doln&#237;ho p&#225;su z roviny = vzd&#225;lenost svislych zt&#250;&#382;idel = <strong>%.1f m</strong>.</p>', ...
@@ -459,18 +480,19 @@ w(fid, '</div>');
 w(fid, '<h2 id="s8">7. V&yacute;sledky &mdash; tabulka prut&#367;</h2>');
 w(fid, ['<table>'...
          '<tr><th>#</th><th>Typ</th>'...
-         '<th>N<sub>Ed</sub><br>[kN]</th>'...
+         '<th>N<sub>Ed,tah</sub><br>[kN]</th><th>KZS</th>'...
+         '<th>N<sub>Ed,tlak</sub><br>[kN]</th><th>KZS</th>'...
          '<th>L<sub>cr</sub><br>[m]</th>'...
          '<th>&lambda;&#773;</th>'...
          '<th>&chi;</th>'...
          '<th>N<sub>b,Rd</sub><br>[kN]</th>'...
          '<th>Vyu&#382;it&#237;<br>[&mdash;]</th>'...
+         '<th>KZS<sub>gov</sub></th>'...
          '<th>Status</th></tr>']);
 
 for p = 1:nmembers
     ic  = results.governing_combo(p);
     chk = results.checks{ic}(p);
-    ned = results.N_Ed(p, ic);
     u   = results.util_max(p);
 
     if strcmp(chk.status,'FAIL')
@@ -482,17 +504,37 @@ for p = 1:nmembers
     end
 
     type_cs = translateType(results.classification.type(p));
-    sup_str = sprintf('<sup>%d</sup>', ic);
+
+    % Max tension
+    Nt = results.N_max_tension(p);
+    if Nt > 0
+        tah_str = sprintf('%.1f', Nt);
+        tah_kzs = sprintf('%d', results.ic_tension(p));
+    else
+        tah_str = '&mdash;'; tah_kzs = '&mdash;';
+    end
+    % Max compression
+    Nc = results.N_max_compress(p);
+    if Nc < 0
+        tlak_str = sprintf('%.1f', Nc);
+        tlak_kzs = sprintf('%d', results.ic_compress(p));
+    else
+        tlak_str = '&mdash;'; tlak_kzs = '&mdash;';
+    end
 
     wf(fid, '<tr%s>', row_cls);
     wf(fid, '<td style="text-align:center">%d</td>', p);
     wf(fid, '<td>%s</td>', type_cs);
-    wf(fid, '<td style="text-align:right">%.1f%s</td>', ned, sup_str);
+    wf(fid, '<td style="text-align:right">%s</td>', tah_str);
+    wf(fid, '<td style="text-align:center">%s</td>', tah_kzs);
+    wf(fid, '<td style="text-align:right">%s</td>', tlak_str);
+    wf(fid, '<td style="text-align:center">%s</td>', tlak_kzs);
     wf(fid, '<td style="text-align:right">%.2f</td>', results.Lcr.governing(p));
     wf(fid, '<td style="text-align:right">%.2f</td>', chk.lambda_bar);
     wf(fid, '<td style="text-align:right">%.3f</td>', chk.chi);
     wf(fid, '<td style="text-align:right">%.1f</td>', chk.N_b_Rd);
     wf(fid, '<td style="text-align:right"><strong>%.3f</strong></td>', u);
+    wf(fid, '<td style="text-align:center"><strong>%d</strong></td>', ic);
     wf(fid, '<td style="text-align:center">%s</td>', chk.status);
     w(fid,  '</tr>');
 end
@@ -501,10 +543,10 @@ w(fid, '</table>');
 % Dynamic footnotes for all combos
 fn_parts = cell(1, ncombos);
 for ic = 1:ncombos
-    fn_parts{ic} = sprintf('&sup%s; = %s', ...
+    fn_parts{ic} = sprintf('KZS %s = %s', ...
         footnoteNum(ic), results.combos{ic}.description);
 end
-wf(fid, '<p class="ref">Barva: b&#237;l&#225; = OK, &#382;lut&#225; = upozorn&#283;n&#237; (util &gt; 0,85), &#269;erven&#225; = NEVYHOVUJE (util &gt; 1,0). Horn&#237; index = rozhoduj&#237;c&#237; KZS. &nbsp; %s</p>', ...
+wf(fid, '<p class="ref">Barva: b&#237;l&#225; = OK, &#382;lut&#225; = upozorn&#283;n&#237; (util &gt; 0,85), &#269;erven&#225; = NEVYHOVUJE (util &gt; 1,0). Vyu&#382;it&#237; = max(tah, vzp&#283;r) p&#345;es v&#353;echny KZS. &nbsp; %s</p>', ...
     strjoin(fn_parts, ';&nbsp; '));
 
 %% ── SECTION 9: Souhrn ────────────────────────────────────────────────
@@ -594,4 +636,16 @@ function s = translateShape(t)
         case 'mono',    s = 'Pultov&#253;&nbsp;&#353;ikm&#253;';
         otherwise,      s = char(t);
     end
+end
+
+function bytes = fileread_binary(filepath)
+    f = fopen(filepath, 'rb');
+    bytes = fread(f, inf, 'uint8=>uint8')';
+    fclose(f);
+end
+
+function s = base64encode(bytes)
+    encoder = org.apache.commons.codec.binary.Base64;
+    s = char(encoder.encodeBase64(bytes))';
+    s = s(:)';   % ensure row vector
 end
