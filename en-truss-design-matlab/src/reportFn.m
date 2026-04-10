@@ -114,7 +114,7 @@ w(fid, 'table{border-collapse:collapse;width:100%;margin-bottom:12px;font-size:9
 w(fid, 'th{background:var(--navy);color:#fff;padding:5px 9px;text-align:center;border:1px solid #0d2740;}');
 w(fid, 'td{padding:4px 9px;border:1px solid #dee2e6;}');
 w(fid, 'tr:nth-child(even) td{background:#f8f9fa;}');
-w(fid, 'tr.warn td{background:#fff3cd !important;}');
+w(fid, 'tr.optimal td{background:#d4edda !important;color:#155724;}');
 w(fid, 'tr.fail td{background:#f8d7da !important;color:#721c24;font-weight:bold;}');
 w(fid, '.ref{color:var(--gray);font-style:italic;font-size:8.5pt;}');
 w(fid, '.fbox{background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:9px 16px;margin:6px 0;font-size:10pt;line-height:1.9;}');
@@ -326,24 +326,96 @@ end
 w(fid, '</table>');
 w(fid, '<p class="ref">q<sub>S</sub>, q<sub>W</sub> jsou v&#253;po&#269;tov&#233; hodnoty v&#269;etn&#283; &gamma; a &psi;. q<sub>W</sub> > 0 = sn&#237;&#382;en&#237; v&yacute;sledn&#233;ho zat&#237;&#382;en&#237; (v&#237;tr zvedá st&#345;echu).</p>');
 
-% --- Obrázky zatěžovacích stavů (KZS) ------------------------------------
-w(fid, '<p><strong>Sch&#233;mata zat&#283;&#382;ovac&#237;ch stav&#367;</strong></p>');
+% --- Schéma geometrie s čísly prutů, uzlů, podporami a kótami ---------------
+w(fid, '<p><strong>Sch&#233;ma vazn&#237;ku</strong></p>');
 prevVisible = get(0, 'DefaultFigureVisible');
 set(0, 'DefaultFigureVisible', 'off');
-for ic = 1:ncombos
-    hfig = plotTrussFn(nodes, members, results.combos{ic}.loads, kinematic);
-    title(hfig.CurrentAxes, sprintf('KZS %d: %s', ic, ...
-        strrep(strrep(regexprep(results.combos{ic}.description, '<[^>]+>', ''), ...
-        '&middot;', char(183)), '&nbsp;', ' ')));
-    tmpPng = [tempname '.png'];
-    print(hfig, tmpPng, '-dpng', '-r150');
-    close(hfig);
-    imgBytes = fileread_binary(tmpPng);
-    b64 = base64encode(imgBytes);
-    delete(tmpPng);
-    wf(fid, '<div style="text-align:center;margin:8px 0"><img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;" alt="KZS %d"></div>', ...
-        b64, ic);
+
+% Empty loads for geometry-only plot
+emptyLoads.x.nodes = []; emptyLoads.x.value = [];
+emptyLoads.z.nodes = []; emptyLoads.z.value = [];
+hfig = plotTrussFn(nodes, members, emptyLoads, kinematic, 'Labels', true);
+set(hfig, 'Position', [100 100 1200 500]);   % wider figure
+ax = hfig.CurrentAxes;
+legend(ax, 'off');   % turn off legend — labels are self-explanatory
+
+% Plain-text title (no HTML entities)
+topo_names = struct('pratt','Pratt','howe','Howe','warren','Warren','warren_inverted','Warren (inv.)');
+shape_names = struct('saddle','sedlovy','flat','rovny','mono','pultovy');
+topo_lbl = loadParams.topology; if isfield(topo_names, topo_lbl), topo_lbl = topo_names.(topo_lbl); end
+shape_lbl = loadParams.shape;   if isfield(shape_names, shape_lbl), shape_lbl = shape_names.(shape_lbl); end
+title(ax, sprintf('Geometrie vazniku  —  %s / %s', topo_lbl, shape_lbl));
+
+% --- Dimension annotations (kóty) — all with HandleVisibility off ---
+x_all  = nodes.x;
+z_all  = nodes.z;
+x_min  = min(x_all);  x_max = max(x_all);
+z_min  = min(z_all);  z_max = max(z_all);
+L_char = max(x_max - x_min, 1);
+kota_d = 0.10 * L_char;
+kota_col = [0.4 0.4 0.4];
+hv = 'off';   % HandleVisibility — keeps lines out of legend
+
+% Horizontal dimension: span L
+z_kota = z_min - 1.8*kota_d;
+line(ax, [x_min x_max], [z_kota z_kota], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+line(ax, [x_min x_min], [z_kota-kota_d*0.3 z_kota+kota_d*0.3], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+line(ax, [x_max x_max], [z_kota-kota_d*0.3 z_kota+kota_d*0.3], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+text(ax, (x_min+x_max)/2, z_kota - kota_d*0.4, sprintf('L = %.0f m', x_max-x_min), ...
+    'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', kota_col);
+
+% Panel spacing 'a' — mark first panel
+a_val = loadParams.purlin_spacing;
+top_x = sort(unique(x_all(x_all >= x_min & x_all <= x_min + a_val + 0.1)));
+if numel(top_x) >= 2
+    z_kota_a = z_kota - kota_d*1.0;
+    x_a1 = top_x(1);  x_a2 = top_x(2);
+    line(ax, [x_a1 x_a2], [z_kota_a z_kota_a], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_a1 x_a1], [z_kota_a-kota_d*0.3 z_kota_a+kota_d*0.3], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_a2 x_a2], [z_kota_a-kota_d*0.3 z_kota_a+kota_d*0.3], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    text(ax, (x_a1+x_a2)/2, z_kota_a - kota_d*0.4, sprintf('a = %.0f m', a_val), ...
+        'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', kota_col);
 end
+
+% Vertical dimension: height at support (left side)
+z_bot_left = min(z_all(x_all == x_min));
+z_top_left = max(z_all(x_all == x_min));
+if z_top_left > z_bot_left
+    x_kota = x_min - 1.5*kota_d;
+    line(ax, [x_kota x_kota], [z_bot_left z_top_left], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_kota-kota_d*0.3 x_kota+kota_d*0.3], [z_bot_left z_bot_left], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_kota-kota_d*0.3 x_kota+kota_d*0.3], [z_top_left z_top_left], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    text(ax, x_kota - kota_d*0.4, (z_bot_left+z_top_left)/2, ...
+        sprintf('h = %.1f m', z_top_left-z_bot_left), ...
+        'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', kota_col, 'Rotation', 90);
+end
+
+% Vertical dimension: height at midspan (right side)
+x_mid = (x_min + x_max) / 2;
+tol_mid = a_val * 0.6;
+z_bot_mid = min(z_all(abs(x_all - x_mid) < tol_mid));
+z_top_mid = max(z_all(abs(x_all - x_mid) < tol_mid));
+if z_top_mid > z_bot_mid && abs(z_top_mid - z_top_left) > 0.01
+    x_kota_r = x_max + 1.5*kota_d;
+    line(ax, [x_kota_r x_kota_r], [z_bot_mid z_top_mid], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_kota_r-kota_d*0.3 x_kota_r+kota_d*0.3], [z_bot_mid z_bot_mid], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    line(ax, [x_kota_r-kota_d*0.3 x_kota_r+kota_d*0.3], [z_top_mid z_top_mid], 'Color', kota_col, 'LineWidth', 0.8, 'HandleVisibility', hv);
+    text(ax, x_kota_r + kota_d*0.4, (z_bot_mid+z_top_mid)/2, ...
+        sprintf('h_{mid} = %.1f m', z_top_mid-z_bot_mid), ...
+        'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', kota_col, 'Rotation', 90);
+end
+
+% Adjust axis limits to include dimension lines
+ylim(ax, [z_kota - kota_d*2.0, z_max + kota_d*1.5]);
+xlim(ax, [x_min - 3.5*kota_d, x_max + 4.0*kota_d]);
+
+tmpPng = [tempname '.png'];
+print(hfig, tmpPng, '-dpng', '-r150');
+close(hfig);
+imgBytes = fileread_binary(tmpPng);
+b64 = base64encode(imgBytes);
+delete(tmpPng);
+wf(fid, '<div style="text-align:center;margin:8px 0"><img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;" alt="Schema vazniku"></div>', b64);
 set(0, 'DefaultFigureVisible', prevVisible);
 
 %% ── SECTION 5: Vzpěrné délky ─────────────────────────────────────────
@@ -357,10 +429,10 @@ w(fid, ['<table><tr>'...
          '<th>L<sub>cr,z&nbsp;roviny</sub></th>'...
          '</tr>']);
 rules_all = {
-    "top_chord",    'Horn&#237; p&#225;s',  'L<sub>sys</sub>',                   '0,9 &middot; a';
-    "bottom_chord", 'Doln&#237; p&#225;s',  'L<sub>sys</sub>',                   'vzd. zt&#250;&#382;idel';
-    "diagonal",     'Diagon&#225;la',       '0,9 &middot; L<sub>sys</sub>',      '0,75 &middot; L<sub>sys</sub>';
-    "vertical",     'Svislice',             '0,9 &middot; L<sub>sys</sub>',      '0,75 &middot; L<sub>sys</sub>';
+    "top_chord",    'Horn&#237; p&#225;s',  '0,9 &middot; L<sub>sys</sub>',      '0,9 &middot; a';
+    "bottom_chord", 'Doln&#237; p&#225;s',  '0,9 &middot; L<sub>sys</sub>',      'vzd. zt&#250;&#382;idel';
+    "diagonal",     'Diagon&#225;la',       '0,75 &middot; L<sub>sys</sub>',     '0,75 &middot; L<sub>sys</sub>';
+    "vertical",     'Svislice',             '0,75 &middot; L<sub>sys</sub>',     '0,75 &middot; L<sub>sys</sub>';
 };
 for k = 1:size(rules_all, 1)
     if ~any(results.classification.type == rules_all{k,1}); continue; end
@@ -470,7 +542,7 @@ if N_Ed_crit < 0
         chk_crit.chi, sections.A(si_crit)*1e4, fy_MPa, chk_crit.N_b_Rd);
     w(fid, '<br><strong>5. Posouzen&#237;</strong>');
     util_val = chk_crit.util_max;
-    check_sym = '\\leq 1{,}0';
+    check_sym = '\leq 1{,}0';
     if util_val > 1.0; check_sym = '> 1{,}0'; end
     wf(fid, '<div class="step">$\\dfrac{|N_{Ed}|}{N_{b,Rd}} = \\dfrac{%.1f}{%.1f} = \\mathbf{%.3f}$ &nbsp; $%s$ &nbsp;&nbsp; &rarr; &nbsp; <strong>%s</strong></div>', ...
         abs(N_Ed_crit), chk_crit.N_b_Rd, util_val, check_sym, chk_crit.status);
@@ -481,7 +553,7 @@ else
         sections.A(si_crit)*1e4, fy_MPa, chk_crit.N_pl_Rd);
     w(fid, '<br><strong>5. Posouzen&#237;</strong>');
     util_val = chk_crit.util_max;
-    check_sym = '\\leq 1{,}0';
+    check_sym = '\leq 1{,}0';
     if util_val > 1.0; check_sym = '> 1{,}0'; end
     wf(fid, '<div class="step">$\\dfrac{N_{Ed}}{N_{pl,Rd}} = \\dfrac{%.1f}{%.1f} = \\mathbf{%.3f}$ &nbsp; $%s$ &nbsp;&nbsp; &rarr; &nbsp; <strong>%s</strong></div>', ...
         N_Ed_crit, chk_crit.N_pl_Rd, util_val, check_sym, chk_crit.status);
@@ -495,6 +567,7 @@ w(fid, ['<table>'...
          '<th>N<sub>Ed,tah</sub><br>[kN]</th><th>KZS</th>'...
          '<th>N<sub>Ed,tlak</sub><br>[kN]</th><th>KZS</th>'...
          '<th>L<sub>cr</sub><br>[m]</th>'...
+         '<th>&lambda;<br>[&mdash;]</th>'...
          '<th>&lambda;&#773;</th>'...
          '<th>&chi;</th>'...
          '<th>N<sub>b,Rd</sub><br>[kN]</th>'...
@@ -509,8 +582,8 @@ for p = 1:nmembers
 
     if strcmp(chk.status,'FAIL')
         row_cls = ' class="fail"';
-    elseif u > 0.85
-        row_cls = ' class="warn"';
+    elseif u >= 0.85
+        row_cls = ' class="optimal"';
     else
         row_cls = '';
     end
@@ -542,6 +615,13 @@ for p = 1:nmembers
     wf(fid, '<td style="text-align:right">%s</td>', tlak_str);
     wf(fid, '<td style="text-align:center">%s</td>', tlak_kzs);
     wf(fid, '<td style="text-align:right">%.2f</td>', results.Lcr.governing(p));
+    si_p = members.sections(p);
+    lambda_abs = results.Lcr.governing(p) / sections.i_radius(si_p);
+    if lambda_abs > 200
+        wf(fid, '<td style="text-align:right;color:#721c24;font-weight:bold">%.0f</td>', lambda_abs);
+    else
+        wf(fid, '<td style="text-align:right">%.0f</td>', lambda_abs);
+    end
     wf(fid, '<td style="text-align:right">%.2f</td>', chk.lambda_bar);
     wf(fid, '<td style="text-align:right">%.3f</td>', chk.chi);
     wf(fid, '<td style="text-align:right">%.1f</td>', chk.N_b_Rd);
@@ -558,7 +638,7 @@ for ic = 1:ncombos
     fn_parts{ic} = sprintf('KZS %s = %s', ...
         footnoteNum(ic), results.combos{ic}.description);
 end
-wf(fid, '<p class="ref">Barva: b&#237;l&#225; = OK, &#382;lut&#225; = upozorn&#283;n&#237; (util &gt; 0,85), &#269;erven&#225; = NEVYHOVUJE (util &gt; 1,0). Vyu&#382;it&#237; = max(tah, vzp&#283;r) p&#345;es v&#353;echny KZS. &nbsp; %s</p>', ...
+wf(fid, '<p class="ref">Barva: b&#237;l&#225; = m&#225; rezervu, <span style="background:#d4edda;padding:0 4px">zelen&#225;</span> = optim&#225;ln&#237; (util &ge; 0,85), <span style="background:#f8d7da;padding:0 4px;color:#721c24">&#269;erven&#225;</span> = NEVYHOVUJE (util &gt; 1,0). Vyu&#382;it&#237; = max(tah, vzp&#283;r) p&#345;es v&#353;echny KZS. &nbsp; %s</p>', ...
     strjoin(fn_parts, ';&nbsp; '));
 
 %% ── SECTION 9: Souhrn ────────────────────────────────────────────────

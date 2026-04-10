@@ -5,10 +5,10 @@ function Lcr = bucklingLengthsFn(members, nodes, classification, params)
 %
 %   Member type    | L_cr in-plane          | L_cr out-of-plane
 %   ───────────────┼────────────────────────┼──────────────────────────
-%   Top chord      | L_sys (node distance)  | 0.9 × purlin_spacing
-%   Bottom chord   | L_sys (node distance)  | bracing_spacing
-%   Diagonal       | 0.9 × L_sys            | 0.75 × L_sys
-%   Vertical       | 0.9 × L_sys            | 0.75 × L_sys
+%   Top chord      | 0.9 × L_sys            | 0.9 × purlin_spacing
+%   Bottom chord   | 0.9 × L_sys            | bracing_spacing
+%   Diagonal       | 0.75 × L_sys           | 0.75 × L_sys
+%   Vertical       | 0.75 × L_sys           | 0.75 × L_sys
 %
 % INPUTS:
 %   members        - struct with .nodesHead, .nodesEnd (nmembers×1)
@@ -45,15 +45,15 @@ for p = 1:nmembers
     L = Lsys(p);
 
     if t == "top_chord"
-        Lcr_in(p)  = L;
+        Lcr_in(p)  = 0.9 * L;
         Lcr_out(p) = 0.9 * params.purlin_spacing;
 
     elseif t == "bottom_chord"
-        Lcr_in(p)  = L;
-        Lcr_out(p) = params.bracing_spacing;
+        Lcr_in(p)  = 0.9 * L;
+        Lcr_out(p) = 1.0 * params.bracing_spacing;
 
     else   % diagonal or vertical
-        Lcr_in(p)  = 0.9 * L;
+        Lcr_in(p)  = 0.75 * L;
         Lcr_out(p) = 0.75 * L;
     end
 end
