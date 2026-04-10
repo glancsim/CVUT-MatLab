@@ -47,6 +47,16 @@ b    = loadParams.truss_spacing;   % [m]
 trib = loadParams.trib;            % [m]
 top  = loadParams.top_nodes;
 
+% Self-weight: actual nodal forces (if available) or legacy scalar
+hasSW = isfield(loadParams, 'selfWeight');
+if hasSW
+    sw     = loadParams.selfWeight;      % struct .nodes, .values [N]
+    g_roof = loadParams.g_roof;          % [kN/m²] roof + purlins only
+else
+    sw     = struct('nodes', [], 'values', []);
+    g_roof = loadParams.g_total;         % legacy — all dead load in one scalar
+end
+
 % Snow design value: μ₁ = 0.8 per EN 1991-1-3 Tab. 5.2 (saddle, α ≤ 30°)
 mu1 = 0.8;
 s_d = mu1 * loadParams.s_k;       % [kN/m²]
@@ -69,38 +79,49 @@ else
 end
 
 %% Helper — assemble one combo struct -----------------------------------
-    function c = makeCombo(gG, qG, gS, qS, gW, qW, desc)
-        % qG, qS: downward [kN/m²];  qW: upward [kN/m²]
-        q_net = gG*qG + gS*qS - gW*qW;          % net downward [kN/m²]
-        Fz    = -q_net * b .* trib * 1e3;         % [N], negative = downward
+    function c = makeCombo(gG, qG_roof, gS, qS, gW, qW, desc)
+        % qG_roof: roof+purlins [kN/m²]; qS: snow [kN/m²]; qW: wind [kN/m²]
+        q_net_top = gG*qG_roof + gS*qS - gW*qW;  % net on top chord [kN/m²]
+        Fz_top    = -q_net_top * b .* trib * 1e3;  % [N], negative = downward
+
+        % Self-weight nodal forces (all nodes)
+        if hasSW && ~isempty(sw.nodes)
+            Fz_sw      = gG * sw.values;            % [N], gamma_G applied
+            all_nodes  = [top;    sw.nodes];
+            all_values = [Fz_top; Fz_sw];
+        else
+            all_nodes  = top;
+            all_values = Fz_top;
+        end
+
         lds.x.nodes = [];  lds.x.value = [];
-        lds.z.nodes = top;
-        lds.z.value = Fz;
+        lds.z.nodes = all_nodes;
+        lds.z.value = all_values;
         c.loads       = lds;
         c.description = desc;
         c.gamma_G     = gG;
         c.gamma_Q     = max([gS, gW]);
-        c.q_G         = gG * qG;
+        c.q_G         = gG * qG_roof;
         c.q_S         = gS * qS;
         c.q_W         = gW * qW;
-        c.q_net       = q_net;
+        c.q_net       = q_net_top;
     end
 
 %% 5 KZS ----------------------------------------------------------------
-c1 = makeCombo(1.35, loadParams.g_total, 1.50, s_d,  0,    0,    ...
+c1 = makeCombo(1.35, g_roof, 1.50, s_d,  0,    0,    ...
     '1,35&middot;G + 1,5&middot;S');
 
-c2 = makeCombo(1.35, loadParams.g_total, 1.50, s_d,  0.90, q_Wt, ...
+c2 = makeCombo(1.35, g_roof, 1.50, s_d,  0.90, q_Wt, ...
     '1,35&middot;G + 1,5&middot;S + 0,9&middot;W<sub>t</sub>');
 
-c3 = makeCombo(1.35, loadParams.g_total, 0.75, s_d,  1.50, q_Wt, ...
+c3 = makeCombo(1.35, g_roof, 0.75, s_d,  1.50, q_Wt, ...
     '1,35&middot;G + 1,5&middot;W<sub>t</sub> + 0,75&middot;S');
 
-c4 = makeCombo(1.00, loadParams.g_min,   0,    0,    1.50, q_Wt, ...
-    '1,0&middot;G<sub>min</sub> + 1,5&middot;W<sub>t</sub>');
+c4 = makeCombo(1.00, g_roof, 0,    0,    1.50, q_Wt, ...
+    '1,0&middot;G<sub>inf</sub> + 1,5&middot;W<sub>t</sub>');
 
-c5 = makeCombo(1.00, loadParams.g_min,   0,    0,    1.50, q_Wl, ...
-    '1,0&middot;G<sub>min</sub> + 1,5&middot;W<sub>l</sub>');
+c5 = makeCombo(1.00, g_roof, 0,    0,    1.50, q_Wl, ...
+    '1,0&middot;G<sub>inf</sub> + 1,5&middot;W<sub>l</sub>');
 
 combos = {c1; c2; c3; c4; c5};
 

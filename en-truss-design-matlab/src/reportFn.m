@@ -48,11 +48,21 @@ lambda_1 = pi * sqrt(params.E / params.f_y);
 mu1      = 0.8;
 s_d      = mu1 * loadParams.s_k;       % snow design value [kN/m²]
 
-% Self-weight (Jandera formula)
-g_d     = params.g_roof + params.s_k;
-g_self  = L / 76 * sqrt(g_d * params.truss_spacing);
-g_total = params.g_roof + g_self;
-g_min   = params.g_roof + 0.5 * g_self;
+% Self-weight
+if isfield(loadParams, 'selfWeight')
+    sw           = loadParams.selfWeight;
+    g_self       = loadParams.g_self_actual;      % [kN/m²] actual equivalent
+    g_self_emp   = loadParams.g_self_empirical;   % [kN/m²] Jandera estimate
+    g_roof_only  = loadParams.g_roof;             % [kN/m²] roof + purlins
+else
+    % Legacy fallback (Jandera formula)
+    g_d          = params.g_roof + params.s_k;
+    g_self       = L / 76 * sqrt(g_d * params.truss_spacing) / params.truss_spacing;
+    g_self_emp   = g_self;
+    g_roof_only  = params.g_roof;
+    sw           = struct('total_kN', g_self * L * params.truss_spacing);
+end
+g_total = g_roof_only + g_self;
 
 % Topology / shape labels
 if isfield(loadParams, 'topology'),  topo_key  = loadParams.topology;
@@ -246,15 +256,17 @@ else
 end
 w(fid, '</table>');
 
-% Dead load (Jandera formula)
+% Dead load — actual self-weight from member properties
 w(fid, '<div class="fbox">');
-w(fid, '<strong>Vlastn&#237; t&#237;ha vazn&#237;ku</strong> &nbsp;<span class="ref">(Jandera &mdash; OK&nbsp;01, kap.&nbsp;1.4.4)</span>');
-wf(fid, '<div class="step">$g_{self} = \\dfrac{L}{76} \\cdot \\sqrt{(g_k + s_k) \\cdot d} = \\dfrac{%.0f}{76} \\cdot \\sqrt{%.2f \\cdot %.1f} = \\mathbf{%.3f}$ kN/m&sup2;</div>', ...
-    L, g_d, params.truss_spacing, g_self);
-wf(fid, '<div class="step">$g_{total} = g_k + g_{self} = %.2f + %.3f = \\mathbf{%.3f}$ kN/m&sup2; &nbsp;&nbsp; (horn&#237; mez &mdash; pro KZS 1&ndash;3)</div>', ...
-    params.g_roof, g_self, g_total);
-wf(fid, '<div class="step">$g_{min} = g_k + 0{,}5 \\cdot g_{self} = %.2f + 0{,}5 \\cdot %.3f = \\mathbf{%.3f}$ kN/m&sup2; &nbsp;&nbsp; (doln&#237; mez &mdash; pro KZS 4&ndash;5)</div>', ...
-    params.g_roof, g_self, g_min);
+w(fid, '<strong>Vlastn&#237; t&#237;ha vazn&#237;ku</strong> &nbsp;<span class="ref">(z&nbsp;pr&#367;&#345;ez&#367; prut&#367;: &rho;&middot;A&middot;L&middot;g)</span>');
+wf(fid, '<div class="step">$G_{self} = \\sum_{i=1}^{n} \\rho \\cdot A_i \\cdot L_i \\cdot g = \\mathbf{%.2f}$ kN &nbsp;&nbsp; (%.0f kg)</div>', ...
+    sw.total_kN, sw.total_kN * 1e3 / 9.81);
+wf(fid, '<div class="step">$g_{self} = G_{self} / (L \\cdot d) = %.2f / (%.0f \\cdot %.1f) = \\mathbf{%.3f}$ kN/m&sup2; &nbsp; (ekvivalentn&#237; plo&#353;n&#233; zat&#237;&#382;en&#237;)</div>', ...
+    sw.total_kN, L, params.truss_spacing, g_self);
+wf(fid, '<div class="step">$g_{total} = g_k + g_{self} = %.3f + %.3f = \\mathbf{%.3f}$ kN/m&sup2;</div>', ...
+    g_roof_only, g_self, g_total);
+wf(fid, '<div class="step muted">Odhad dle Jandery (OK&nbsp;01, kap.&nbsp;1.4.4): $g_{self,emp} = L/76 \\cdot \\sqrt{q_d \\cdot d} = \\mathbf{%.3f}$ kN/m&sup2; &nbsp; (pom&#283;r: %.2f)</div>', ...
+    g_self_emp, g_self / max(g_self_emp, eps));
 w(fid, '</div>');
 
 % Snow (EN 1991-1-3)
@@ -575,10 +587,15 @@ end   % end reportFn
 
 %% ── Local helpers ────────────────────────────────────────────────────
 function w(fid, str)
+    % Source uses '\\' for LaTeX backslash (MATLAB literal = two chars).
+    % Convert '\\' → '\' so the HTML file gets a single '\' for MathJax.
+    str = strrep(str, '\\', '\');
     fprintf(fid, '%s\n', str);
 end
 
 function wf(fid, fmt, varargin)
+    % fprintf interprets '\\' → '\' in format strings automatically,
+    % so LaTeX backslashes come out correct. Original behavior.
     fprintf(fid, [fmt '\n'], varargin{:});
 end
 

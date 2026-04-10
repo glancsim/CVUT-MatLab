@@ -34,61 +34,55 @@ femDir = fullfile(root, '..', 'fem-2d-truss-matlab', 'src');
 addpath(srcDir);
 addpath(femDir);
 
-%% ── Průřezy (základní skupiny — trussHallInputFn expanduje symetricky) ──
+%% ── Průřezy (dle referenčního návrhu Jandera — OK 01) ─────────────────
 %
-%  Vstupní skupiny (3 nebo 4):
-%    1 = horní pás   (TR 108×5)
-%    2 = dolní pás   (TR 159×5)
-%    3 = diagonály   (TR 82.5×3.6)
-%    4 = svislice    (TR 82.5×3.6 — prozatím stejný jako diag.)
+%  Vstupní skupiny (5 profilů):
+%    1 = horní pás           H   (TR 108×5)
+%    2 = dolní pás           S   (TR 159×5)
+%    3 = vnější diagonály    D₁,D₂  (TR 82.5×3.6)
+%    4 = vnitřní diagonály   D₃,D₄  (TR 44.5×3.2)
+%    5 = svislice            V₁..Vₙ (TR 38×3.2)
 %
-%  trussHallInputFn automaticky rozšíří na symetrické podskupiny:
-%    sec 3..2+nD = diagonály (každý symetrický pár = vlastní skupina)
-%    sec 2+nD+1..nGroups = svislice (každý symetrický pár = vlastní skupina)
+%  params.diag_sections mapuje symetrické skupiny (zvenku dovnitř)
+%  na vstupní průřezy: [3 3 4 4] → D₁,D₂=sec3, D₃,D₄=sec4
 %
 % Vzorce pro CHS:
 %   A = pi/4 * (D^2 - d_i^2),   d_i = D - 2*t
 %   I = pi/64 * (D^4 - d_i^4)
 %   i = sqrt(I/A)
 
-% --- TR 108×5 (horní pás) ---
-D1 = 0.108; t1 = 0.005; di = D1 - 2*t1;
-A1 = pi/4 * (D1^2 - di^2);          % m²
-I1 = pi/64 * (D1^4 - di^4);         % m⁴
-i1 = sqrt(I1/A1);                    % m
+CHS = @(D, t) struct( ...
+    'D', D, 't', t, ...
+    'A', pi/4*(D^2 - (D-2*t)^2), ...
+    'I', pi/64*(D^4 - (D-2*t)^4), ...
+    'i', sqrt( (pi/64*(D^4-(D-2*t)^4)) / (pi/4*(D^2-(D-2*t)^2)) ));
 
-% --- TR 159×5.0 (dolní pás) ---
-D2 = 0.159; t2 = 0.0050; di = D2 - 2*t2;
-A2 = pi/4 * (D2^2 - di^2);
-I2 = pi/64 * (D2^4 - di^4);
-i2 = sqrt(I2/A2);
+p1 = CHS(0.108,  0.005);    % TR 108×5     — horní pás
+p2 = CHS(0.159,  0.005);    % TR 159×5     — dolní pás
+p3 = CHS(0.0825, 0.0036);   % TR 82.5×3.6  — vnější diagonály (D₁,D₂)
+p4 = CHS(0.0445, 0.0032);   % TR 44.5×3.2  — vnitřní diagonály (D₃,D₄)
+p5 = CHS(0.038,  0.0032);   % TR 38×3.2    — svislice
 
-% --- TR 82.5×3.6 (diagonály) ---
-D3 = 0.0820; t3 = 0.0036; di = D3 - 2*t3;
-A3 = pi/4 * (D3^2 - di^2);
-I3 = pi/64 * (D3^4 - di^4);
-i3 = sqrt(I3/A3);
-
-% --- TR 82.5×3.6 (svislice — prozatím stejný jako diagonály) ---
-D4 = D3; t4 = t3; di = D4 - 2*t4;
-A4 = A3;
-I4 = I3;
-i4 = i3;
+profiles = [p1 p2 p3 p4 p5];
+nProf = numel(profiles);
 
 fprintf('Průřezové charakteristiky:\n');
-fprintf('  TR 108×5:    A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A1*1e4, i1*1e3, D1/t1);
-fprintf('  TR 159×5:    A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A2*1e4, i2*1e3, D2/t2);
-fprintf('  TR 82.5×3.6: A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A3*1e4, i3*1e3, D3/t3);
-fprintf('  TR 60.3×3.2: A = %.2f cm², i = %.1f mm,  D/t = %.1f\n', A4*1e4, i4*1e3, D4/t4);
-fprintf('  Límit třídy 1 (S355): D/t ≤ %.1f\n', 50*(235/355));
+labels = {'TR 108x5  (H)', 'TR 159x5  (S)', 'TR 82.5x3.6 (D1,D2)', ...
+          'TR 44.5x3.2 (D3,D4)', 'TR 38x3.2 (V)'};
+for k = 1:nProf
+    fprintf('  %-22s A = %.2f cm2, i = %.1f mm, D/t = %.1f\n', ...
+        labels{k}, profiles(k).A*1e4, profiles(k).i*1e3, profiles(k).D/profiles(k).t);
+end
+fprintf('  Limit tridy 1 (S355): D/t <= %.1f\n', 50*(235/355));
 
-sections.A        = [A1; A2; A3; A4];                  % [m²]
-sections.E        = [210e9; 210e9; 210e9; 210e9];      % [Pa]
-sections.I        = [I1; I2; I3; I4];                  % [m⁴]
-sections.i_radius = [i1; i2; i3; i4];                  % [m]
-sections.curve    = {'a'; 'a'; 'a'; 'a'};               % horně válcované CHS → křivka a
-sections.D        = [D1; D2; D3; D4];                  % [m] vnější průměr
-sections.t        = [t1; t2; t3; t4];                  % [m] tloušťka stěny
+E_steel = 210e9;
+sections.A        = [profiles.A]';
+sections.E        = E_steel * ones(nProf, 1);
+sections.I        = [profiles.I]';
+sections.i_radius = [profiles.i]';
+sections.curve    = repmat({'a'}, nProf, 1);    % CHS → krivka a
+sections.D        = [profiles.D]';
+sections.t        = [profiles.t]';
 
 %% ── Parametry haly ────────────────────────────────────────────────────
 params.span            = 24;      % [m]
@@ -103,8 +97,11 @@ params.g_purlins       = 0.09;    % [kN/m] vaznice
 params.s_k             = 1.0;    % [kN/m²] sníh
 params.w_suction       = 0.48;    % [kN/m²] sání (>0 = nahoru)
 params.sections        = sections;
-params.topology        = 'warren_inverted'; 
-params.warren_verticals = true
+params.topology        = 'warren_inverted';
+params.warren_verticals = true;
+params.diag_sections   = [3 3 4 4];        % D₁,D₂ → sec 3; D₃,D₄ → sec 4
+params.vert_sections   = 5;                % všechny svislice → sec 5 (skalár = broadcast)
+params.support         = 'top';            % podpora v horním pásu (vazník na sloupech)
 
 %% ── Generování geometrie ──────────────────────────────────────────────
 [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(params);

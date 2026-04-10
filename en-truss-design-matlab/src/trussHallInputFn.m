@@ -88,6 +88,7 @@ if ~isfield(params, 'h_eave'),           params.h_eave           = 0;       end
 if ~isfield(params, 'topology'),          params.topology          = 'pratt'; end
 if ~isfield(params, 'shape'),             params.shape             = 'saddle'; end
 if ~isfield(params, 'warren_verticals'),  params.warren_verticals  = false;  end
+if ~isfield(params, 'support'),           params.support           = 'bottom'; end
 
 assert(isfield(params, 'sections'), ...
     'trussHallInputFn: params.sections is required (fields: A, E, I, i_radius, curve)');
@@ -131,11 +132,19 @@ end
 nodes.x = [x_chord; x_chord];
 nodes.z = [z_bot;   z_top  ];
 
+topSupport = strcmpi(params.support, 'top');
+
 %% --- Members ------------------------------------------------------------
 % --- Bottom chord (section 2): nodes 1..nb ---
-botHead  = (1 : n)';
-botEnd   = (2 : nb)';
-sec_bot  = 2 * ones(n, 1);
+if topSupport
+    % Skip edge segments (no bottom chord at supports — truss sits on columns)
+    botHead = (2 : n-1)';
+    botEnd  = (3 : n)';
+else
+    botHead = (1 : n)';
+    botEnd  = (2 : nb)';
+end
+sec_bot = 2 * ones(numel(botHead), 1);
 
 % --- Top chord (section 1): nodes nb+1..2*nb ---
 topHead  = (nb+1 : nb+n)';
@@ -234,8 +243,13 @@ switch lower(params.topology)
             end
         end
 
-        % Verticals: always include first and last
-        vIdx_edge = [1; nb];
+        % Verticals
+        if topSupport
+            % No edge verticals (columns replace them)
+            vIdx_edge = [];
+        else
+            vIdx_edge = [1; nb];
+        end
         if params.warren_verticals
             vIdx = [vIdx_edge; (2 : nb-1)'];
         else
@@ -296,12 +310,40 @@ else
 end
 
 %% --- Expand sections to nGroups ----------------------------------------
-%  Input sections has 3 or 4 entries (top, bot, diag, [vert]).
-%  Replicate diagonal properties to groups 3..2+nDiagGroups,
-%  replicate vertical properties to groups 2+nDiagGroups+1..nGroups.
+%  Input sections has N entries (at least 3: top, bot, diag, [vert], ...).
+%
+%  Mapping from symmetric groups to input section indices:
+%    Group 1       = top chord    → input section 1
+%    Group 2       = bottom chord → input section 2
+%    Groups 3..2+nD = diagonals   → params.diag_sections (per group, outermost first)
+%                                   default: all → input section 3
+%    Groups 2+nD+1..nG = verticals → params.vert_sections (per group, outermost first)
+%                                    default: all → input section 4 (or 3)
+%
+%  Example: params.diag_sections = [3 3 4 4]
+%           → D₁,D₂ (outer) use input sec 3; D₃,D₄ (inner) use input sec 4
 secIn = params.sections;
-diagSrcIdx = 3;                                        % source for diagonals
-vertSrcIdx = min(numel(secIn.A), 4);                   % source for verticals (4 if exists, else 3)
+
+% Per-group mapping for diagonals (scalar → broadcast to all groups)
+if isfield(params, 'diag_sections') && ~isempty(params.diag_sections)
+    diagMap = params.diag_sections(:)';
+    if isscalar(diagMap), diagMap = diagMap * ones(1, nDiagGroups); end
+    assert(numel(diagMap) == nDiagGroups, ...
+        'params.diag_sections must be scalar or have %d elements (one per symmetric diagonal group).', nDiagGroups);
+else
+    diagMap = 3 * ones(1, nDiagGroups);   % default: all from input section 3
+end
+
+% Per-group mapping for verticals (scalar → broadcast to all groups)
+if isfield(params, 'vert_sections') && ~isempty(params.vert_sections)
+    vertMap = params.vert_sections(:)';
+    if isscalar(vertMap), vertMap = vertMap * ones(1, nVertGroups); end
+    assert(numel(vertMap) == nVertGroups, ...
+        'params.vert_sections must be scalar or have %d elements (one per symmetric vertical group).', nVertGroups);
+else
+    vertSrcIdx = min(numel(secIn.A), 4);
+    vertMap = vertSrcIdx * ones(1, nVertGroups);
+end
 
 sections.A        = zeros(nGroups, 1);
 sections.E        = zeros(nGroups, 1);
@@ -313,11 +355,11 @@ if isfield(secIn, 't'), sections.t = zeros(nGroups, 1); end
 
 for sg = 1:nGroups
     if sg <= 2
-        srcIdx = sg;                     % top/bottom chord
+        srcIdx = sg;                                   % top/bottom chord
     elseif sg <= 2 + nDiagGroups
-        srcIdx = diagSrcIdx;             % diagonal group → copy from input sec 3
+        srcIdx = diagMap(sg - 2);                      % diagonal group
     else
-        srcIdx = vertSrcIdx;             % vertical group → copy from input sec 4 (or 3)
+        srcIdx = vertMap(sg - 2 - nDiagGroups);        % vertical group
     end
     sections.A(sg)        = secIn.A(srcIdx);
     sections.E(sg)        = secIn.E(srcIdx);
@@ -328,30 +370,67 @@ for sg = 1:nGroups
     if isfield(secIn, 't'), sections.t(sg) = secIn.t(srcIdx); end
 end
 
+%% --- Remove orphan nodes and renumber (top support) ---------------------
+if topSupport
+    usedNodes = unique([members.nodesHead; members.nodesEnd]);
+    nodeMap   = zeros(2*nb, 1);
+    nodeMap(usedNodes) = (1:numel(usedNodes))';
+
+    nodes.x = nodes.x(usedNodes);
+    nodes.z = nodes.z(usedNodes);
+    members.nodesHead = nodeMap(members.nodesHead);
+    members.nodesEnd  = nodeMap(members.nodesEnd);
+
+    % Identify new top chord node indices (original nb+1..2*nb that survived)
+    topOrig   = (nb+1 : 2*nb)';
+    topMask   = ismember(topOrig, usedNodes);
+    topNew    = nodeMap(topOrig(topMask));
+
+    nb_new = numel(usedNodes);   % updated total node count
+end
+
 %% --- Supports -----------------------------------------------------------
-% Pin at left support (node 1), roller at right support (node nb)
-kinematic.x.nodes = 1;
-kinematic.z.nodes = [1; nb];
+if topSupport
+    % Pin at first top chord node, roller at last top chord node
+    kinematic.x.nodes = topNew(1);
+    kinematic.z.nodes = [topNew(1); topNew(end)];
+else
+    % Pin at left support (node 1), roller at right support (node nb)
+    kinematic.x.nodes = 1;
+    kinematic.z.nodes = [1; nb];
+end
 
 %% --- Load parameters ---------------------------------------------------
-% Self-weight estimate per Jandera OK 01, kap. 1.4.4:
-%   g = L/76 * sqrt(q_d * d)   [kN/m²]  — upper bound for combo 1
-%   g_min = 0.5 * g            [kN/m²]  — lower bound for combo 2
-g_d    = params.g_roof + params.s_k + params.g_purlins/params.purlin_spacing;
-g_self = L / 76 * sqrt(g_d * params.truss_spacing) / params.truss_spacing; %[kN/m²]
-g_total = params.g_roof + params.g_purlins/params.purlin_spacing +  g_self;
-g_min   = params.g_roof + 0.5 * g_self;
+% Actual self-weight from member cross-sections (rho * A * L * g)
+sw = selfWeightFn(members, nodes, sections);
+g_self_actual = sw.total_kN / (L * params.truss_spacing);   % [kN/m²] equivalent
+
+% Empirical estimate for comparison (Jandera OK 01, kap. 1.4.4)
+g_d = params.g_roof + params.s_k + params.g_purlins/params.purlin_spacing;
+g_self_empirical = L / 76 * sqrt(g_d * params.truss_spacing) / params.truss_spacing;
+
+% Roof + purlin load (without self-weight — that goes separately via nodal forces)
+g_roof  = params.g_roof + params.g_purlins / params.purlin_spacing;   % [kN/m²]
+g_total = g_roof + g_self_actual;    % informational
 
 % Tributary lengths for top chord nodes
 trib        = a * ones(nb, 1);
 trib(1)     = a / 2;   % left edge node
 trib(nb)    = a / 2;   % right edge node
 
-loadParams.top_nodes       = (nb+1 : 2*nb)';
+if topSupport
+    loadParams.top_nodes   = topNew;
+else
+    loadParams.top_nodes   = (nb+1 : 2*nb)';
+end
 loadParams.trib            = trib;
 loadParams.truss_spacing   = params.truss_spacing;
-loadParams.g_total         = g_total;
-loadParams.g_min           = g_min;
+loadParams.selfWeight      = sw;               % struct .nodes, .values, .total_kN
+loadParams.g_roof          = g_roof;            % [kN/m²] roof + purlins (no self-weight)
+loadParams.g_self_actual   = g_self_actual;     % [kN/m²] actual equivalent
+loadParams.g_self_empirical = g_self_empirical; % [kN/m²] Jandera estimate
+loadParams.g_total         = g_total;           % [kN/m²] informational
+loadParams.g_min           = g_total;           % backward compat — gamma handles reduction
 loadParams.s_k             = params.s_k;
 loadParams.w_suction       = params.w_suction;
 loadParams.f_y             = params.f_y;
@@ -396,7 +475,8 @@ fprintf('Vazník: L = %.0f m, a = %.1f m, n = %d panelů  [%s / %s]\n', ...
     L, a, n, upper(params.topology), upper(params.shape));
 fprintf('  Průřezové skupiny: %d (2 pásy + %d diag + %d vert)\n', ...
     nGroups, nDiagGroups, nVertGroups);
-fprintf('  Vlastní tíha (odhad): g = %.3f kN/m²,  g_min = %.3f kN/m²\n', ...
-    g_total, g_min);
+fprintf('  Vlastní tíha (skutečná):  %.3f kN/m²  (%.1f kg)\n', ...
+    g_self_actual, sw.total_kN * 1e3 / 9.81);
+fprintf('  Vlastní tíha (Jandera):   %.3f kN/m²\n', g_self_empirical);
 
 end
