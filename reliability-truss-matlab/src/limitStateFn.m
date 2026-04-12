@@ -92,14 +92,14 @@ for k = 1:N_samples
     tE_k    = X(k, nG+10);
 
     % --- 2. Derive physical quantities ---
-    % Yield strength: JRC Tab 3.7 — R1 normalized, X_k = 0.83 (5% fraktil)
-    f_y_k = R1_k * f_y_nom / 0.83;     % [Pa]
+    % Yield strength: R1 normalized so that R1(5%) = 1.0 → f_y(5%) = f_y_k
+    f_y_k = R1_k * f_y_nom;            % [Pa]
 
     % CHS geometry: A and i from random diameter d and deterministic t
     [A_k, i_k] = CHS_propertiesFn(d_k, t_nom');
 
     % Snow on ground → roof
-    s_g_k  = Q1_k * s_k / 0.82;        % [kN/m²] real ground snow
+    s_g_k  = Q1_k * s_k;               % [kN/m²] ground snow (Q1 norm: 98%-fraktil = 1)
     s_roof = tQ2_k * mu1_k * 1.0 * s_g_k;  % C_t = 1.0
 
     % --- 3. Update sections for FEM ---

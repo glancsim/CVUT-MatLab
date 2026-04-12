@@ -70,8 +70,8 @@ tb    = X(:, nG+9);
 tE    = X(:, nG+10);
 
 % --- Derived quantities (vectorized over samples) ---
-f_y = R1 * (f_y_nom / 0.83);                    % (N×1)
-s_g = Q1 * (s_k / 0.82);                        % (N×1) ground snow
+f_y = R1 * f_y_nom;                              % (N×1) R1 norm: 5%-fraktil = 1.0
+s_g = Q1 * s_k;                                  % (N×1) ground snow [kN/m²]
 s_roof = tQ2 .* mu1 .* s_g;                     % (N×1) roof snow [kN/m²]
 
 % --- CHS properties per sample per group ---
