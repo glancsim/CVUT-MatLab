@@ -55,7 +55,7 @@ ndisc = 2;
 % --------------------------------------------------------------------------
 Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
 
-% plotModeShapeFn(nodes, beams, kinematic, Results);
+% plotModeShapeFn(nodes, beams, kinematic, Results, 2);
 
 posVals = Results.values(Results.values > 0);
 lambda1 = posVals(1)*0.225;   % smallest positive critical load multiplier

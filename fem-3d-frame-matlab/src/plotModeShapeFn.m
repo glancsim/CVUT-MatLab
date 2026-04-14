@@ -35,7 +35,6 @@ function plotModeShapeFn(nodes, beams, kinematic, Results, modeNum)
 %
 % (c) S. Glanc, 2025
 
-N_PLOT   = 30;   % interpolation points per beam
 N_FRAMES = 40;   % animation frames per full oscillation cycle
 FPS      = 25;   % target playback frame rate [Hz]
 
@@ -62,6 +61,19 @@ if ~isfield(beams, 'angles')
 end
 beams.XY = XYtoRotBeamsFn(beams, beams.angles);
 
+% Discretization — needed to access internal node DOFs
+if isfield(Results, 'ndisc')
+    ndisc = Results.ndisc;
+else
+    ndisc = 1;
+end
+beams.disc = ndisc * ones(nbeams, 1);
+elements   = discretizationBeamsFn(beams, nodes);
+nelement   = elements.nelement;
+
+% Adaptive interpolation points per element (~30 total per beam)
+N_PLOT = max(10, round(30 / ndisc));
+
 %--------------------------------------------------------------------------
 % 2. SELECT critical mode — eigenvalue with smallest absolute value
 %--------------------------------------------------------------------------
@@ -72,29 +84,81 @@ lambda_cr   = Results.values(modeNum);
 eigvec    = full(Results.vectors(:, modeNum));
 
 %--------------------------------------------------------------------------
-% 3. MAP eigenvector entries → nodal displacements (nnodes × 6)
+% 3. HERMITIAN INTERPOLATION along each element
+%
+% Iterates over beams → elements (segments). For each element, extracts
+% DOFs from the eigenvector via elements.codeNumbers (including internal
+% discretisation nodes), then applies cubic Hermite interpolation.
 %--------------------------------------------------------------------------
-u_nodes = zeros(nnodes, 6);
+xi = linspace(0, 1, N_PLOT);
+N1 = 1 - 3*xi.^2 + 2*xi.^3;   % Hermite shape functions
+N2 = xi .* (1 - xi).^2;
+N3 = 3*xi.^2 - 2*xi.^3;
+N4 = xi.^2 .* (xi - 1);
+
+cu = zeros(3, N_PLOT, nelement);   % undeformed positions
+cd = zeros(3, N_PLOT, nelement);   % unit displacement (global)
+ct = zeros(1, N_PLOT, nelement);   % transverse magnitude
+
+elem_idx = 0;
 for b = 1:nbeams
+    c  = beams.disc(b);
     hn = beams.nodesHead(b);
-    en = beams.nodesEnd(b);
-    for d = 1:6
-        k = beams.codeNumbers(b, d);
-        if k > 0,  u_nodes(hn, d) = eigvec(k);  end
-        k = beams.codeNumbers(b, d + 6);
-        if k > 0,  u_nodes(en, d) = eigvec(k);  end
+    P_start = [nodes.x(hn); nodes.y(hn); nodes.z(hn)];
+    dP_elem = beams.vertex(b,:)' / c;
+    L_elem  = norm(dP_elem);
+
+    % Local coordinate system (same for all elements of this beam)
+    e1  = dP_elem / L_elem;
+    XYv = beams.XY(b,:)';
+    e2  = XYv - dot(XYv, e1) * e1;
+    e2  = e2 / norm(e2);
+    e3  = cross(e1, e2);
+    T3  = [e1, e2, e3]';   % 3×3: rows are local basis vectors
+
+    for s = 1:c
+        elem_idx = elem_idx + 1;
+        P1 = P_start + dP_elem * (s - 1);
+
+        % Extract head (cols 1-6) and tail (cols 7-12) DOFs from eigenvector
+        u_head = zeros(6, 1);
+        u_tail = zeros(6, 1);
+        for d = 1:6
+            k = elements.codeNumbers(elem_idx, d);
+            if k > 0, u_head(d) = eigvec(k); end
+            k = elements.codeNumbers(elem_idx, d + 6);
+            if k > 0, u_tail(d) = eigvec(k); end
+        end
+
+        % Transform to local coordinates
+        u1 = T3 * u_head(1:3);   % head translation local
+        u2 = T3 * u_tail(1:3);   % tail translation local
+        r1 = T3 * u_head(4:6);   % head rotation local
+        r2 = T3 * u_tail(4:6);   % tail rotation local
+
+        % Hermite interpolation in local coords
+        ux_loc = (1 - xi) * u1(1) + xi * u2(1);
+        uy_loc = N1*u1(2) + N2*r1(3)*L_elem + N3*u2(2) + N4*r2(3)*L_elem;
+        uz_loc = N1*u1(3) - N2*r1(2)*L_elem + N3*u2(3) - N4*r2(2)*L_elem;
+
+        % Transform back to global
+        u_glob = T3' * [ux_loc; uy_loc; uz_loc];
+
+        cu(:, :, elem_idx) = P1 + dP_elem * xi;
+        cd(:, :, elem_idx) = u_glob;
+        ct(:, :, elem_idx) = sqrt(uy_loc.^2 + uz_loc.^2);
     end
 end
 
 %--------------------------------------------------------------------------
-% 4. AUTO-SCALE — max nodal translation = 15 % of bounding box
+% 4. AUTO-SCALE — max displacement across ALL interpolated points
 %--------------------------------------------------------------------------
 L_char = max([max(nodes.x)-min(nodes.x), ...
               max(nodes.y)-min(nodes.y), ...
               max(nodes.z)-min(nodes.z), 1]);
 
-u_mag = sqrt(u_nodes(:,1).^2 + u_nodes(:,2).^2 + u_nodes(:,3).^2);
-u_max = max(u_mag);
+u_mag_all = sqrt(cd(1,:,:).^2 + cd(2,:,:).^2 + cd(3,:,:).^2);
+u_max = max(u_mag_all(:));
 if u_max < eps
     warning('plotModeShapeFn: mode shape has zero displacement.');
     scaleFactor = 1;
@@ -102,68 +166,10 @@ else
     scaleFactor = 0.15 * L_char / u_max;
 end
 
-%--------------------------------------------------------------------------
-% 5. HERMITIAN INTERPOLATION along each beam
-%
-% For each beam, compute:
-%   coords_undef (3 × N_PLOT) — undeformed centreline
-%   disp_unit    (3 × N_PLOT) — displacement at scale = 1
-%   transv_mag   (1 × N_PLOT) — local transverse magnitude (for colour)
-%--------------------------------------------------------------------------
-xi = linspace(0, 1, N_PLOT);   % parametric coordinate along beam
-N1 = 1 - 3*xi.^2 + 2*xi.^3;   % Hermite shape functions
-N2 = xi .* (1 - xi).^2;
-N3 = 3*xi.^2 - 2*xi.^3;
-N4 = xi.^2 .* (xi - 1);
-
-cu  = zeros(3, N_PLOT, nbeams);   % undeformed
-cd  = zeros(3, N_PLOT, nbeams);   % unit displacement (global)
-ct  = zeros(1, N_PLOT, nbeams);   % transverse magnitude
-
-for b = 1:nbeams
-    hn = beams.nodesHead(b);
-    en = beams.nodesEnd(b);
-
-    P1 = [nodes.x(hn); nodes.y(hn); nodes.z(hn)];
-    P2 = [nodes.x(en); nodes.y(en); nodes.z(en)];
-    dP = P2 - P1;
-    L  = norm(dP);
-
-    % Local coordinate system (same logic as transformationMatrixFn)
-    e1  = dP / L;
-    XYv = beams.XY(b, :)';
-    e2  = XYv - dot(XYv, e1) * e1;
-    e2  = e2 / norm(e2);
-    e3  = cross(e1, e2);
-    T3  = [e1, e2, e3]';    % 3×3: rows are local basis vectors
-
-    % Nodal quantities in local coordinates
-    u1  = T3 * u_nodes(hn, 1:3)';   % head translation [ux, uy, uz] local
-    u2  = T3 * u_nodes(en, 1:3)';   % end  translation
-    r1  = T3 * u_nodes(hn, 4:6)';   % head rotation    [rx, ry, rz] local
-    r2  = T3 * u_nodes(en, 4:6)';   % end  rotation
-
-    % Interpolate displacement at each xi in LOCAL coordinates
-    %   axial:         linear interpolation
-    %   transverse y:  cubic Hermite (bending about local z, rotation = rz)
-    %   transverse z:  cubic Hermite (bending about local y, rotation = ry)
-    ux_loc = (1 - xi) * u1(1)  + xi * u2(1);
-    uy_loc = N1 * u1(2)  + N2 * r1(3) * L  + N3 * u2(2)  + N4 * r2(3) * L;
-    uz_loc = N1 * u1(3)  - N2 * r1(2) * L  + N3 * u2(3)  - N4 * r2(2) * L;
-
-    % Transform back to global
-    u_glob = T3' * [ux_loc; uy_loc; uz_loc];   % 3 × N_PLOT
-
-    % Store
-    cu(:, :, b) = P1 + dP * xi;       % undeformed positions
-    cd(:, :, b) = u_glob;              % global displacement (unit scale)
-    ct(:, :, b) = sqrt(uy_loc.^2 + uz_loc.^2);   % transverse magnitude
-end
-
 % Normalise colour data to [0, 1]
 ct_max = max(ct(:));
 if ct_max < eps, ct_max = 1; end
-C_norm = ct / ct_max;   % 1 × N_PLOT × nbeams
+C_norm = ct / ct_max;
 
 %--------------------------------------------------------------------------
 % 6. FIGURE — static elements
@@ -190,19 +196,19 @@ cb.Label.String = 'Příčný posun [normalizovaný]';
 clim(ax, [0, 1]);
 
 % Undeformed structure — thin grey lines
-for b = 1:nbeams
-    plot3(ax, cu(1,:,b), cu(2,:,b), cu(3,:,b), ...
+for e = 1:nelement
+    plot3(ax, cu(1,:,e), cu(2,:,e), cu(3,:,e), ...
         '-', 'Color', [0.75 0.75 0.75], 'LineWidth', 0.8);
 end
 
-% Deformed shape — coloured surface-line objects (one per beam)
-surf_h = gobjects(nbeams, 1);
-for b = 1:nbeams
-    Xd = cu(1,:,b) + scaleFactor * cd(1,:,b);
-    Yd = cu(2,:,b) + scaleFactor * cd(2,:,b);
-    Zd = cu(3,:,b) + scaleFactor * cd(3,:,b);
-    C  = squeeze(C_norm(1,:,b));
-    surf_h(b) = surface(ax, [Xd; Xd], [Yd; Yd], [Zd; Zd], [C; C], ...
+% Deformed shape — coloured surface-line objects (one per element)
+surf_h = gobjects(nelement, 1);
+for e = 1:nelement
+    Xd = cu(1,:,e) + scaleFactor * cd(1,:,e);
+    Yd = cu(2,:,e) + scaleFactor * cd(2,:,e);
+    Zd = cu(3,:,e) + scaleFactor * cd(3,:,e);
+    C  = squeeze(C_norm(1,:,e));
+    surf_h(e) = surface(ax, [Xd; Xd], [Yd; Yd], [Zd; Zd], [C; C], ...
         'EdgeColor', 'interp', 'FaceColor', 'none', 'LineWidth', 2);
 end
 
@@ -218,11 +224,11 @@ try
             if ~ishandle(fig), break; end
             phase = sin(2 * pi * (frame - 1) / N_FRAMES);   % -1 … +1
 
-            for b = 1:nbeams
-                Xd = cu(1,:,b) + scaleFactor * phase * cd(1,:,b);
-                Yd = cu(2,:,b) + scaleFactor * phase * cd(2,:,b);
-                Zd = cu(3,:,b) + scaleFactor * phase * cd(3,:,b);
-                set(surf_h(b), ...
+            for e = 1:nelement
+                Xd = cu(1,:,e) + scaleFactor * phase * cd(1,:,e);
+                Yd = cu(2,:,e) + scaleFactor * phase * cd(2,:,e);
+                Zd = cu(3,:,e) + scaleFactor * phase * cd(3,:,e);
+                set(surf_h(e), ...
                     'XData', [Xd; Xd], ...
                     'YData', [Yd; Yd], ...
                     'ZData', [Zd; Zd]);
