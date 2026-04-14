@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="cs"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spolehlivostní analýza — metodika</title>
+<script>
+window.MathJax = {
+  tex: {inlineMath: [["\\(","\\)"]], displayMath: [["\\[","\\]"]]},
+  options: {skipHtmlTags: ["script","noscript","style","textarea","code"]}
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+:root{--navy:#1a3a5c;--blue:#2b5f9e;--gray:#6c757d;}
+body{font-family:"Segoe UI",Arial,sans-serif;font-size:10.5pt;color:#212529;max-width:1050px;margin:0 auto;padding:20px 28px;line-height:1.6;}
+h1{color:var(--navy);border-bottom:3px solid var(--navy);padding-bottom:5px;font-size:15pt;margin-bottom:4px;}
+h2{color:var(--navy);font-size:12pt;margin-top:30px;border-left:4px solid var(--blue);padding-left:8px;}
+h3{color:var(--blue);font-size:10.5pt;margin-top:18px;}
+table{border-collapse:collapse;width:100%%;margin-bottom:12px;font-size:9.5pt;}
+th{background:var(--navy);color:#fff;padding:5px 9px;text-align:center;border:1px solid #0d2740;}
+td{padding:4px 9px;border:1px solid #dee2e6;}
+tr:nth-child(even) td{background:#f8f9fa;}
+.ref{color:var(--gray);font-style:italic;font-size:8.5pt;}
+.fbox{background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:12px 18px;margin:8px 0;font-size:10pt;line-height:2.0;}
+.wbox{background:#e8f4f8;border:1px solid #b8daff;border-radius:4px;padding:12px 18px;margin:8px 0;font-size:10pt;line-height:2.0;}
+.sbox{padding:14px 20px;border-radius:6px;font-size:12.5pt;font-weight:bold;text-align:center;margin-top:20px;}
+.meta{color:var(--gray);font-size:9.5pt;margin-bottom:20px;}
+.step{margin-left:20px;line-height:2.2;}
+tr.fail td{background:#f8d7da !important;color:#721c24;font-weight:bold;}
+@media print{body{max-width:100%%;padding:8mm 10mm;} h2{page-break-after:avoid;} th,tr.fail td{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style>
+</head><body>
+<h1>Spolehlivostní analýza příhradového vazníku</h1>
+<div class="meta"><strong>Metoda:</strong> Monte Carlo simulace (UQLab) &nbsp;|&nbsp; <strong>Norma:</strong> EN 1993-1-1, JRC TR (2024) &nbsp;|&nbsp; <strong>Datum:</strong> 13.04.2026</div>
+<table>
+<tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th><th>Jednotka</th></tr>
+<tr><td>Rozpětí</td><td style="text-align:center">L</td><td style="text-align:right"><strong>24.0</strong></td><td>m</td></tr>
+<tr><td>Ocel</td><td style="text-align:center">—</td><td style="text-align:right"><strong>S355</strong></td><td>—</td></tr>
+<tr><td>Mez kluzu (char.)</td><td style="text-align:center">f<sub>y,k</sub></td><td style="text-align:right"><strong>355</strong></td><td>MPa</td></tr>
+<tr><td>Modul pružnosti</td><td style="text-align:center">E</td><td style="text-align:right"><strong>210</strong></td><td>GPa</td></tr>
+<tr><td>Počet prutů</td><td style="text-align:center">n<sub>mem</sub></td><td style="text-align:right"><strong>29</strong></td><td>—</td></tr>
+<tr><td>Průřez. skupin</td><td style="text-align:center">n<sub>G</sub></td><td style="text-align:right"><strong>10</strong></td><td>—</td></tr>
+<tr><td>Sníh na zemi (char.)</td><td style="text-align:center">s<sub>k</sub></td><td style="text-align:right"><strong>1.00</strong></td><td>kN/m²</td></tr>
+</table>
+<h2>1. Popis metody</h2>
+<p>Cílem analýzy je ověřit systémovou spolehlivost příhradového vazníku
+pro zatěžovací případ tíha + sníh. Použitá metoda je <strong>simulace Monte Carlo</strong>
+(MCS) s náhodnými veličinami dle JRC&nbsp;TR „Reliability background of the Eurocodes" (2024).</p>
+<h3>1.1 Sériový systém</h3>
+<p>Příhrada je modelována jako <strong>sériový systém</strong> — selhání
+libovolného prutu způsobí kolaps celé konstrukce (staticky určitá soustava).</p>
+<div class="fbox">
+\[g_{\mathrm{sys}} = \min_{p=1}^{n_{\mathrm{mem}}} g_p(\mathbf{X})\]
+\[P_{f,\mathrm{sys}} = P\!\left(g_{\mathrm{sys}} \leq 0\right) = P\!\left(\bigcup_{p=1}^{n_{\mathrm{mem}}} \{g_p \leq 0\}\right)\]
+\[\beta_{\mathrm{sys}} = -\Phi^{-1}\!\left(P_{f,\mathrm{sys}}\right)\]
+</div>
+<p class="ref">Kde \(\Phi^{-1}\) je inverzní standardní normální distribuční funkce.</p>
+<h3>1.2 Cílová spolehlivost</h3>
+<div class="wbox">
+Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 3{,}8\) &nbsp;(CC2, referenční období 50 let)<br>
+<span class="ref">EN 1990:2002, Tab. B.2; JRC TR (2024), Tab. 3.1</span>
+</div>
+<h2>2. Náhodné veličiny</h2>
+<p>Model zahrnuje \(n_{\mathrm{dim}} = n_G + 10\) náhodných veličin (NV), tj. <strong>20 NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Tab.&nbsp;3.7 a Annex&nbsp;A.</p>
+<table>
+<tr><th>NV</th><th>Popis</th><th>Distribuce</th><th>Střední hodnota</th><th>COV</th><th>Normalizace</th></tr>
+<tr><td>\(R_1\)</td><td>Mez kluzu (multiplikátor)</td><td>Lognormal</td><td style="text-align:right">1.0857</td><td style="text-align:right">0.050</td><td>\(x_{0{,}05} = 1{,}0\)</td></tr>
+<tr><td>\(d_{1}\)</td><td>Průměr CHS sk. 1 (D=108 mm)</td><td>Normal</td><td style="text-align:right">0.1080 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{2}\)</td><td>Průměr CHS sk. 2 (D=159 mm)</td><td>Normal</td><td style="text-align:right">0.1590 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{3}\)</td><td>Průměr CHS sk. 3 (D=82 mm)</td><td>Normal</td><td style="text-align:right">0.0825 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{4}\)</td><td>Průměr CHS sk. 4 (D=82 mm)</td><td>Normal</td><td style="text-align:right">0.0825 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{5}\)</td><td>Průměr CHS sk. 5 (D=44 mm)</td><td>Normal</td><td style="text-align:right">0.0445 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{6}\)</td><td>Průměr CHS sk. 6 (D=44 mm)</td><td>Normal</td><td style="text-align:right">0.0445 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{7}\)</td><td>Průměr CHS sk. 7 (D=38 mm)</td><td>Normal</td><td style="text-align:right">0.0380 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{8}\)</td><td>Průměr CHS sk. 8 (D=38 mm)</td><td>Normal</td><td style="text-align:right">0.0380 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{9}\)</td><td>Průměr CHS sk. 9 (D=38 mm)</td><td>Normal</td><td style="text-align:right">0.0380 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(d_{10}\)</td><td>Průměr CHS sk. 10 (D=38 mm)</td><td>Normal</td><td style="text-align:right">0.0380 m</td><td style="text-align:right">0.005</td><td>\(\mu = D_{\mathrm{nom}}\)</td></tr>
+<tr><td>\(G_s\)</td><td>Vlastní tíha (multiplik.)</td><td>Normal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.025</td><td>\\(\\mu = 1\\)</td></tr>
+<tr><td>\(G_P\)</td><td>Stálé zatížení (multiplik.)</td><td>Normal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.100</td><td>\\(\\mu = 1\\)</td></tr>
+<tr><td>\(Q_1\)</td><td>Sníh na zemi (50-let max)</td><td>Gumbel</td><td style="text-align:right">0.5888</td><td style="text-align:right">0.200</td><td>\\(x_{0{,}98} = 1{,}0\\)</td></tr>
+<tr><td>\(\theta_{Q2}\)</td><td>Model. nejist. sněhu (čas. inv.)</td><td>Lognormal</td><td style="text-align:right">0.810</td><td style="text-align:right">0.260</td><td>JRC Tab. 3.7</td></tr>
+<tr><td>\(\mu_1\)</td><td>Tvarový souč. sněhu</td><td>Lognormal</td><td style="text-align:right">0.800</td><td style="text-align:right">0.200</td><td>EN 1991-1-3</td></tr>
+<tr><td>\(C_e\)</td><td>Souč. expozice</td><td>Lognormal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.150</td><td>JRC Tab. 3.7</td></tr>
+<tr><td>\(\theta_R\)</td><td>Model. nejist. (tah)</td><td>Lognormal</td><td style="text-align:right">1.150</td><td style="text-align:right">0.050</td><td>JRC Tab. 3.7</td></tr>
+<tr><td>\(\theta_b\)</td><td>Model. nejist. (vzpěr)</td><td>Lognormal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.100</td><td>JRC Tab. 3.7</td></tr>
+<tr><td>\(\theta_E\)</td><td>Model. nejist. (účinek zat.)</td><td>Lognormal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.050</td><td>JRC Tab. 3.7</td></tr>
+</table>
+<h3>2.1 Normalizace \(R_1\) a \(Q_1\)</h3>
+<p>NV jsou normalizovány tak, aby charakteristická hodnota odpovídala fraktilu 1,0:</p>
+<div class="fbox">
+<strong>Mez kluzu \(R_1\)</strong> (Lognormal, 5%% fraktil = 1,0):<br>
+\[\mu_{R_1} = \frac{1}{\exp(-1{,}645 \cdot V_{R_1})}\]
+Pro \(V_{R_1} = 0.050\): &nbsp; \(\mu_{R_1} = 1.0857\), &nbsp; \(f_y = R_1 \cdot f_{y,k}\), &nbsp; \(f_y(5%%) = f_{y,k}\) &#10003;
+</div>
+<div class="fbox">
+<strong>Sníh \(Q_1\)</strong> (Gumbel, 98%% fraktil = 1,0):<br>
+\[x_{0{,}98} = \mu \cdot \left(1 + K_{98} \cdot V\right), \quad K_{98} = \frac{\sqrt{6}}{\pi}\left(\gamma + \ln(-\ln 0{,}98)\right) \approx 2{,}593\]
+\[\mu_{Q_1} = \frac{1}{1 + K_{98} \cdot V_{Q_1}}\]
+Pro \(V_{Q_1} = 0.20\): &nbsp; \(\mu_{Q_1} = 0.5888\), &nbsp; \(s_g = Q_1 \cdot s_k\), &nbsp; \(s_g(98%%) = s_k\) &#10003;
+</div>
+<h2>3. Model zatížení</h2>
+<p>Uvažuje se kombinace stálého a sněhového zatížení <strong>bez dílčích součinitelů</strong>
+(ty jsou nahrazeny náhodnými veličinami).</p>
+<h3>3.1 Sníh na střeše</h3>
+<div class="fbox">
+\[s_{\mathrm{roof}} = \theta_{Q2} \cdot \mu_1 \cdot C_e \cdot C_t \cdot Q_1 \cdot s_k\]
+kde \(C_t = 1{,}0\) (tepelný součinitel).<br>
+<span class="ref">EN 1991-1-3:2025, Eq. 7.3; JRC TR Tab. 3.7</span>
+</div>
+<h3>3.2 Skládání účinků zatížení</h3>
+<p>Osová síla v prutu \(p\) se získá superpozicí:</p>
+<div class="fbox">
+\[N_{\mathrm{Ed},p} = G_P \cdot N_p^{\mathrm{perm}} + s_{\mathrm{roof}} \cdot N_p^{\mathrm{snow}} + G_s \cdot N_p^{\mathrm{sw}}\]
+</div>
+<p>kde \(N_p^{\mathrm{perm}}\), \(N_p^{\mathrm{snow}}\), \(N_p^{\mathrm{sw}}\) jsou <strong>vlivové koeficienty</strong>
+— osové síly získané ze tří jednotkových FEM výpočtů (viz kap. 6).</p>
+<h2>4. Model odolnosti</h2>
+<h3>4.1 Tah (Cl. 6.2.3)</h3>
+<div class="fbox">
+\[N_{t,\mathrm{Rd}} = \theta_R \cdot f_y \cdot A\]
+<span class="ref">EN 1993-1-1:2005, Cl. 6.2.3</span>
+</div>
+<h3>4.2 Vzpěr (Cl. 6.3.1)</h3>
+<div class="fbox">
+\[\bar{\lambda} = \frac{L_{\mathrm{cr}} / i}{\pi \sqrt{E / f_y}}\]
+\[\Phi = \tfrac{1}{2}\left[1 + \alpha\left(\bar{\lambda} - 0{,}2\right) + \bar{\lambda}^2\right]\]
+\[\chi = \min\!\left(\frac{1}{\Phi + \sqrt{\Phi^2 - \bar{\lambda}^2}},\; 1{,}0\right)\]
+\[N_{b,\mathrm{Rd}} = \theta_b \cdot \chi \cdot f_y \cdot A\]
+<span class="ref">EN 1993-1-1:2005, Cl. 6.3.1.2</span>
+</div>
+<h3>4.3 CHS geometrie</h3>
+<p>Průřezové charakteristiky CHS z náhodného průměru \(d\) a deterministické tloušťky \(t\):</p>
+<div class="fbox">
+\[A = \frac{\pi}{4}\left(d^2 - (d - 2t)^2\right), \quad I = \frac{\pi}{64}\left(d^4 - (d - 2t)^4\right), \quad i = \sqrt{I/A}\]
+</div>
+<table>
+<tr><th>Skupina</th><th>D [mm]</th><th>t [mm]</th><th>A [cm²]</th><th>i [mm]</th><th>Křivka</th><th>α</th></tr>
+<tr><td style="text-align:center">1</td><td style="text-align:right">108.0</td><td style="text-align:right">5.0</td><td style="text-align:right">16.18</td><td style="text-align:right">36.5</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">2</td><td style="text-align:right">159.0</td><td style="text-align:right">5.0</td><td style="text-align:right">24.19</td><td style="text-align:right">54.5</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">3</td><td style="text-align:right">82.5</td><td style="text-align:right">3.6</td><td style="text-align:right">8.92</td><td style="text-align:right">27.9</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">4</td><td style="text-align:right">82.5</td><td style="text-align:right">3.6</td><td style="text-align:right">8.92</td><td style="text-align:right">27.9</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">5</td><td style="text-align:right">44.5</td><td style="text-align:right">3.2</td><td style="text-align:right">4.15</td><td style="text-align:right">14.6</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">6</td><td style="text-align:right">44.5</td><td style="text-align:right">3.2</td><td style="text-align:right">4.15</td><td style="text-align:right">14.6</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">7</td><td style="text-align:right">38.0</td><td style="text-align:right">3.2</td><td style="text-align:right">3.50</td><td style="text-align:right">12.4</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">8</td><td style="text-align:right">38.0</td><td style="text-align:right">3.2</td><td style="text-align:right">3.50</td><td style="text-align:right">12.4</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">9</td><td style="text-align:right">38.0</td><td style="text-align:right">3.2</td><td style="text-align:right">3.50</td><td style="text-align:right">12.4</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+<tr><td style="text-align:center">10</td><td style="text-align:right">38.0</td><td style="text-align:right">3.2</td><td style="text-align:right">3.50</td><td style="text-align:right">12.4</td><td style="text-align:center">a</td><td style="text-align:right">0.21</td></tr>
+</table>
+<h2>5. Limitní stavová funkce</h2>
+<p>Pro každý prut \(p\) se vyhodnotí limitní stavová funkce \(g_p\):</p>
+<div class="wbox">
+<strong>Tah</strong> (\(N_{\mathrm{Ed},p} \geq 0\)):
+\[g_p = \theta_R \cdot f_y \cdot A_p - \theta_E \cdot N_{\mathrm{Ed},p}\]
+<strong>Tlak — vzpěr</strong> (\(N_{\mathrm{Ed},p} < 0\)):
+\[g_p = \theta_b \cdot \chi_p \cdot f_y \cdot A_p - \theta_E \cdot |N_{\mathrm{Ed},p}|\]
+</div>
+<p>\(g_p > 0\): bezpečný stav; &ensp; \(g_p \leq 0\): selhání prutu \(p\).</p>
+<p>Systémová funkce (sériový systém): \(g_{\mathrm{sys}} = \min_p g_p\).</p>
+<h2>6. Efektivní výpočet (superposice)</h2>
+<p>Pro lineární analýzu staticky určité příhrady platí <strong>princip superpozice</strong>:
+osové síly jsou lineární funkcí zatížení. Namísto \(N\) volání FEM solveru
+(jedno na každý MC vzorek) stačí <strong>3 jednotkové výpočty</strong>:</p>
+<div class="fbox">
+<ol style="margin:0;padding-left:20px;">
+<li>\(\mathbf{N}^{\mathrm{perm}}\): jednotkové stálé zatížení (\(G_P = 1\), \(s = 0\), \(G_s = 0\))</li>
+<li>\(\mathbf{N}^{\mathrm{snow}}\): jednotkový sníh (\(G_P = 0\), \(s = 1\;\mathrm{kN/m^2}\), \(G_s = 0\))</li>
+<li>\(\mathbf{N}^{\mathrm{sw}}\): jednotková vlastní tíha (\(G_P = 0\), \(s = 0\), \(G_s = 1\))</li>
+</ol><br>
+Každý MC vzorek pak: &ensp; \(N_{\mathrm{Ed},p} = G_P \cdot N_p^{\mathrm{perm}} + s_{\mathrm{roof}} \cdot N_p^{\mathrm{snow}} + G_s \cdot N_p^{\mathrm{sw}}\)<br><br>
+<strong>Zrychlení:</strong> ~500× oproti přímému FEM (vektorové operace místo řešení soustav).
+</div>
+<p class="ref">Platnost: exaktní pro staticky určité příhrady. Pro staticky neurčité
+zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 %% (COV(\(d\)) = 0,5 %%).</p>
+<h2>7. Vzpěrné délky</h2>
+<p>Vzpěrné délky \(L_{\mathrm{cr}}\) dle Tab. 1.29 (Jandera, OK-01):</p>
+<table>
+<tr><th>Typ prutu</th><th>\(L_{\mathrm{cr}}\) v rovině</th><th>\(L_{\mathrm{cr}}\) z roviny</th></tr>
+<tr><td>Horní pás</td><td style="text-align:center">\(L_{\mathrm{sys}}\)</td><td style="text-align:center">\(0{,}9 \times a\) (rozteč vaznic)</td></tr>
+<tr><td>Dolní pás</td><td style="text-align:center">\(L_{\mathrm{sys}}\)</td><td style="text-align:center">rozteč ztužení</td></tr>
+<tr><td>Diagonála</td><td style="text-align:center">\(0{,}9 \times L_{\mathrm{sys}}\)</td><td style="text-align:center">\(0{,}75 \times L_{\mathrm{sys}}\)</td></tr>
+<tr><td>Svislice</td><td style="text-align:center">\(0{,}9 \times L_{\mathrm{sys}}\)</td><td style="text-align:center">\(0{,}75 \times L_{\mathrm{sys}}\)</td></tr>
+</table>
+<p class="ref">Pro CHS (\(I_y = I_z\)) rozhoduje \(\max(L_{\mathrm{cr,in}}, L_{\mathrm{cr,out}})\).</p>
+<h2>8. Monte Carlo simulace</h2>
+<div class="fbox">
+<strong>Algoritmus:</strong><br><div class="step">
+1. Vygeneruj \(N\) vzorků náhodného vektoru \(\mathbf{X}\)<br>
+2. Pro každý vzorek \(k\): vypočti \(f_y^{(k)}\), \(A_p^{(k)}\), \(i_p^{(k)}\), \(N_{\mathrm{Ed},p}^{(k)}\) (superpozice)<br>
+3. Vyhodnoť \(g_p^{(k)}\) pro všechny pruty, urči \(g_{\mathrm{sys}}^{(k)} = \min_p g_p^{(k)}\)<br>
+4. Odhad: \(\hat{P}_f = \frac{1}{N} \sum_{k=1}^{N} \mathbf{1}\!\left[g_{\mathrm{sys}}^{(k)} \leq 0\right]\), &ensp; \(\hat{\beta} = -\Phi^{-1}(\hat{P}_f)\)<br>
+5. Koeficient variace: \(\mathrm{CoV}(\hat{P}_f) = \sqrt{\frac{1 - \hat{P}_f}{N \cdot \hat{P}_f}}\)
+</div></div>
+<p>Software: <strong>UQLab</strong> (ETH Zürich), metoda MCS nebo Subset Simulation.</p>
+<h2>9. Výsledky</h2>
+<table>
+<tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th></tr>
+<tr><td>Pravděpodobnost selhání</td><td>\(P_f\)</td><td style="text-align:right"><strong>3.1500e-04</strong></td></tr>
+<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>3.418</strong></td></tr>
+<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">8.5 %%</td></tr>
+<tr><td>Počet vzorků</td><td>\(N\)</td><td style="text-align:right">4e+04</td></tr>
+<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">3462</td></tr>
+<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">0.4 s</td></tr>
+</table>
+<h3>9.1 Spolehlivost jednotlivých prutů</h3>
+<table>
+<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>\(P_{f,p}\)</th><th>\(\beta_p\)</th><th>Kritický [%%]</th><th>Mód</th></tr>
+<tr><td style="text-align:center">1</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">2</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">3</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">4</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">5</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">6</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">7</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">8</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">9</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr class="fail"><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">1.2</td><td style="text-align:center">vzpěr</td></tr>
+<tr class="fail"><td style="text-align:center">11</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr class="fail"><td style="text-align:center">12</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">13</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">14</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">15</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">5.54e-03</td><td style="text-align:right">2.54</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">16</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">17</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">6.29e-02</td><td style="text-align:right">1.53</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">18</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">6.29e-02</td><td style="text-align:right">1.53</td><td style="text-align:right">81.3</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">20</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">21</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">5.54e-03</td><td style="text-align:right">2.54</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">22</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.70e-05</td><td style="text-align:right">4.04</td><td style="text-align:right">0.0</td><td style="text-align:center">tah</td></tr>
+<tr class="fail"><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.10e-02</td><td style="text-align:right">2.03</td><td style="text-align:right">0.3</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">24</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">25</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">17.2</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">27</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
+<tr class="fail"><td style="text-align:center">28</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.10e-02</td><td style="text-align:right">2.03</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">29</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.70e-05</td><td style="text-align:right">4.04</td><td style="text-align:right">0.0</td><td style="text-align:center">tah</td></tr>
+</table>
+<h2>10. Souhrn</h2>
+<div class="sbox" style="background:#f8d7da;border:2px solid #f5c6cb;color:#721c24;">
+\(\beta = 3.418\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 3{,}8\) &nbsp;&rarr;&nbsp; <strong>NEVYHOVUJE</strong>
+</div>
+<hr style="margin-top:30px;border:none;border-top:1px solid #ccc;">
+<p class="ref">Vygenerováno: 13.04.2026 17:35 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
+</body></html>

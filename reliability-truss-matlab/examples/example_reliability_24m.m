@@ -88,36 +88,17 @@ detResults = designCheckFn(nodes, members, sections, kinematic, loadParams);
 fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
     find(detResults.util_max == max(detResults.util_max), 1));
 
-%% ── Fáze 1: Rychlý testovací běh (1e4 vzorků) ────────────────────────
-fprintf('\n====== FÁZE 1: Testovací běh (1e4 vzorků) ======\n');
-mcOpts.nSamples  = 1e4;
-mcOpts.batchSize = 1e3;
-mcOpts.method    = 'MCS';
-mcOpts.verbose   = true;
-
-results1 = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
-reliabilityReportFn(results1, sections, loadParams);
-convergencePlotFn(results1);
-
-%% ── Fáze 2: Střední běh (1e5 vzorků) — odkomentuj po ověření pipeline
-% fprintf('\n====== FÁZE 2: Střední běh (1e5 vzorků) ======\n');
-% mcOpts.nSamples  = 1e5;
-% mcOpts.batchSize = 1e4;
-% results2 = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
-% reliabilityReportFn(results2, sections, loadParams);
-% convergencePlotFn(results2);
-
-%% ── Fáze 3: Plný běh (1e6+ nebo SubsetSimulation) — odkomentuj pro finální výsledky
+%% ── Spolehlivostní posudek ────────────────────────
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
 mcOpts.nSamples  = 1e6;
 mcOpts.batchSize = 1e4;
 mcOpts.method    = 'Subset';             % UQLab Subset Simulation (nebo 'IS' pro Importance Sampling)
-results3 = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
-reliabilityReportFn(results3, sections, loadParams);
-convergencePlotFn(results3);
+results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
+reliabilityReportFn(results, sections, loadParams);
+reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);
+convergencePlotFn(results);
 
 %% ── Srovnání deterministického a probabilistického posudku ────────────
-results = results1;   % změň na results2/results3 po odkomentování
 fprintf('\n--- Srovnání ---\n');
 fprintf('  Deterministický max util:  %.3f\n', max(detResults.util_max));
 fprintf('  Probabilistický β:         %.3f\n', results.beta);
