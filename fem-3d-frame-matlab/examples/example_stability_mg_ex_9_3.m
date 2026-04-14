@@ -40,14 +40,14 @@ loads.rx.nodes = [];   loads.rx.value = [];
 loads.ry.nodes = [];   loads.ry.value = [];
 loads.rz.nodes = [];   loads.rz.value = [];
 
-% plotStructureFn(nodes, beams, loads, kinematic) 
+plotStructureFn(nodes, beams, loads, kinematic) 
 
 ndisc = 2;
 %% STABILITY ANALYSIS
 % --------------------------------------------------------------------------
 Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
 
-% plotModeShapeFn(nodes, beams, kinematic, Results);
+plotModeShapeFn(nodes, beams, kinematic, Results);
 
 posVals = Results.values(Results.values > 0);
 lambda1 = posVals(1);   % smallest positive critical load multiplier

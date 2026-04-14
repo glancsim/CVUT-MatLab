@@ -46,7 +46,7 @@ loads.rz.nodes = [];   loads.rz.value = [];
 ndisc = 2;
 %% STABILITY ANALYSIS
 % --------------------------------------------------------------------------
-Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "oofem", 1e-9);
+Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads, "mc-guire", 1e-9);
 
 % plotModeShapeFn(nodes, beams, kinematic, Results);
 
@@ -63,3 +63,10 @@ fprintf('\n');
 fprintf('  Reference critical load 2    : F_ref = 132.07 kN\n');
 fprintf('\n');
 fprintf('  Critical load                : F_crit = %.2f kN\n', abs(lambda2));
+
+
+% Pridat MAC koeficienty ve scie malé pruty a vytahám posuny
+% Topologická optimalizace a stabilitu - state of the art - vybereme nějaké
+% příklady, podle citovanosti, zajímavé ale easy na implementaci.
+
+% 11:30 čtvrtek ZT
