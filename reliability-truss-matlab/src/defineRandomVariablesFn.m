@@ -27,7 +27,7 @@ function InputOpts = defineRandomVariablesFn(loadParams, sections, opts)
 %     .G_P_mean, .G_P_cov     (default: 1.00, 0.10)
 %     .Q1_cov                 (default: 0.20, mean auto-computed: 98%-fraktil=1)
 %     .tQ2_mean, .tQ2_cov     (default: 0.81, 0.26)
-%     .mu1_mean, .mu1_cov     (default: 0.8*Ce_mean, 0.20)
+%     .mu1_mean, .mu1_cov     (default: 0.80, 0.20) — EN 1991-1-3 Tab. 5.2, sklon ≤ 30°
 %     .Ce_mean, .Ce_cov       (default: 1.00, 0.15)
 %     .tR_mean, .tR_cov       (default: 1.15, 0.05)
 %     .tb_mean, .tb_cov       (default: 1.00, 0.10)

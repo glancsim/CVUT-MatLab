@@ -86,7 +86,7 @@ for k = 1:N_samples
     Q1_k    = X(k, nG+4);
     tQ2_k   = X(k, nG+5);
     mu1_k   = X(k, nG+6);
-    Ce_k    = X(k, nG+7);              %#ok<NASGU> — used in snow model
+    Ce_k    = X(k, nG+7);
     tR_k    = X(k, nG+8);
     tb_k    = X(k, nG+9);
     tE_k    = X(k, nG+10);
@@ -100,7 +100,7 @@ for k = 1:N_samples
 
     % Snow on ground → roof
     s_g_k  = Q1_k * s_k;               % [kN/m²] ground snow (Q1 norm: 98%-fraktil = 1)
-    s_roof = tQ2_k * mu1_k * 1.0 * s_g_k;  % C_t = 1.0
+    s_roof = tQ2_k * mu1_k * Ce_k * s_g_k;  % C_t = 1.0 (EN 1991-1-3 Eq. 7.3)
 
     % --- 3. Update sections for FEM ---
     sec_k   = params.sections;

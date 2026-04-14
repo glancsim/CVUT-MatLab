@@ -64,7 +64,7 @@ G_P   = X(:, nG+3);
 Q1    = X(:, nG+4);
 tQ2   = X(:, nG+5);
 mu1   = X(:, nG+6);
-% Ce  = X(:, nG+7);               % not used directly
+Ce    = X(:, nG+7);
 tR    = X(:, nG+8);
 tb    = X(:, nG+9);
 tE    = X(:, nG+10);
@@ -72,7 +72,7 @@ tE    = X(:, nG+10);
 % --- Derived quantities (vectorized over samples) ---
 f_y = R1 * f_y_nom;                              % (N×1) R1 norm: 5%-fraktil = 1.0
 s_g = Q1 * s_k;                                  % (N×1) ground snow [kN/m²]
-s_roof = tQ2 .* mu1 .* s_g;                     % (N×1) roof snow [kN/m²]
+s_roof = tQ2 .* mu1 .* Ce .* s_g;               % (N×1) roof snow [kN/m²] (EN 1991-1-3 Eq. 7.3, C_t=1)
 
 % --- CHS properties per sample per group ---
 % A(k,sg) = pi/4 * (d^2 - (d-2t)^2) = pi * t * (d - t)
