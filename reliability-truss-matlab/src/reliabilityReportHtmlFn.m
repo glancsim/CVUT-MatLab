@@ -297,14 +297,23 @@ if hasResults
     end
     w(fid, '</table>');
 
-    % Per-member table
-    if isfield(results, 'member') && isfield(results.member, 'Pf')
-        w(fid, '<h3>9.1 Spolehlivost jednotlivých prutů</h3>');
+    % Per-member table — jen pruty, které někdy byly nejslabším článkem,
+    % seřazeno sestupně dle critical_pct. Per-member Pf/β se nereportuje:
+    % u Subset/IS jsou vzorky vychýlené a marginální Pf z nich přímo
+    % odhadnout nelze; systémové Pf je v tabulce výše.
+    if isfield(results, 'member') && isfield(results.member, 'critical_pct')
+        w(fid, '<h3>9.1 Kritičnost jednotlivých prutů</h3>');
+        w(fid, '<p>Podíl vzorků, ve kterých byl daný prut nejslabším článkem sériového systému. Ukazují se jen pruty s nenulovým podílem, seřazené sestupně.</p>');
         w(fid, '<table>');
-        w(fid, '<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>\(P_{f,p}\)</th><th>\(\beta_p\)</th><th>Kritický [%%]</th><th>Mód</th></tr>');
+        w(fid, '<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%%]</th><th>Převažující mód</th></tr>');
 
         classification = results.classification;
-        for pp = 1:nmembers
+        crit_pct = results.member.critical_pct;
+        [~, order] = sort(crit_pct, 'descend');
+        show = order(crit_pct(order) > 0);
+
+        for kk = 1:numel(show)
+            pp = show(kk);
             si = members.sections(pp);
             type_str = translateType(char(classification.type(pp)));
             D_mm = sections.D(si)*1e3;
@@ -319,20 +328,8 @@ if hasResults
                 mode_str = '—';
             end
 
-            if isinf(results.member.beta(pp))
-                beta_str = '∞';
-            else
-                beta_str = sprintf('%.2f', results.member.beta(pp));
-            end
-
-            if results.member.Pf(pp) > 0 && results.member.beta(pp) < 3.8
-                rc = ' class="fail"';
-            else
-                rc = '';
-            end
-
-            fprintf(fid, '<tr%s><td style="text-align:center">%d</td><td>%s</td><td style="text-align:center">%s</td><td style="text-align:right">%.2e</td><td style="text-align:right">%s</td><td style="text-align:right">%.1f</td><td style="text-align:center">%s</td></tr>\n', ...
-                rc, pp, type_str, prof_str, results.member.Pf(pp), beta_str, results.member.critical_pct(pp), mode_str);
+            fprintf(fid, '<tr><td style="text-align:center">%d</td><td>%s</td><td style="text-align:center">%s</td><td style="text-align:right">%.1f</td><td style="text-align:center">%s</td></tr>\n', ...
+                pp, type_str, prof_str, crit_pct(pp), mode_str);
         end
         w(fid, '</table>');
     end

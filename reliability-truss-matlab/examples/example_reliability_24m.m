@@ -1,14 +1,21 @@
-% example_reliability_30m.m
+% example_reliability_24m.m
 %
 % Spolehlivostní analýza příhradového vazníku metodou Monte Carlo (UQLab).
 %
-% Využívá stejnou geometrii jako en-truss-design-matlab/examples/example_truss_hall_30m.m:
-%   - 24m Warren inverted vazník, S355, CHS průřezy
-%   - Zatížení: gravitace (G) + sníh (S) — bez větru
-%   - Sériový systém: selhání jednoho prutu = kolaps
+% ── OKRAJOVÉ PODMÍNKY PŘÍKLADU ─────────────────────────────────────────
+%   Objekt:          zateplená hala (C_t = 1.0 dle ČSN EN 1991-1-3 Tab. D.1)
+%   Půdorys:         24 m × 59.4 m  (1 pole × 9 polí á 6.6 m)
+%   Vazník:          24 m Warren inverted, sklon 5 %, S355, CHS
+%   Střešní plášť:   g_roof = 0.23 kN/m² (char.)
+%   Sněhová oblast:  II (ČR)  →  s_k = 1.0 kN/m² (ČSN EN 1991-1-3 NA)
+%   Větrná oblast:   II       →  v_b,0 = 25 m/s  (nepoužito: pouze G + S)
+%   Kategorie terénu: III     →  C_e,mean = 1.0  (Tab. 5.1)
+%   C_t:             1.0      (zateplená střecha, bez tání)
+%   Zatížení:        gravitace (G) + sníh (S) — vítr se v reliability nepočítá
+%   Systém:          sériový — selhání jednoho prutu = kolaps
 %
 % Náhodné veličiny dle JRC TR "Reliability background of the Eurocodes" (2024),
-% Table 3.7, Annex A + EN 1991-1-3:2025.
+% Table 3.7, Annex A + ČSN EN 1991-1-3 ed. 2.
 %
 % Cílový index spolehlivosti: β_t = 3.8 (CC2, referenční období 50 let)
 %
@@ -57,17 +64,18 @@ sections.D        = [profiles.D]';
 sections.t        = [profiles.t]';
 
 %% ── Parametry haly ────────────────────────────────────────────────────
-params.span            = 24;      % [m]
-params.slope           = 0.05;    % [-]  5% sklon
-params.purlin_spacing  = 3;       % [m]  rozteč vaznic
-params.h_support       = 1.8;     % [m]  výška v uložení
-params.truss_spacing   = 6.6;     % [m]  vzdálenost vazníků
+% Půdorys 24 × 59.4 m, 9 polí á 6.6 m. Vazníky po 6.6 m → truss_spacing.
+params.span            = 24;      % [m] rozpětí vazníku (1 pole)
+params.slope           = 0.05;    % [-] 5 % sklon střechy
+params.purlin_spacing  = 3;       % [m] rozteč vaznic
+params.h_support       = 1.8;     % [m] výška v uložení
+params.truss_spacing   = 6.6;     % [m] vzdálenost vazníků (podélné pole)
 params.f_y             = 355e6;   % [Pa] S355
 params.E               = 210e9;   % [Pa]
-params.g_roof          = 0.23;    % [kN/m²] plášť
+params.g_roof          = 0.23;    % [kN/m²] střešní plášť (char.)
 params.g_purlins       = 0.09;    % [kN/m] vaznice
-params.s_k             = 1.0;     % [kN/m²] sníh char. (na zemi)
-params.w_suction       = 0.48;    % [kN/m²] sání (nepoužito v reliabilitě)
+params.s_k             = 1.0;     % [kN/m²] sníh char. (II. sněhová oblast ČR)
+params.w_suction       = 0.48;    % [kN/m²] sání (II. větrná obl., kat. terénu III — nepoužito v reliabilitě)
 params.sections        = sections;
 params.topology        = 'warren_inverted';
 params.warren_verticals = true;
@@ -92,7 +100,17 @@ fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
 mcOpts.nSamples  = 1e6;
 mcOpts.batchSize = 1e4;
-mcOpts.method    = 'Subset';             % UQLab Subset Simulation (nebo 'IS' pro Importance Sampling)
+mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
+
+% Explicitní hodnoty RV dle okrajových podmínek (viz hlavička):
+%   Ce_mean = 1.0  — kategorie terénu III ("normální"), ČSN EN 1991-1-3 Tab. 5.1
+%   C_t = 1.0      — zateplená střecha (hardcoded v limitStateFastFn)
+%   μ₁ = 0.8       — plochá střecha, sklon 5 % ≤ 30° (Tab. 5.2, případ (i))
+mcOpts.rvOpts.Ce_mean  = 1.00;
+mcOpts.rvOpts.Ce_cov   = 0.15;
+mcOpts.rvOpts.mu1_mean = 0.80;
+mcOpts.rvOpts.mu1_cov  = 0.20;
+
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
 reliabilityReportFn(results, sections, loadParams);
 reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);

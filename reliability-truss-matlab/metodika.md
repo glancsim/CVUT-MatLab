@@ -6,6 +6,40 @@ Uživatel potřebuje ověřit, že výpočet všech náhodných veličin a jejic
 
 ---
 
+## 0. Okrajové podmínky referenčního příkladu
+
+Referenční příklad: `examples/example_reliability_24m.m`.
+
+| Parametr | Hodnota | Zdroj / poznámka |
+|----------|---------|-------------------|
+| Typ objektu | zateplená hala | → C_t = 1.0 (bez tání) |
+| Půdorys | 24 m × 59.4 m | 1 pole × 9 polí á 6.6 m |
+| Rozpětí vazníku | 24 m | 1 pole |
+| Topologie | Warren inverted, sklon 5 % | plochá střecha, μ₁ = 0.8 |
+| Vzdálenost vazníků | 6.6 m | podélné pole |
+| Rozteč vaznic | 3 m | — |
+| Materiál | S355, CHS hot-finished | f_y,nom = 355 MPa; vzpěrná křivka 'a' |
+| Střešní plášť | g_roof = 0.23 kN/m² | charakteristická hodnota |
+| Vaznice | g_purlins = 0.09 kN/m | — |
+| Sněhová oblast | II (ČR) | s_k = 1.0 kN/m² (ČSN EN 1991-1-3 NA mapa) |
+| Větrná oblast | II | v_b,0 = 25 m/s — **vítr nezahrnut do reliability**, jen G + S |
+| Kategorie terénu | III ("normální") | → C_e,mean = 1.0 (ČSN EN 1991-1-3 Tab. 5.1) |
+| Tepelný součinitel | C_t = 1.0 | zateplená střecha (Tab. D.1) |
+| Tvarový součinitel | μ₁ = 0.8 | sklon ≤ 30°, případ (i) — Tab. 5.2 |
+
+**Proč vítr není v reliability modelu:** v tomto běhu se uvažují jen kombinace s dominantním sněhem (stálá + sníh). Sání větru (w_suction v params) slouží pro deterministický posudek v `designCheckFn`, ale `limitStateFastFn` ho nevyužívá. Rozšíření o vítr by znamenalo přidat další RV (v_b, c_p) a druhou limitní funkci pro uplift.
+
+**Jak jsou okrajové podmínky zohledněny v kódu:**
+- `params.s_k = 1.0` — II. sněhová oblast (v `example_reliability_24m.m` ř. 76)
+- `params.g_roof = 0.23` — střešní plášť (ř. 74)
+- `params.truss_spacing = 6.6` a opakování 9× tvoří 59.4 m (ř. 71, délka haly implicitně)
+- `mcOpts.rvOpts.Ce_mean = 1.00` — explicitně v příkladu (kat. terénu III)
+- `mcOpts.rvOpts.mu1_mean = 0.80` — explicitně (sklon 5 %)
+- C_t = 1 — hardcoded (zateplená střecha), viz `limitStateFastFn` ř. 75
+- `sections.curve = 'a'` — CHS hot-finished (ř. 62 v příkladu)
+
+---
+
 ## 1. Přehled toku dat
 
 ```
@@ -137,6 +171,12 @@ Pf       = P(g_sys ≤ 0)
 β        = −Φ⁻¹(Pf)
 ```
 ✔ Pro staticky určitý vazník odpovídá realitě (jediný selhávající prut = kolaps).
+
+**Per-member Pf/β se záměrně nereportuje.** U Subset Simulation a Importance Sampling nejsou vzorky ve `limitStateFastFn` store unconditional — jsou vychýlené (MCMC vzorky z mezilehlých úrovní selhání resp. vážené IS vzorky) a prostý průměr `mean(g_member <= 0)` nedává marginální pravděpodobnost selhání členu. To vedlo k artefaktu `β_member > β_sys`, který porušuje základní vlastnost sériového systému (β_sys ≤ min β_p). I u čistého MCS je marginální Pf členu interpretačně zavádějící — prut není nezávislá událost, sdílí globální RV (Q1, G_s, G_P, R1, θ_E…) se všemi ostatními.
+
+Místo per-member Pf/β se reportují:
+- `member.critical_pct` — podíl vzorků, kde byl prut nejslabším článkem (smysluplné u všech metod)
+- `member.n_tension_fail` / `n_buckling_fail` — dominantní mód selhání prutu
 
 ---
 

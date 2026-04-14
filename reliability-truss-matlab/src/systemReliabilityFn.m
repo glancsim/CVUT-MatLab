@@ -29,6 +29,15 @@ function results = systemReliabilityFn(nodes, members, sections, kinematic, load
 %     .params        deterministic parameters struct (for post-processing)
 %     .classification member classification
 %     .Lcr           buckling lengths
+%     .member.critical_pct   (nmembers×1) % vzorků, kde byl prut nejslabší článek
+%     .member.n_tension_fail, .n_buckling_fail — rozdělení módů selhání
+%     .member.g_member       (nSamples×nmembers) hodnoty limitní funkce
+%
+% Pozn.: per-member Pf/β se záměrně nepočítá. U Subset/IS jsou vzorky
+% ze store vychýlené (MCMC resp. vážené) a marginální Pf členu z nich
+% přímo odhadnout nelze. I u MCS je marginální Pf člena interpretačně
+% zavádějící (není to nezávislá událost). Systémové Pf je v .Pf;
+% pro relativní kritičnost prutů použij .member.critical_pct.
 %
 % (c) S. Glanc, 2026
 
@@ -201,20 +210,13 @@ results.Lcr            = Lcr_struct;
 results.elapsed        = elapsed;
 
 %% 8. Per-member results from persistent store ----------------------------
+% Per-member marginal Pf/β se záměrně nepočítá — viz hlavička funkce.
+% U Subset/IS jsou vzorky ve store vychýlené a prostý průměr g<=0 nedává
+% marginální Pf členu. Zachováváme pouze relativní kritičnost a rozdělení
+% módů selhání, které jsou interpretačně platné pro všechny metody.
 memberStore = limitStateFastFn('get_store', []);
 if ~isempty(memberStore)
     nEval = size(memberStore.g_member, 1);
-
-    % Per-member failure probability
-    results.member.Pf = mean(memberStore.g_member <= 0, 1)';   % (nmembers×1)
-    results.member.beta = zeros(nmembers, 1);
-    for p = 1:nmembers
-        if results.member.Pf(p) > 0
-            results.member.beta(p) = -norminv(results.member.Pf(p));
-        else
-            results.member.beta(p) = Inf;
-        end
-    end
 
     % Critical member histogram: how often each member is the weakest link
     results.member.critical_count = histcounts(memberStore.critical_member, ...
@@ -245,12 +247,17 @@ if opts.verbose
     end
     fprintf('──────────────────────────────────────────────\n');
 
-    % Per-member table
-    if isfield(results, 'member') && isfield(results.member, 'Pf')
-        fprintf('\n── Per-member spolehlivost ────────────────────\n');
-        fprintf('  %4s  %-14s  %10s  %8s  %8s  %s\n', ...
-            'č.', 'Typ', 'Pf_member', 'β_member', 'Krit.%', 'Mód');
-        for p = 1:nmembers
+    % Per-member table — jen pruty, které někdy byly slabým článkem,
+    % seřazeno sestupně dle relativní kritičnosti
+    if isfield(results, 'member') && isfield(results.member, 'critical_pct')
+        crit_pct = results.member.critical_pct;
+        [~, order] = sort(crit_pct, 'descend');
+        show = order(crit_pct(order) > 0);
+
+        fprintf('\n── Kritičnost prutů (podíl v systémových selháních) ──\n');
+        fprintf('  %4s  %-14s  %8s  %s\n', 'č.', 'Typ', 'Krit.%', 'Mód');
+        for k = 1:numel(show)
+            p = show(k);
             type_str = char(classification.type(p));
             if results.member.n_buckling_fail(p) > results.member.n_tension_fail(p)
                 mode_str = 'vzpěr';
@@ -259,14 +266,11 @@ if opts.verbose
             else
                 mode_str = '—';
             end
-            if isinf(results.member.beta(p))
-                beta_str = '   Inf';
-            else
-                beta_str = sprintf('%8.2f', results.member.beta(p));
-            end
-            fprintf('  %4d  %-14s  %10.2e  %s  %7.1f%%  %s\n', ...
-                p, type_str, results.member.Pf(p), beta_str, ...
-                results.member.critical_pct(p), mode_str);
+            fprintf('  %4d  %-14s  %7.1f%%  %s\n', ...
+                p, type_str, crit_pct(p), mode_str);
+        end
+        if isempty(show)
+            fprintf('  (žádný prut nebyl nejslabším článkem — zkontroluj vzorkování)\n');
         end
     end
 end

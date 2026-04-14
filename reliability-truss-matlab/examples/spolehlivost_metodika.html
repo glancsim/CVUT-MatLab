@@ -31,7 +31,7 @@ tr.fail td{background:#f8d7da !important;color:#721c24;font-weight:bold;}
 </style>
 </head><body>
 <h1>Spolehlivostní analýza příhradového vazníku</h1>
-<div class="meta"><strong>Metoda:</strong> Monte Carlo simulace (UQLab) &nbsp;|&nbsp; <strong>Norma:</strong> EN 1993-1-1, JRC TR (2024) &nbsp;|&nbsp; <strong>Datum:</strong> 13.04.2026</div>
+<div class="meta"><strong>Metoda:</strong> Monte Carlo simulace (UQLab) &nbsp;|&nbsp; <strong>Norma:</strong> EN 1993-1-1, JRC TR (2024) &nbsp;|&nbsp; <strong>Datum:</strong> 14.04.2026</div>
 <table>
 <tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th><th>Jednotka</th></tr>
 <tr><td>Rozpětí</td><td style="text-align:center">L</td><td style="text-align:right"><strong>24.0</strong></td><td>m</td></tr>
@@ -194,50 +194,26 @@ zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 %% (C
 <h2>9. Výsledky</h2>
 <table>
 <tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th></tr>
-<tr><td>Pravděpodobnost selhání</td><td>\(P_f\)</td><td style="text-align:right"><strong>3.1500e-04</strong></td></tr>
-<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>3.418</strong></td></tr>
-<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">8.5 %%</td></tr>
-<tr><td>Počet vzorků</td><td>\(N\)</td><td style="text-align:right">4e+04</td></tr>
-<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">3462</td></tr>
-<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">0.4 s</td></tr>
+<tr><td>Pravděpodobnost selhání</td><td>\(P_f\)</td><td style="text-align:right"><strong>6.1300e-04</strong></td></tr>
+<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>3.233</strong></td></tr>
+<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">4.0 %%</td></tr>
+<tr><td>Počet vzorků</td><td>\(N\)</td><td style="text-align:right">1e+06</td></tr>
+<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">613</td></tr>
+<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">8.5 s</td></tr>
 </table>
-<h3>9.1 Spolehlivost jednotlivých prutů</h3>
+<h3>9.1 Kritičnost jednotlivých prutů</h3>
+<p>Podíl vzorků, ve kterých byl daný prut nejslabším článkem sériového systému. Ukazují se jen pruty s nenulovým podílem, seřazené sestupně.</p>
 <table>
-<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>\(P_{f,p}\)</th><th>\(\beta_p\)</th><th>Kritický [%%]</th><th>Mód</th></tr>
-<tr><td style="text-align:center">1</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">2</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">3</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">4</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">5</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">6</td><td>Dolní pás</td><td style="text-align:center">159×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">7</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">8</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">9</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr class="fail"><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">1.2</td><td style="text-align:center">vzpěr</td></tr>
-<tr class="fail"><td style="text-align:center">11</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr class="fail"><td style="text-align:center">12</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">1.45e-02</td><td style="text-align:right">2.18</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">13</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">14</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">15</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">5.54e-03</td><td style="text-align:right">2.54</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">16</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">17</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">6.29e-02</td><td style="text-align:right">1.53</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">18</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">6.29e-02</td><td style="text-align:right">1.53</td><td style="text-align:right">81.3</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">20</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">21</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">5.54e-03</td><td style="text-align:right">2.54</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">22</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.70e-05</td><td style="text-align:right">4.04</td><td style="text-align:right">0.0</td><td style="text-align:center">tah</td></tr>
-<tr class="fail"><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.10e-02</td><td style="text-align:right">2.03</td><td style="text-align:right">0.3</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">24</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">25</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">17.2</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">27</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">0.00e+00</td><td style="text-align:right">∞</td><td style="text-align:right">0.0</td><td style="text-align:center">—</td></tr>
-<tr class="fail"><td style="text-align:center">28</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.10e-02</td><td style="text-align:right">2.03</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">29</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">2.70e-05</td><td style="text-align:right">4.04</td><td style="text-align:right">0.0</td><td style="text-align:center">tah</td></tr>
+<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%%]</th><th>Převažující mód</th></tr>
+<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">62.6</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">37.3</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
 </table>
 <h2>10. Souhrn</h2>
 <div class="sbox" style="background:#f8d7da;border:2px solid #f5c6cb;color:#721c24;">
-\(\beta = 3.418\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 3{,}8\) &nbsp;&rarr;&nbsp; <strong>NEVYHOVUJE</strong>
+\(\beta = 3.233\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 3{,}8\) &nbsp;&rarr;&nbsp; <strong>NEVYHOVUJE</strong>
 </div>
 <hr style="margin-top:30px;border:none;border-top:1px solid #ccc;">
-<p class="ref">Vygenerováno: 13.04.2026 17:35 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
+<p class="ref">Vygenerováno: 14.04.2026 16:52 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
 </body></html>
