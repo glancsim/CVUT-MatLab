@@ -2,7 +2,7 @@ function convergencePlotFn(results)
 % convergencePlotFn  Plot convergence of reliability index β vs. sample count.
 %
 % Creates a figure with two subplots:
-%   1. β convergence with target β = 3.8 reference line
+%   1. β convergence with target β = 4.7 reference line
 %   2. Histogram of system limit state function g_sys
 %
 % INPUTS:
@@ -22,7 +22,7 @@ valid = isfinite(b_vec);
 if any(valid)
     plot(n_vec(valid), b_vec(valid), 'b-', 'LineWidth', 1.5);
     hold on;
-    yline(3.8, 'r--', 'LineWidth', 1.2, 'Label', '\beta_{target} = 3.8');
+    yline(4.7, 'r--', 'LineWidth', 1.2, 'Label', '\beta_{target} = 4.7');
     yline(results.beta, 'k:', 'LineWidth', 1.0, ...
         'Label', sprintf('\\beta_{final} = %.2f', results.beta));
     hold off;

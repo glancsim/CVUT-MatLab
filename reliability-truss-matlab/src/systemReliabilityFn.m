@@ -161,10 +161,12 @@ end
 %% 7. Extract results ----------------------------------------------------
 uqResults = myAnalysis.Results;
 
-results.Pf       = uqResults.Pf;
-results.beta     = uqResults.Beta;
-results.Pf_CoV   = uqResults.CoV;
-results.nSamples = uqResults.ModelEvaluations;
+results.Pf         = uqResults.Pf;
+results.beta       = uqResults.Beta;
+results.Pf_CoV     = uqResults.CoV;
+results.nSamples   = uqResults.ModelEvaluations;   % skutečný počet vyhodnocení LSF
+results.method     = opts.method;                   % 'MCS' / 'SubsetSimulation' / 'IS'
+results.maxSamples = opts.nSamples;                 % horní mez (MaxSampleSize)
 
 % System LSF values
 if isfield(uqResults, 'History')
@@ -239,11 +241,11 @@ if opts.verbose
     fprintf('  β      = %.3f\n', results.beta);
     fprintf('  CoV(Pf)= %.1f %%\n', results.Pf_CoV * 100);
     fprintf('  Vzorky = %.0e  (selhání: %d)\n', results.nSamples, results.nFailures);
-    fprintf('  β_cíl  = 3.8  (CC2, 50 let)\n');
-    if results.beta >= 3.8
-        fprintf('  Stav:  VYHOVUJE (β ≥ 3.8)\n');
+    fprintf('  β_cíl  = 4.7  (CC2, 1 rok — roční maxima)\n');
+    if results.beta >= 4.7
+        fprintf('  Stav:  VYHOVUJE (β ≥ 4.7)\n');
     else
-        fprintf('  Stav:  NEVYHOVUJE (β < 3.8)\n');
+        fprintf('  Stav:  NEVYHOVUJE (β < 4.7)\n');
     end
     fprintf('──────────────────────────────────────────────\n');
 

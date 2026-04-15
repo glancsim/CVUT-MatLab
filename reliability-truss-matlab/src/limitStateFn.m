@@ -14,7 +14,8 @@ function g_sys = limitStateFn(X, params)
 %
 % INPUTS:
 %   X      - (N × nDim) matrix of RV realizations from UQLab
-%            Order: [R1, d_1..d_nG, G_s, G_P, Q1, θ_Q2, μ₁, C_e, θ_R, θ_b, θ_E]
+%            Order: [R1, d_1..d_nG, G_s, G_P, Q1, θ_Q2, μ₁, C_e, θ_b, θ_E]
+%            NOTE: θ_R is NOT a RV — deterministically 1.0 (JRC TR Tab. A.25 note 4)
 %   params - struct with pre-computed deterministic parameters:
 %     .nGroups      number of section groups
 %     .nmembers     number of truss members
@@ -87,20 +88,20 @@ for k = 1:N_samples
     tQ2_k   = X(k, nG+5);
     mu1_k   = X(k, nG+6);
     Ce_k    = X(k, nG+7);
-    tR_k    = X(k, nG+8);
-    tb_k    = X(k, nG+9);
-    tE_k    = X(k, nG+10);
+    % tR_k = 1.0  (θ_R není samostatná RV — pokryto R1 a d_sg, JRC TR Tab. A.25 pozn. 4)
+    tb_k    = X(k, nG+8);
+    tE_k    = X(k, nG+9);
 
     % --- 2. Derive physical quantities ---
-    % Yield strength: R1 normalized so that R1(5%) = 1.0 → f_y(5%) = f_y_k
+    % Yield strength: R1_mean = 1+4·V (bias dle JRC TR Tab. A.16), f_yk = min. guaranteed value
     f_y_k = R1_k * f_y_nom;            % [Pa]
 
     % CHS geometry: A and i from random diameter d and deterministic t
     [A_k, i_k] = CHS_propertiesFn(d_k, t_nom');
 
-    % Snow on ground → roof
-    s_g_k  = Q1_k * s_k;               % [kN/m²] ground snow (Q1 norm: 98%-fraktil = 1)
-    s_roof = tQ2_k * mu1_k * Ce_k * s_g_k;  % C_t = 1.0 (EN 1991-1-3 Eq. 7.3)
+    % Snow on ground → roof (EN 1991-1-3 Eq. 7.3, C_t = 1.0)
+    s_g_k  = Q1_k * s_k;               % [kN/m²] ground snow (Q1 norm: 98%-fraktil ročního max = s_k)
+    s_roof = tQ2_k * mu1_k * Ce_k * s_g_k;  % C_t = 1.0 (zateplená střecha)
 
     % --- 3. Update sections for FEM ---
     sec_k   = params.sections;
@@ -118,8 +119,8 @@ for k = 1:N_samples
         si = params.members.sections(p);
 
         if N_Ed(p) >= 0
-            % TENSION: g = θ_R · f_y · A  −  θ_E · N_Ed
-            g_all(p) = tR_k * f_y_k * A_k(si) - tE_k * N_Ed(p);
+            % TENSION: g = f_y · A  −  θ_E · N_Ed  (θ_R = 1.0, JRC TR Tab. A.25 pozn. 4)
+            g_all(p) = 1.0 * f_y_k * A_k(si) - tE_k * N_Ed(p);
         else
             % BUCKLING: EN 1993-1-1 Cl. 6.3.1
             lam1    = pi * sqrt(E_steel / f_y_k);
