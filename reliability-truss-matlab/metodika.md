@@ -64,32 +64,32 @@ nG = počet průřezových skupin (v example_30m: 5 profilů, ale sections má n
 
 | # | Proměnná | Rozdělení | Střední hodnota | COV | Normalizace | Zdroj |
 |---|----------|-----------|-----------------|-----|-------------|-------|
-| 1 | R1 | Lognormal | `1/exp(-1.645·COV)` ≈ 1.086 | 0.05 | 5%-fraktil = 1 → f_y,5% = f_yk | JRC TR Tab. 3.7 |
-| 2..nG+1 | d_sg | Gaussian | `sections.D(sg)` (nominal) | 0.005 | nominál | JRC TR A.4 |
-| nG+2 | G_s | Gaussian | 1.00 | 0.025 | multiplikátor vl. tíhy | JRC TR |
-| nG+3 | G_P | Gaussian | 1.00 | 0.10 | multiplikátor stálého | JRC TR |
-| nG+4 | Q1 | Gumbel | `1/(1+2.593·COV)` ≈ 0.658 | 0.20 | 98%-fraktil = 1 → s_g,98% = s_k | EN 1991-1-3:2025 |
-| nG+5 | θ_Q2 | Lognormal | 0.81 | 0.26 | model. nejistota sněhu (časově nezávislá) | JRC TR |
-| nG+6 | μ₁ | Lognormal | 0.80 | 0.20 | tvarový součinitel sněhu | EN 1991-1-3 |
-| nG+7 | C_e | Lognormal | 1.00 | 0.15 | expoziční součinitel | EN 1991-1-3 |
-| nG+8 | θ_R | Lognormal | 1.15 | 0.05 | model. nejistota — tah | JRC TR |
-| nG+9 | θ_b | Lognormal | 1.00 | 0.10 | model. nejistota — vzpěr | JRC TR |
-| nG+10 | θ_E | Lognormal | 1.00 | 0.05 | model. nejistota — účinky zatížení | JRC TR |
+| 1 | R1 | Lognormal | `1 + 4·V` = 1.20 | 0.05 | bias dle JRC TR Tab. A.16; f_yk = min. guaranteed value (~0.1%-fraktil) | JRC TR 2024 Annex A, Tab. A.16 |
+| 2..nG+1 | d_sg | Gaussian | `sections.D(sg)` (nominal) | 0.005 | nominál | JCSS PMC Part 3.02; EN 10210-2 |
+| nG+2 | G_s | Gaussian | 0.995 | 0.025 | průměrná válcovaná plocha 0.5 % pod nominálem | JRC TR 2024 Annex A, Tab. A.2 |
+| nG+3 | G_P | Gaussian | 1.00 | 0.10 | char. hodnota = 50%-fraktil = střední hodnota | JRC TR 2024 Annex A, Tab. A.5 |
+| nG+4 | Q1 | Gumbel | `1/(1+2.593·COV)` ≈ 0.658 | 0.20 | roční max; 98%-fraktil = 1 → s_g,98% = s_k | EN 1991-1-3 (s_k = 98%-fraktil ročního max) |
+| nG+5 | θ_Q2 | Lognormal | 0.81 | 0.26 | model. nejistota sněhu (časově nezávislá) | JRC TR 2024, str. 134 |
+| nG+6 | μ₁ | Lognormal | 0.80 | **0.15** | tvarový součinitel sněhu (sklon ≤ 30°) | EN 1991-1-3 Tab. 5.2; JCSS PMC Part 2, Climatic Actions |
+| nG+7 | C_e | Lognormal | 1.00 | 0.15 | expoziční součinitel | EN 1991-1-3 **odd. 7.3 a 7.5** |
+| ~~nG+8~~ | ~~θ_R~~ | — | — | — | **odstraněna** — pokryta R1 a d_sg (JRC TR Tab. A.25 pozn. 4) | — |
+| nG+8 | θ_b | Lognormal | **1.15** | **0.05** | model. nejistota — vzpěr | JRC TR 2024 Annex A, **Tab. A.25** |
+| nG+9 | θ_E | Lognormal | 1.00 | 0.05 | model. nejistota — účinky zatížení (osové síly) | JRC TR 2024 Annex A, **Tab. A.22** |
 
 ### Detail normalizace
 
 **R1 (mez kluzu):**
 ```
-μ_R1 = 1 / exp(−1.645 · COV)    # pro malé COV ≈ e^(1.645·COV)
+μ_R1 = 1 + 4 · V_fy    # JRC TR 2024 Annex A, Tab. A.16 pro S235–S420
 ```
-→ zaručí, že **P(R1 < 1) = 5 %**, tj. f_y,5% = R1,5% · f_y,nom = 1 · f_y,nom = f_yk. ✔
+→ f_yk = „minimum guaranteed value" (~0,1%-fraktil), bias = 1 + 4·V = **1,20** pro V = 0,05. ✔
 
-**Q1 (sníh na zemi):**
+**Q1 (sníh na zemi — roční maximum):**
 ```
 K98 = (√6/π) · (γ + |ln(−ln 0.98)|) = 2.593    # Eulerova konstanta γ = 0.5772
 μ_Q1 = 1 / (1 + K98 · COV)
 ```
-→ P(Q1 < 1) = 98 %, tedy s_g,98% = 1 · s_k = s_k (= 50letý max dle EN). ✔
+→ P(Q1 < 1) = 98 %, tedy s_g,98% = 1 · s_k = s_k (= char. hodnota dle EN 1991-1-3). Q1 je **roční** maximum → β_target = **4,7** (nikoli 3,8 pro 50 let). ✔
 
 **d_i (průměry CHS):**
 Normální rozdělení s μ = nominální průměr, σ = 0.005·μ. Tloušťky t **nejsou** náhodné (deterministické).
@@ -180,42 +180,24 @@ Místo per-member Pf/β se reportují:
 
 ---
 
-## 7. ⚠ Nekonzistence k prověření
+## 7. ✅ Opravené nekonzistence
 
-### 7.1 Přepočet sněhu se liší mezi pomalou a rychlou verzí
+### 7.1 Přepočet sněhu — opraveno
 
-**`limitStateFn.m` (ř. 103):**
+**Původní stav (před opravou):**
+
+`limitStateFn.m`: `s_roof = tQ2_k * mu1_k * 0.8 * s_g_k` — C_e = 0.8 hardcoded, náhodná `Ce_k` nepoužita.
+`limitStateFastFn.m`: `s_roof = tQ2 .* mu1 .* s_g` — C_e zcela chyběla.
+
+**Oprava (dle EN 1991-1-3:2025, rov. 7.3):**
 ```matlab
-s_roof = tQ2_k * mu1_k * 0.8 * 1.0 * s_g_k;   % C_e = 0.8, C_t = 1.0 (hardcoded)
+s_roof = tQ2 .* mu1 .* Ce .* s_g    % C_t = 1.0 (zateplená střecha)
 ```
-→ Součinitel **C_e = 0.8** je **hardcoded**, náhodná veličina `Ce_k` (X(:,nG+7)) je rozbalena ale **NEPOUŽITA** (`#ok<NASGU>`).
+→ Obě verze (pomalá i rychlá) nyní používají náhodnou `Ce` → konzistentní. ✔
 
-**`limitStateFastFn.m` (ř. 75):**
-```matlab
-s_roof = tQ2 .* mu1 .* s_g;                   % BEZ faktoru 0.8, BEZ Ce!
-```
-→ Chybí jak pevný faktor 0.8, tak náhodná Ce.
+### 7.2 Výchozí μ pro `mu1` — záměrně 0.80 (opravena matoucí dokumentace)
 
-**Důsledek:**
-- Rychlá verze dává **systematicky 1,25× větší sníh** než pomalá (protože 1/0.8 = 1.25) → nižší β.
-- V obou verzích je nadefinovaná náhodná `C_e` (Lognormal, μ=1, COV 0.15), ale **ani jedna ji nezapojuje do výpočtu**.
-
-**Co by mělo být (dle EN 1991-1-3:2025, rov. 7.3):**
-```
-s = μ_1 · C_e · C_t · s_k              (EN deterministické)
-s_roof = θ_Q2 · μ_1 · C_e · C_t · s_g  (reliability s modelovou nejistotou)
-```
-tj. `s_roof = tQ2 .* mu1 .* Ce .* s_g` (C_t = 1 pro běžné střechy).
-
-### 7.2 Výchozí μ pro `mu1` je 0.80 — záměrně, nebo omylem za 0.8·C_e?
-
-V `defineRandomVariablesFn` je `mu1_mean = 0.80`. Hlavička funkce uvádí v komentáři:
-```
-.mu1_mean, .mu1_cov     (default: 0.8*Ce_mean, 0.20)
-```
-ale kód je `'mu1_mean', 0.80` (konstanta, nezávisle na Ce_mean).
-
-Pro plochou střechu se sklonem ≤ 30° EN 1991-1-3 Tab. 5.2 dává μ_1 = 0.8. Takže hodnota 0.8 je správně jako **tvarový součinitel** — ne jako 0.8·Ce. Komentář v hlavičce je matoucí.
+`mu1_mean = 0.80` je správně jako **tvarový součinitel** μ₁ pro plochou střechu (sklon ≤ 30°, EN 1991-1-3 Tab. 5.2 případ (i)). Původní matoucí komentář `0.8*Ce_mean` byl odstraněn. ✔
 
 ---
 
@@ -237,13 +219,17 @@ Pro β_cíl = 3.8 musí platit Pf ≤ 7.2·10⁻⁵. V example_30m.m se výslede
 
 ---
 
-## 9. Doporučení k opravě (ne nyní — až schválíš)
+## 9. Stav implementace
 
-1. **Sjednotit `limitStateFn` a `limitStateFastFn`** — rozhodnout, zda sníh má:
-   - (a) používat náhodnou `Ce` (viz 7.1 — fyzikálně správné), nebo
-   - (b) držet deterministické C_e = 0.8 (a RV Ce odstranit z `defineRandomVariablesFn`).
-2. **Opravit komentář u `mu1_mean`** — odstranit matoucí `0.8*Ce_mean`.
-3. **Ověřit, jestli regresní výsledek β z example_30m odpovídá** po opravě (pravděpodobně se změní ve 2. desetinném místě).
+Všechny změny z JRC TR revize byly implementovány:
+1. ✅ R1 bias: `1+4·V = 1.20` (JRC TR Tab. A.16)
+2. ✅ β_target: 3.8 → **4.7** (Q1 = roční max)
+3. ✅ C_e bug: opraven v `limitStateFn` i `limitStateFastFn`
+4. ✅ μ₁ COV: 0.20 → **0.15** (JCSS PMC Part 2)
+5. ✅ θ_R: odstraněna jako RV, nahrazena 1.0 (JRC TR Tab. A.25)
+6. ✅ θ_b: mean 1.00→**1.15**, cov 0.10→**0.05** (JRC TR Tab. A.25)
+7. ✅ G_s: mean 1.00→**0.995** (JRC TR Tab. A.2)
+8. ✅ Citace: A.2, A.5, A.16, A.22, A.25, EN 1991-1-3 odd. 7.3/7.5
 
 ---
 

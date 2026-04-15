@@ -26,26 +26,26 @@ fprintf('║  Sériový systém (příhradový vazník)                         
 fprintf('╠══════════════════════════════════════════════════════════════════╣\n');
 fprintf('║  Zatížení:     G + S (gravitace + sníh)                        ║\n');
 fprintf('║  Norma:        EN 1993-1-1, JRC TR Tab. 3.7                    ║\n');
-fprintf('║  Cílový β:     3.8 (CC2, 50 let)                               ║\n');
+fprintf('║  Cílový β:     4.7 (CC2, 1 rok — roční maxima)                 ║\n');
 fprintf('╚══════════════════════════════════════════════════════════════════╝\n');
 
 %% 2. Random variables
-fprintf('\n── Náhodné veličiny (%d) ──────────────────────\n', nG + 10);
+fprintf('\n── Náhodné veličiny (%d) ──────────────────────\n', nG + 9);
 fprintf('  %-12s  %-12s  %8s  %8s\n', 'Proměnná', 'Distribuce', 'Střed', 'COV');
 fprintf('  %-12s  %-12s  %8s  %8s\n', '--------', '----------', '-----', '---');
-fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'R1 (f_y)',    'Lognormal', 1.00, 0.05);
+fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'R1 (f_y)',    'Lognormal', 1.20, 0.05);
 for sg = 1:nG
     fprintf('  d_%d (D=%.0fmm) %-8s  %8.4f  %8.3f\n', ...
         sg, sections.D(sg)*1e3, 'Normal', sections.D(sg), 0.005);
 end
-fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'G_s',       'Normal',    1.00, 0.025);
+fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'G_s',       'Normal',    0.995, 0.025);
 fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'G_P',       'Normal',    1.00, 0.10);
 fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'Q1 (sníh)', 'Gumbel',    1.00, 0.20);
 fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'θ_Q2',      'Lognormal', 0.81, 0.26);
-fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'μ₁',        'Lognormal', 0.80, 0.20);
+fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'μ₁',        'Lognormal', 0.80, 0.15);
 fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'C_e',       'Lognormal', 1.00, 0.15);
-fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'θ_R',       'Lognormal', 1.15, 0.05);
-fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'θ_b',       'Lognormal', 1.00, 0.10);
+% θ_R odstraněna — pokryta R1 a d_sg (JRC TR Tab. A.25 pozn. 4)
+fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'θ_b',       'Lognormal', 1.15, 0.05);
 fprintf('  %-12s  %-12s  %8.3f  %8.3f\n', 'θ_E',       'Lognormal', 1.00, 0.05);
 
 %% 3. System results
@@ -57,10 +57,10 @@ fprintf('  Vzorky       = %.0e\n', results.nSamples);
 fprintf('  Selhání      = %d\n', results.nFailures);
 fprintf('  Čas výpočtu  = %.1f s\n', results.elapsed);
 
-if results.beta >= 3.8
-    fprintf('  Posudek:     VYHOVUJE  (β = %.2f ≥ 3.8)\n', results.beta);
+if results.beta >= 4.7
+    fprintf('  Posudek:     VYHOVUJE  (β = %.2f ≥ 4.7)\n', results.beta);
 else
-    fprintf('  Posudek:     NEVYHOVUJE  (β = %.2f < 3.8)\n', results.beta);
+    fprintf('  Posudek:     NEVYHOVUJE  (β = %.2f < 4.7)\n', results.beta);
 end
 
 %% 4. Cross-check with JRC Table 3.8

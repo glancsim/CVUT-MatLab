@@ -33,10 +33,10 @@ K98_gumbel = (sqrt(6)/pi) * (0.5772 + abs(log(-log(0.98))));
 Q1_cov = 0.20;
 Q1_mean = 1.0 / (1 + K98_gumbel * Q1_cov);
 R1_cov = 0.05;
-R1_mean = 1.0 / exp(-1.645 * R1_cov);
+R1_mean = 1 + 4 * R1_cov;   % = 1.20  (JRC TR Tab. A.16: bias = 1+4·V)
 
 if hasResults
-    if results.beta >= 3.8
+    if results.beta >= 4.7
         sc = '#155724'; sbg = '#d4edda'; sb = '#c3e6cb';
     else
         sc = '#721c24'; sbg = '#f8d7da'; sb = '#f5c6cb';
@@ -113,41 +113,42 @@ w(fid, '<p class="ref">Kde \(\Phi^{-1}\) je inverzní standardní normální dis
 
 w(fid, '<h3>1.2 Cílová spolehlivost</h3>');
 w(fid, '<div class="wbox">');
-w(fid, 'Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 3{,}8\) &nbsp;(CC2, referenční období 50 let)<br>');
-w(fid, '<span class="ref">EN 1990:2002, Tab. B.2; JRC TR (2024), Tab. 3.1</span>');
+w(fid, 'Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}7\) &nbsp;(CC2, referenční období 1 rok — roční maxima)<br>');
+w(fid, '\(\beta_{50\text{let}} = 3{,}8\) odpovídá \(\beta_{1\text{rok}} = 4{,}7\) při 50 nezávislých ročních maximech.<br>');
+w(fid, '<span class="ref">EN 1990:2002, Tab. B.2; JRC TR (2024), Tab. 3.1; MC produkuje roční P_f</span>');
 w(fid, '</div>');
 
 %% ── 3. Náhodné veličiny ──────────────────────────────────────────────
 w(fid, '<h2>2. Náhodné veličiny</h2>');
-fprintf(fid, '<p>Model zahrnuje \\(n_{\\mathrm{dim}} = n_G + 10\\) náhodných veličin (NV), tj. <strong>%d NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Tab.&nbsp;3.7 a Annex&nbsp;A.</p>\n', nG + 10);
+fprintf(fid, '<p>Model zahrnuje \\(n_{\\mathrm{dim}} = n_G + 9\\) náhodných veličin (NV), tj. <strong>%d NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Annex&nbsp;A (Tab.&nbsp;A.2, A.5, A.16, A.22, A.25) a EN 1991-1-3.</p>\n', nG + 9);
 
 w(fid, '<table>');
-w(fid, '<tr><th>NV</th><th>Popis</th><th>Distribuce</th><th>Střední hodnota</th><th>COV</th><th>Normalizace</th></tr>');
+w(fid, '<tr><th>NV</th><th>Popis</th><th>Distribuce</th><th>Střední hodnota</th><th>COV</th><th>Zdroj</th></tr>');
 
 % R1
-fprintf(fid, '<tr><td>\\(R_1\\)</td><td>Mez kluzu (multiplikátor)</td><td>Lognormal</td><td style="text-align:right">%.4f</td><td style="text-align:right">%.3f</td><td>\\(x_{0{,}05} = 1{,}0\\)</td></tr>\n', R1_mean, R1_cov);
+fprintf(fid, '<tr><td>\\(R_1\\)</td><td>Mez kluzu (multiplikátor)</td><td>Lognormal</td><td style="text-align:right">%.4f</td><td style="text-align:right">%.3f</td><td>JRC TR 2024 Annex A, Tab. A.16</td></tr>\n', R1_mean, R1_cov);
 
 % d per group
 for sg = 1:nG
-    fprintf(fid, '<tr><td>\\(d_{%d}\\)</td><td>Průměr CHS sk. %d (D=%.0f mm)</td><td>Normal</td><td style="text-align:right">%.4f m</td><td style="text-align:right">0.005</td><td>\\(\\mu = D_{\\mathrm{nom}}\\)</td></tr>\n', ...
+    fprintf(fid, '<tr><td>\\(d_{%d}\\)</td><td>Průměr CHS sk. %d (D=%.0f mm)</td><td>Normal</td><td style="text-align:right">%.4f m</td><td style="text-align:right">0.005</td><td>JCSS PMC Part 3.02; EN 10210-2</td></tr>\n', ...
         sg, sg, sections.D(sg)*1e3, sections.D(sg));
 end
 
-% Other RVs
+% Other RVs  (θ_R odstraněna — pokryta R1 a d_sg dle JRC TR Tab. A.25 pozn. 4)
 rv = {
-    'G_s',          'Vlastní tíha (multiplik.)',        'Normal',    '1.000', '0.025', '\\(\\mu = 1\\)';
-    'G_P',          'Stálé zatížení (multiplik.)',      'Normal',    '1.000', '0.100', '\\(\\mu = 1\\)';
-    'Q_1',          'Sníh na zemi (50-let max)',        'Gumbel',    sprintf('%.4f', Q1_mean), sprintf('%.3f', Q1_cov), '\\(x_{0{,}98} = 1{,}0\\)';
-    '\theta_{Q2}',  'Model. nejist. sněhu (čas. inv.)', 'Lognormal', '0.810', '0.260', 'JRC Tab. 3.7';
-    '\mu_1',        'Tvarový souč. sněhu',              'Lognormal', '0.800', '0.200', 'EN 1991-1-3';
-    'C_e',          'Souč. expozice',                   'Lognormal', '1.000', '0.150', 'JRC Tab. 3.7';
-    '\theta_R',     'Model. nejist. (tah)',             'Lognormal', '1.150', '0.050', 'JRC Tab. 3.7';
-    '\theta_b',     'Model. nejist. (vzpěr)',           'Lognormal', '1.000', '0.100', 'JRC Tab. 3.7';
-    '\theta_E',     'Model. nejist. (účinek zat.)',     'Lognormal', '1.000', '0.050', 'JRC Tab. 3.7';
+    'G_s',          'Vlastní tíha (multiplik.)',        'Normal',    '0.995', '0.025', 'JRC TR 2024 Annex A, Tab. A.2';
+    'G_P',          'Stálé zatížení (multiplik.)',      'Normal',    '1.000', '0.100', 'JRC TR 2024 Annex A, Tab. A.5';
+    'Q_1',          'Sníh na zemi (roční max)',         'Gumbel',    sprintf('%.4f', Q1_mean), sprintf('%.3f', Q1_cov), 'EN 1991-1-3 (s_k = 98%-fraktil roč. max)';
+    '\theta_{Q2}',  'Model. nejist. sněhu (čas. inv.)', 'Lognormal', '0.810', '0.260', 'JRC TR 2024, str. 134';
+    '\mu_1',        'Tvarový souč. sněhu',              'Lognormal', '0.800', '0.150', 'EN 1991-1-3 Tab. 5.2; JCSS PMC Part 2';
+    'C_e',          'Souč. expozice',                   'Lognormal', '1.000', '0.150', 'EN 1991-1-3 odd. 7.3 a 7.5';
+    '\theta_b',     'Model. nejist. (vzpěr)',           'Lognormal', '1.150', '0.050', 'JRC TR 2024 Annex A, Tab. A.25';
+    '\theta_E',     'Model. nejist. (účinek zat.)',     'Lognormal', '1.000', '0.050', 'JRC TR 2024 Annex A, Tab. A.22';
 };
 for k = 1:size(rv,1)
     fprintf(fid, '<tr><td>\\(%s\\)</td><td>%s</td><td>%s</td><td style="text-align:right">%s</td><td style="text-align:right">%s</td><td>%s</td></tr>\n', rv{k,:});
 end
+w(fid, '<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn.: &theta;<sub>R</sub> (model. nejistota tahu) není samostatnou NV — dle JRC TR 2024 Tab. A.25 pozn. (4) je pokryta v R<sub>1</sub> a d<sub>sg</sub>. V LSF se nahrazuje konstantou 1,0.</td></tr>');
 w(fid, '</table>');
 
 % Normalization
@@ -155,16 +156,19 @@ w(fid, '<h3>2.1 Normalizace \(R_1\) a \(Q_1\)</h3>');
 w(fid, '<p>NV jsou normalizovány tak, aby charakteristická hodnota odpovídala fraktilu 1,0:</p>');
 
 w(fid, '<div class="fbox">');
-w(fid, '<strong>Mez kluzu \(R_1\)</strong> (Lognormal, 5%% fraktil = 1,0):<br>');
-w(fid, '\[\mu_{R_1} = \frac{1}{\exp(-1{,}645 \cdot V_{R_1})}\]');
-fprintf(fid, 'Pro \\(V_{R_1} = %.3f\\): &nbsp; \\(\\mu_{R_1} = %.4f\\), &nbsp; \\(f_y = R_1 \\cdot f_{y,k}\\), &nbsp; \\(f_y(5%%%%) = f_{y,k}\\) &#10003;\n', R1_cov, R1_mean);
+w(fid, '<strong>Mez kluzu \(R_1\)</strong> (Lognormal, bias dle JRC TR Tab. A.16):<br>');
+w(fid, 'Pro ocel S235–S420 platí \(f_{y,m}/f_{y,k} = 1 + 4 \cdot V_{f_y}\), kde \(f_{y,k}\) je „minimum guaranteed value" (přibližně 0,1%-fraktil), nikoliv 5%-fraktil:<br>');
+w(fid, '\[\mu_{R_1} = 1 + 4 \cdot V_{R_1}\]');
+fprintf(fid, 'Pro \\(V_{R_1} = %.3f\\): &nbsp; \\(\\mu_{R_1} = %.4f\\), &nbsp; \\(f_y = R_1 \\cdot f_{y,k}\\) &#10003;\n', R1_cov, R1_mean);
 w(fid, '</div>');
 
 w(fid, '<div class="fbox">');
-w(fid, '<strong>Sníh \(Q_1\)</strong> (Gumbel, 98%% fraktil = 1,0):<br>');
+w(fid, '<strong>Sníh \(Q_1\)</strong> (Gumbel, roční maximum — 98% fraktil = \(s_k\)):<br>');
+w(fid, '\(s_k\) je definováno v EN 1991-1-3 jako 98%-fraktil <strong>ročního maxima</strong> sněhu na zemi.');
+w(fid, '\(Q_1\) proto reprezentuje roční maximum, MC simulace produkuje roční \(P_f\), a platí \(\beta_{\mathrm{target}} = 4{,}7\).<br>');
 w(fid, '\[x_{0{,}98} = \mu \cdot \left(1 + K_{98} \cdot V\right), \quad K_{98} = \frac{\sqrt{6}}{\pi}\left(\gamma + \ln(-\ln 0{,}98)\right) \approx 2{,}593\]');
 w(fid, '\[\mu_{Q_1} = \frac{1}{1 + K_{98} \cdot V_{Q_1}}\]');
-fprintf(fid, 'Pro \\(V_{Q_1} = %.2f\\): &nbsp; \\(\\mu_{Q_1} = %.4f\\), &nbsp; \\(s_g = Q_1 \\cdot s_k\\), &nbsp; \\(s_g(98%%%%) = s_k\\) &#10003;\n', Q1_cov, Q1_mean);
+fprintf(fid, 'Pro \\(V_{Q_1} = %.2f\\): &nbsp; \\(\\mu_{Q_1} = %.4f\\), &nbsp; \\(s_g = Q_1 \\cdot s_k\\), &nbsp; \\(s_g(98\\%%) = s_k\\) &#10003;\n', Q1_cov, Q1_mean);
 w(fid, '</div>');
 
 %% ── 4. Model zatížení ────────────────────────────────────────────────
@@ -192,8 +196,9 @@ w(fid, '<h2>4. Model odolnosti</h2>');
 
 w(fid, '<h3>4.1 Tah (Cl. 6.2.3)</h3>');
 w(fid, '<div class="fbox">');
-w(fid, '\[N_{t,\mathrm{Rd}} = \theta_R \cdot f_y \cdot A\]');
-w(fid, '<span class="ref">EN 1993-1-1:2005, Cl. 6.2.3</span>');
+w(fid, '\[N_{t,\mathrm{Rd}} = f_y \cdot A\]');
+w(fid, '(\(\theta_R = 1{,}0\) deterministicky — model. nejistota tahu pokryta v \(R_1\) a \(d_{sg}\) dle JRC TR Tab. A.25 pozn. (4))<br>');
+w(fid, '<span class="ref">EN 1993-1-1:2005, Cl. 6.2.3; JRC TR 2024 Annex A, Tab. A.25</span>');
 w(fid, '</div>');
 
 w(fid, '<h3>4.2 Vzpěr (Cl. 6.3.1)</h3>');
@@ -231,7 +236,8 @@ w(fid, '<p>Pro každý prut \(p\) se vyhodnotí limitní stavová funkce \(g_p\)
 
 w(fid, '<div class="wbox">');
 w(fid, '<strong>Tah</strong> (\(N_{\mathrm{Ed},p} \geq 0\)):');
-w(fid, '\[g_p = \theta_R \cdot f_y \cdot A_p - \theta_E \cdot N_{\mathrm{Ed},p}\]');
+w(fid, '\[g_p = f_y \cdot A_p - \theta_E \cdot N_{\mathrm{Ed},p}\]');
+w(fid, '(\(\theta_R = 1{,}0\) deterministicky — JRC TR Tab. A.25 pozn. (4))<br>');
 w(fid, '<strong>Tlak — vzpěr</strong> (\(N_{\mathrm{Ed},p} < 0\)):');
 w(fid, '\[g_p = \theta_b \cdot \chi_p \cdot f_y \cdot A_p - \theta_E \cdot |N_{\mathrm{Ed},p}|\]');
 w(fid, '</div>');
@@ -255,7 +261,7 @@ w(fid, 'Každý MC vzorek pak: &ensp; \(N_{\mathrm{Ed},p} = G_P \cdot N_p^{\math
 w(fid, '<strong>Zrychlení:</strong> ~500× oproti přímému FEM (vektorové operace místo řešení soustav).');
 w(fid, '</div>');
 w(fid, '<p class="ref">Platnost: exaktní pro staticky určité příhrady. Pro staticky neurčité');
-w(fid, 'zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 %% (COV(\(d\)) = 0,5 %%).</p>');
+w(fid, 'zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 % (COV(\(d\)) = 0,5 %).</p>');
 
 %% ── 8. Vzpěrné délky ─────────────────────────────────────────────────
 w(fid, '<h2>7. Vzpěrné délky</h2>');
@@ -290,12 +296,19 @@ if hasResults
     fprintf(fid, '<tr><td>Pravděpodobnost selhání</td><td>\\(P_f\\)</td><td style="text-align:right"><strong>%.4e</strong></td></tr>\n', results.Pf);
     fprintf(fid, '<tr><td>Index spolehlivosti</td><td>\\(\\beta\\)</td><td style="text-align:right"><strong>%.3f</strong></td></tr>\n', results.beta);
     fprintf(fid, '<tr><td>Koef. variace odhadu</td><td>\\(\\mathrm{CoV}(\\hat{P}_f)\\)</td><td style="text-align:right">%.1f %%%%</td></tr>\n', results.Pf_CoV * 100);
-    fprintf(fid, '<tr><td>Počet vzorků</td><td>\\(N\\)</td><td style="text-align:right">%.0e</td></tr>\n', results.nSamples);
+    if isfield(results, 'method')
+        fprintf(fid, '<tr><td>Metoda</td><td>—</td><td style="text-align:right">%s</td></tr>\n', results.method);
+    end
+    fprintf(fid, '<tr><td>Počet vyhodnocení modelu</td><td>\\(N_{\\mathrm{eval}}\\)</td><td style="text-align:right">%.0e</td></tr>\n', results.nSamples);
+    if isfield(results, 'maxSamples')
+        fprintf(fid, '<tr><td>Max. povolený počet vzorků</td><td>\\(N_{\\mathrm{max}}\\)</td><td style="text-align:right">%.0e</td></tr>\n', results.maxSamples);
+    end
     fprintf(fid, '<tr><td>Počet selhání</td><td>\\(n_f\\)</td><td style="text-align:right">%d</td></tr>\n', results.nFailures);
     if isfield(results, 'elapsed')
         fprintf(fid, '<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">%.1f s</td></tr>\n', results.elapsed);
     end
     w(fid, '</table>');
+    w(fid, '<p class="ref"><em>Subset Simulation a Importance Sampling jsou adaptivní metody — počet vyhodnocení bývá výrazně nižší než nastavená horní mez.</em></p>');
 
     % Per-member table — jen pruty, které někdy byly nejslabším článkem,
     % seřazeno sestupně dle critical_pct. Per-member Pf/β se nereportuje:
@@ -305,7 +318,7 @@ if hasResults
         w(fid, '<h3>9.1 Kritičnost jednotlivých prutů</h3>');
         w(fid, '<p>Podíl vzorků, ve kterých byl daný prut nejslabším článkem sériového systému. Ukazují se jen pruty s nenulovým podílem, seřazené sestupně.</p>');
         w(fid, '<table>');
-        w(fid, '<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%%]</th><th>Převažující mód</th></tr>');
+        w(fid, '<tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%]</th><th>Převažující mód</th></tr>');
 
         classification = results.classification;
         crit_pct = results.member.critical_pct;
@@ -336,18 +349,37 @@ if hasResults
 
     % Summary box
     w(fid, '<h2>10. Souhrn</h2>');
-    if results.beta >= 3.8
+    if results.beta >= 4.7
         status_txt = 'VYHOVUJE';
     else
         status_txt = 'NEVYHOVUJE';
     end
     fprintf(fid, '<div class="sbox" style="background:%s;border:2px solid %s;color:%s;">\n', sbg, sb, sc);
-    fprintf(fid, '\\(\\beta = %.3f\\) &nbsp; vs. &nbsp; \\(\\beta_{\\mathrm{target}} = 3{,}8\\) &nbsp;&rarr;&nbsp; <strong>%s</strong>\n', results.beta, status_txt);
+    fprintf(fid, '\\(\\beta = %.3f\\) &nbsp; vs. &nbsp; \\(\\beta_{\\mathrm{target}} = 4{,}7\\) (CC2, 1 rok) &nbsp;&rarr;&nbsp; <strong>%s</strong>\n', results.beta, status_txt);
     w(fid, '</div>');
 else
     w(fid, '<h2>9. Výsledky</h2>');
     w(fid, '<p><em>Výsledky nebyly předány — report obsahuje pouze metodiku.</em></p>');
 end
+
+%% ── Budoucí vylepšení ────────────────────────────────────────────────
+w(fid, '<h2>11. Budoucí vylepšení</h2>');
+w(fid, '<ol>');
+w(fid, '<li><strong>Automatický výpočet \(\mu_1\) ze sklonu střechy</strong> dle EN 1991-1-3 Tab. 5.2:<br>');
+w(fid, '<ul style="margin-top:4px;">');
+w(fid, '<li>\(0° \leq \alpha \leq 30°\) &rarr; \(\mu_1 = 0{,}80\)</li>');
+w(fid, '<li>\(30° < \alpha < 60°\) &rarr; \(\mu_1 = 0{,}80 \cdot (60-\alpha)/30\)</li>');
+w(fid, '<li>\(\alpha \geq 60°\) &rarr; \(\mu_1 = 0\)</li>');
+w(fid, '</ul>');
+w(fid, 'Nyní natvrdo \(\mu_1 = 0{,}80\) (platí pro plochou/mírně skloněnou střechu). Vstupem by byl <code>params.slope</code>.</li>');
+w(fid, '<li><strong>Volba \(C_e\) podle topografie terénu</strong> dle EN 1991-1-3 Tab. 5.1:<br>');
+w(fid, '<ul style="margin-top:4px;">');
+w(fid, '<li>Windswept (obnažená) &rarr; \(C_e = 0{,}8\)</li>');
+w(fid, '<li>Normal (běžná) &rarr; \(C_e = 1{,}0\) (výchozí)</li>');
+w(fid, '<li>Sheltered (chráněná) &rarr; \(C_e = 1{,}2\)</li>');
+w(fid, '</ul>');
+w(fid, 'Zavést parametr <code>params.terrain_exposure</code> ∈ {<code>''windswept''</code>, <code>''normal''</code>, <code>''sheltered''</code>}.</li>');
+w(fid, '</ol>');
 
 %% ── Patička ──────────────────────────────────────────────────────────
 w(fid, '<hr style="margin-top:30px;border:none;border-top:1px solid #ccc;">');

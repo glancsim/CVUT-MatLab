@@ -65,13 +65,13 @@ Q1    = X(:, nG+4);
 tQ2   = X(:, nG+5);
 mu1   = X(:, nG+6);
 Ce    = X(:, nG+7);
-tR    = X(:, nG+8);
-tb    = X(:, nG+9);
-tE    = X(:, nG+10);
+% tR = 1.0  (θ_R není samostatná RV — pokryto R1 a d_sg, JRC TR Tab. A.25 pozn. 4)
+tb    = X(:, nG+8);
+tE    = X(:, nG+9);
 
 % --- Derived quantities (vectorized over samples) ---
-f_y = R1 * f_y_nom;                              % (N×1) R1 norm: 5%-fraktil = 1.0
-s_g = Q1 * s_k;                                  % (N×1) ground snow [kN/m²]
+f_y = R1 * f_y_nom;                              % (N×1) R1_mean = 1+4·V (JRC TR Tab. A.16)
+s_g = Q1 * s_k;                                  % (N×1) ground snow [kN/m²] (Q1 = roční max, 98%-fraktil = s_k)
 s_roof = tQ2 .* mu1 .* Ce .* s_g;               % (N×1) roof snow [kN/m²] (EN 1991-1-3 Eq. 7.3, C_t=1)
 
 % --- CHS properties per sample per group ---
@@ -104,9 +104,9 @@ for p = 1:nmem
 
     is_tension = N_Ed_p >= 0;
 
-    % Tension members
+    % Tension members  (θ_R = 1.0, JRC TR Tab. A.25 pozn. 4)
     g_member_batch(is_tension, p) = ...
-        tR(is_tension) .* f_y(is_tension) .* A_p(is_tension) ...
+        1.0 .* f_y(is_tension) .* A_p(is_tension) ...
         - tE(is_tension) .* N_Ed_p(is_tension);
 
     % Compression members — buckling

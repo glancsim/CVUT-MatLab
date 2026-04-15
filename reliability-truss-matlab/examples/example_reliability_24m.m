@@ -17,7 +17,7 @@
 % Náhodné veličiny dle JRC TR "Reliability background of the Eurocodes" (2024),
 % Table 3.7, Annex A + ČSN EN 1991-1-3 ed. 2.
 %
-% Cílový index spolehlivosti: β_t = 3.8 (CC2, referenční období 50 let)
+% Cílový index spolehlivosti: β_t = 4.7 (CC2, 1 rok — Q1 je roční maximum, MC produkuje roční Pf)
 %
 % Prerekvizita: UQLab framework (https://www.uqlab.com/)
 %
@@ -109,7 +109,7 @@ mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
 mcOpts.rvOpts.Ce_mean  = 1.00;
 mcOpts.rvOpts.Ce_cov   = 0.15;
 mcOpts.rvOpts.mu1_mean = 0.80;
-mcOpts.rvOpts.mu1_cov  = 0.20;
+mcOpts.rvOpts.mu1_cov  = 0.15;   % JCSS PMC Part 2, Climatic Actions
 
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
 reliabilityReportFn(results, sections, loadParams);
@@ -120,11 +120,11 @@ convergencePlotFn(results);
 fprintf('\n--- Srovnání ---\n');
 fprintf('  Deterministický max util:  %.3f\n', max(detResults.util_max));
 fprintf('  Probabilistický β:         %.3f\n', results.beta);
-fprintf('  β_cíl (CC2, 50 let):       3.800\n');
+fprintf('  β_cíl (CC2, 1 rok):        4.700\n');
 
-if max(detResults.util_max) <= 1.0 && results.beta >= 3.8
+if max(detResults.util_max) <= 1.0 && results.beta >= 4.7
     fprintf('  → Oba posudky: VYHOVUJE\n');
-elseif max(detResults.util_max) > 1.0 && results.beta < 3.8
+elseif max(detResults.util_max) > 1.0 && results.beta < 4.7
     fprintf('  → Oba posudky: NEVYHOVUJE\n');
 else
     fprintf('  → Posudky se LIŠÍ — dílčí součinitele vs. spolehlivost\n');
