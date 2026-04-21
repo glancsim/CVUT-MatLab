@@ -87,6 +87,13 @@ params.support         = 'top';
 [nodes, members, sections, kinematic, loadParams] = trussHallInputFn(params);
 nmembers = numel(members.nodesHead);
 
+% Vykreslení bez zatížení — prázdné loads:
+emptyLoads.x.nodes = [];  emptyLoads.x.value = [];
+emptyLoads.z.nodes = [];  emptyLoads.z.value = [];
+
+plotTrussFn(nodes, members, emptyLoads, kinematic, 'Labels', true);
+title('Příhradový vazník 24 m — Warren inverted');
+
 fprintf('\nGeometrie: %d prutů, %d uzlů, %d průřezových skupin\n', ...
     nmembers, numel(nodes.x), loadParams.sectionGroups.nGroups);
 
