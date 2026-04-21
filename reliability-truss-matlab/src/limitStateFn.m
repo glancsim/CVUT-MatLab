@@ -13,9 +13,11 @@ function g_sys = limitStateFn(X, params)
 % to retrieve, or limitStateFn('reset') to clear.
 %
 % INPUTS:
-%   X      - (N × nDim) matrix of RV realizations from UQLab
-%            Order: [R1, d_1..d_nG, G_s, G_P, Q1, θ_Q2, μ₁, C_e, θ_b, θ_E]
+%   X      - (N × nDim) matrix of RV realizations from UQLab (nDim = nG + 7)
+%            Order: [R1, d_1..d_nG, G_s, G_P, Q1, θ_Q2, θ_b, θ_E]
 %            NOTE: θ_R is NOT a RV — deterministically 1.0 (JRC TR Tab. A.25 note 4)
+%            NOTE: μ₁ and C_e are NOT RVs — deterministic per prEN 1991-1-3
+%            (their variability included in θ_Q2 per JRC TR Annex A, Tab. A.8)
 %   params - struct with pre-computed deterministic parameters:
 %     .nGroups      number of section groups
 %     .nmembers     number of truss members
@@ -86,11 +88,10 @@ for k = 1:N_samples
     G_P_k   = X(k, nG+3);
     Q1_k    = X(k, nG+4);
     tQ2_k   = X(k, nG+5);
-    mu1_k   = X(k, nG+6);
-    Ce_k    = X(k, nG+7);
+    % mu1 a Ce jsou deterministické — variabilita zahrnuta v tQ2 (JRC TR Tab. A.8)
     % tR_k = 1.0  (θ_R není samostatná RV — pokryto R1 a d_sg, JRC TR Tab. A.25 pozn. 4)
-    tb_k    = X(k, nG+8);
-    tE_k    = X(k, nG+9);
+    tb_k    = X(k, nG+6);
+    tE_k    = X(k, nG+7);
 
     % --- 2. Derive physical quantities ---
     % Yield strength: R1_mean = 1+4·V (bias dle JRC TR Tab. A.16), f_yk = min. guaranteed value
@@ -100,8 +101,8 @@ for k = 1:N_samples
     [A_k, i_k] = CHS_propertiesFn(d_k, t_nom');
 
     % Snow on ground → roof (EN 1991-1-3 Eq. 7.3, C_t = 1.0)
-    s_g_k  = Q1_k * s_k;               % [kN/m²] ground snow (Q1 norm: 98%-fraktil ročního max = s_k)
-    s_roof = tQ2_k * mu1_k * Ce_k * s_g_k;  % C_t = 1.0 (zateplená střecha)
+    s_g_k  = Q1_k;                     % [kN/m²] ground snow ze staničních dat
+    s_roof = tQ2_k * params.mu1 * params.Ce * s_g_k;  % mu1, Ce deterministicky dle prEN; C_t = 1.0
 
     % --- 3. Update sections for FEM ---
     sec_k   = params.sections;

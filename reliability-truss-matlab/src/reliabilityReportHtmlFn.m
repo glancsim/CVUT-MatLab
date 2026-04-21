@@ -29,14 +29,20 @@ nmembers = numel(members.nodesHead);
 nG       = loadParams.sectionGroups.nGroups;
 s_k      = loadParams.s_k;
 
-K98_gumbel = (sqrt(6)/pi) * (0.5772 + abs(log(-log(0.98))));
-Q1_cov = 0.20;
-Q1_mean = 1.0 / (1 + K98_gumbel * Q1_cov);
+% Q1 parametry ze skutečných dat stanice; přebíráme z results.params pokud dostupné
+if hasResults && isfield(results.params, 'Q1_mean')
+    Q1_mean = results.params.Q1_mean;
+    Q1_cov  = results.params.Q1_cov;
+else
+    Q1_mean = 0.31;    % Ostrava Mošnov 1961-2022: μ=0.31 kN/m²
+    Q1_cov  = 0.61;
+end
+Q1_std = Q1_mean * Q1_cov;
 R1_cov = 0.05;
 R1_mean = 1 + 4 * R1_cov;   % = 1.20  (JRC TR Tab. A.16: bias = 1+4·V)
 
 if hasResults
-    if results.beta >= 4.7
+    if results.beta >= 4.1
         sc = '#155724'; sbg = '#d4edda'; sb = '#c3e6cb';
     else
         sc = '#721c24'; sbg = '#f8d7da'; sb = '#f5c6cb';
@@ -91,8 +97,31 @@ fprintf(fid, '<tr><td>Mez kluzu (char.)</td><td style="text-align:center">f<sub>
 fprintf(fid, '<tr><td>Modul pružnosti</td><td style="text-align:center">E</td><td style="text-align:right"><strong>%.0f</strong></td><td>GPa</td></tr>\n', E_GPa);
 fprintf(fid, '<tr><td>Počet prutů</td><td style="text-align:center">n<sub>mem</sub></td><td style="text-align:right"><strong>%d</strong></td><td>—</td></tr>\n', nmembers);
 fprintf(fid, '<tr><td>Průřez. skupin</td><td style="text-align:center">n<sub>G</sub></td><td style="text-align:right"><strong>%d</strong></td><td>—</td></tr>\n', nG);
-fprintf(fid, '<tr><td>Sníh na zemi (char.)</td><td style="text-align:center">s<sub>k</sub></td><td style="text-align:right"><strong>%.2f</strong></td><td>kN/m²</td></tr>\n', s_k);
+fprintf(fid, '<tr><td>Sníh na zemi (char., norma)</td><td style="text-align:center">s<sub>k</sub></td><td style="text-align:right"><strong>%.2f</strong></td><td>kN/m²</td></tr>\n', s_k);
 w(fid, '</table>');
+
+%% ── Schéma vazníku (topology plot jako base64 PNG) ───────────────────
+if hasResults && isfield(results.params, 'kinematic')
+    try
+        set(0, 'DefaultFigureVisible', 'off');
+        plotTrussTopologyFn(nodes, members, results.params.kinematic, 'Labels', true);
+        set(0, 'DefaultFigureVisible', 'on');
+        fig = gcf;
+        set(fig, 'Color', 'w', 'Position', [0 0 1100 320]);
+        tmpPng = [tempname '.png'];
+        exportgraphics(fig, tmpPng, 'Resolution', 144, 'BackgroundColor', 'white');
+        close(fig);
+        fid_img = fopen(tmpPng, 'rb');
+        img_bytes = fread(fid_img, Inf, 'uint8=>uint8');
+        fclose(fid_img);
+        delete(tmpPng);
+        b64 = matlab.net.base64encode(img_bytes);
+        w(fid, '<h3 style="color:var(--navy);font-size:11pt;margin-top:18px;">Schéma příhradového vazníku</h3>');
+        fprintf(fid, '<img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;padding:6px;background:#fff;" alt="Schéma příhradového vazníku">\n', b64);
+    catch
+        % skip if plotTrussTopologyFn unavailable or exportgraphics fails
+    end
+end
 
 %% ── 2. Popis metody ─────────────────────────────────────────────────
 w(fid, '<h2>1. Popis metody</h2>');
@@ -113,14 +142,14 @@ w(fid, '<p class="ref">Kde \(\Phi^{-1}\) je inverzní standardní normální dis
 
 w(fid, '<h3>1.2 Cílová spolehlivost</h3>');
 w(fid, '<div class="wbox">');
-w(fid, 'Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}7\) &nbsp;(CC2, referenční období 1 rok — roční maxima)<br>');
-w(fid, '\(\beta_{50\text{let}} = 3{,}8\) odpovídá \(\beta_{1\text{rok}} = 4{,}7\) při 50 nezávislých ročních maximech.<br>');
-w(fid, '<span class="ref">EN 1990:2002, Tab. B.2; JRC TR (2024), Tab. 3.1; MC produkuje roční P_f</span>');
+w(fid, 'Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}1\) &nbsp;(ocel + sníh, referenční období 1 rok)<br>');
+w(fid, 'Dle JRC TR „Reliability background of the Eurocodes" (2024), Tab. B.2 pro materiál ocel a zatížení sněhem.<br>');
+w(fid, '<span class="ref">JRC TR (2024), Tab. B.2; MC produkuje roční P_f (Q1 = roční max.)</span>');
 w(fid, '</div>');
 
 %% ── 3. Náhodné veličiny ──────────────────────────────────────────────
 w(fid, '<h2>2. Náhodné veličiny</h2>');
-fprintf(fid, '<p>Model zahrnuje \\(n_{\\mathrm{dim}} = n_G + 9\\) náhodných veličin (NV), tj. <strong>%d NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Annex&nbsp;A (Tab.&nbsp;A.2, A.5, A.16, A.22, A.25) a EN 1991-1-3.</p>\n', nG + 9);
+fprintf(fid, '<p>Model zahrnuje \\(n_{\\mathrm{dim}} = n_G + 7\\) náhodných veličin (NV), tj. <strong>%d NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Annex&nbsp;A (Tab.&nbsp;A.2, A.5, A.8, A.16, A.22, A.25) a EN 1991-1-3.</p>\n', nG + 7);
 
 w(fid, '<table>');
 w(fid, '<tr><th>NV</th><th>Popis</th><th>Distribuce</th><th>Střední hodnota</th><th>COV</th><th>Zdroj</th></tr>');
@@ -135,20 +164,20 @@ for sg = 1:nG
 end
 
 % Other RVs  (θ_R odstraněna — pokryta R1 a d_sg dle JRC TR Tab. A.25 pozn. 4)
+%             (mu1 a Ce odstraněny — variabilita zahrnuta v theta_Q2 dle JRC TR Tab. A.8)
 rv = {
     'G_s',          'Vlastní tíha (multiplik.)',        'Normal',    '0.995', '0.025', 'JRC TR 2024 Annex A, Tab. A.2';
     'G_P',          'Stálé zatížení (multiplik.)',      'Normal',    '1.000', '0.100', 'JRC TR 2024 Annex A, Tab. A.5';
-    'Q_1',          'Sníh na zemi (roční max)',         'Gumbel',    sprintf('%.4f', Q1_mean), sprintf('%.3f', Q1_cov), 'EN 1991-1-3 (s_k = 98%-fraktil roč. max)';
-    '\theta_{Q2}',  'Model. nejist. sněhu (čas. inv.)', 'Lognormal', '0.810', '0.260', 'JRC TR 2024, str. 134';
-    '\mu_1',        'Tvarový souč. sněhu',              'Lognormal', '0.800', '0.150', 'EN 1991-1-3 Tab. 5.2; JCSS PMC Part 2';
-    'C_e',          'Souč. expozice',                   'Lognormal', '1.000', '0.150', 'EN 1991-1-3 odd. 7.3 a 7.5';
+    'Q_1',          'Sníh na zemi — roční max [kN/m²]', 'Gumbel',    sprintf('%.4f kN/m²', Q1_mean), sprintf('%.3f', Q1_cov), 'Letiště Ostrava Mošnov, 1961–2022 (n=61 let)';
+    '\theta_{Q2}',  'Model. nejist. sněhu (čas. inv.)', 'Lognormal', '0.810', '0.260', 'JRC TR 2024 Annex A, Tab. A.8';
     '\theta_b',     'Model. nejist. (vzpěr)',           'Lognormal', '1.150', '0.050', 'JRC TR 2024 Annex A, Tab. A.25';
     '\theta_E',     'Model. nejist. (účinek zat.)',     'Lognormal', '1.000', '0.050', 'JRC TR 2024 Annex A, Tab. A.22';
 };
 for k = 1:size(rv,1)
     fprintf(fid, '<tr><td>\\(%s\\)</td><td>%s</td><td>%s</td><td style="text-align:right">%s</td><td style="text-align:right">%s</td><td>%s</td></tr>\n', rv{k,:});
 end
-w(fid, '<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn.: &theta;<sub>R</sub> (model. nejistota tahu) není samostatnou NV — dle JRC TR 2024 Tab. A.25 pozn. (4) je pokryta v R<sub>1</sub> a d<sub>sg</sub>. V LSF se nahrazuje konstantou 1,0.</td></tr>');
+w(fid, '<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn. 1: &theta;<sub>R</sub> (model. nejistota tahu) není samostatnou NV — dle JRC TR 2024 Tab. A.25 pozn. (4) je pokryta v R<sub>1</sub> a d<sub>sg</sub>. V LSF se nahrazuje konstantou 1,0.</td></tr>');
+w(fid, '<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn. 2: &mu;<sub>1</sub> a C<sub>e</sub> nejsou náhodné veličiny — jejich variabilita je zahrnuta v &theta;<sub>Q2</sub> (JRC TR 2024 Annex A, Tab. A.8). Hodnoty deterministicky dle prEN 1991-1-3: &mu;<sub>1</sub> = 0,80 (Tab. 5.2, sklon &le; 30°), C<sub>e</sub> = 1,0 (Tab. 5.1, kat. III).</td></tr>');
 w(fid, '</table>');
 
 % Normalization
@@ -163,12 +192,12 @@ fprintf(fid, 'Pro \\(V_{R_1} = %.3f\\): &nbsp; \\(\\mu_{R_1} = %.4f\\), &nbsp; \
 w(fid, '</div>');
 
 w(fid, '<div class="fbox">');
-w(fid, '<strong>Sníh \(Q_1\)</strong> (Gumbel, roční maximum — 98% fraktil = \(s_k\)):<br>');
-w(fid, '\(s_k\) je definováno v EN 1991-1-3 jako 98%-fraktil <strong>ročního maxima</strong> sněhu na zemi.');
-w(fid, '\(Q_1\) proto reprezentuje roční maximum, MC simulace produkuje roční \(P_f\), a platí \(\beta_{\mathrm{target}} = 4{,}7\).<br>');
-w(fid, '\[x_{0{,}98} = \mu \cdot \left(1 + K_{98} \cdot V\right), \quad K_{98} = \frac{\sqrt{6}}{\pi}\left(\gamma + \ln(-\ln 0{,}98)\right) \approx 2{,}593\]');
-w(fid, '\[\mu_{Q_1} = \frac{1}{1 + K_{98} \cdot V_{Q_1}}\]');
-fprintf(fid, 'Pro \\(V_{Q_1} = %.2f\\): &nbsp; \\(\\mu_{Q_1} = %.4f\\), &nbsp; \\(s_g = Q_1 \\cdot s_k\\), &nbsp; \\(s_g(98\\%%) = s_k\\) &#10003;\n', Q1_cov, Q1_mean);
+w(fid, '<strong>Sníh \(Q_1\)</strong> (Gumbel, roční maximum — skutečná data stanice):<br>');
+w(fid, '\(Q_1\) je přímo ve fyzikálních jednotkách [kN/m²] — bez normalizace přes \(s_k\).');
+w(fid, 'MC simulace produkuje roční \(P_f\), platí \(\beta_{\mathrm{target}} = 4{,}1\) (JRC TR Tab. B.2).<br>');
+w(fid, '<strong>Stanice:</strong> Letiště Leoše Janáčka Ostrava (Mošnov), 1961–2022 (\(n = 61\) let)<br>');
+fprintf(fid, '\\[\\mu_{Q_1} = %.4f \\text{ kN/m}^2, \\quad V_{Q_1} = %.2f, \\quad \\sigma_{Q_1} = %.4f \\text{ kN/m}^2\\]\n', Q1_mean, Q1_cov, Q1_std);
+w(fid, 'Šikmost výběru: 1,09 (Gumbel: teor. 1,14 — dobrá shoda). &ensp; \(s_g = Q_1\) [kN/m²] (přímé fyzikální jednotky).');
 w(fid, '</div>');
 
 %% ── 4. Model zatížení ────────────────────────────────────────────────
@@ -178,9 +207,11 @@ w(fid, '(ty jsou nahrazeny náhodnými veličinami).</p>');
 
 w(fid, '<h3>3.1 Sníh na střeše</h3>');
 w(fid, '<div class="fbox">');
-w(fid, '\[s_{\mathrm{roof}} = \theta_{Q2} \cdot \mu_1 \cdot C_e \cdot C_t \cdot Q_1 \cdot s_k\]');
-w(fid, 'kde \(C_t = 1{,}0\) (tepelný součinitel).<br>');
-w(fid, '<span class="ref">EN 1991-1-3:2025, Eq. 7.3; JRC TR Tab. 3.7</span>');
+w(fid, '\[s_{\mathrm{roof}} = \theta_{Q2} \cdot \mu_1 \cdot C_e \cdot C_t \cdot Q_1\]');
+w(fid, 'kde \(Q_1\) [kN/m²] je roční maximum sněhu na zemi přímo ze staničních dat — \(s_k\) se v LSF nepoužívá.<br>');
+w(fid, '\(\mu_1\), \(C_e\), \(C_t\) jsou <strong>deterministické</strong> — jejich variabilita je zahrnuta v \(\theta_{Q2}\) (JRC TR 2024 Annex A, Tab. A.8).<br>');
+w(fid, '\(\mu_1 = 0{,}80\) (prEN Tab. 5.2, sklon \(\leq 30°\)), &ensp; \(C_e = 1{,}0\) (prEN Tab. 5.1, kat. III), &ensp; \(C_t = 1{,}0\) (zateplená střecha).<br>');
+w(fid, '<span class="ref">EN 1991-1-3:2025, Eq. 7.3; JRC TR 2024 Annex A, Tab. A.8</span>');
 w(fid, '</div>');
 
 w(fid, '<h3>3.2 Skládání účinků zatížení</h3>');
@@ -293,7 +324,7 @@ if hasResults
     w(fid, '<h2>9. Výsledky</h2>');
     w(fid, '<table>');
     w(fid, '<tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th></tr>');
-    fprintf(fid, '<tr><td>Pravděpodobnost selhání</td><td>\\(P_f\\)</td><td style="text-align:right"><strong>%.4e</strong></td></tr>\n', results.Pf);
+    fprintf(fid, '<tr><td>Pravděpodobnost poruchy</td><td>\\(P_f\\)</td><td style="text-align:right"><strong>%.4e</strong></td></tr>\n', results.Pf);
     fprintf(fid, '<tr><td>Index spolehlivosti</td><td>\\(\\beta\\)</td><td style="text-align:right"><strong>%.3f</strong></td></tr>\n', results.beta);
     fprintf(fid, '<tr><td>Koef. variace odhadu</td><td>\\(\\mathrm{CoV}(\\hat{P}_f)\\)</td><td style="text-align:right">%.1f %%%%</td></tr>\n', results.Pf_CoV * 100);
     if isfield(results, 'method')
@@ -333,9 +364,17 @@ if hasResults
             t_mm = sections.t(si)*1e3;
             prof_str = sprintf('%.0f×%.1f', D_mm, t_mm);
 
-            if results.member.n_buckling_fail(pp) > results.member.n_tension_fail(pp)
+            nb = results.member.n_buckling_fail(pp);
+            nt = results.member.n_tension_fail(pp);
+            if nb > 0 && nt > 0
+                if nb >= nt
+                    mode_str = 'vzpěr/tah';
+                else
+                    mode_str = 'tah/vzpěr';
+                end
+            elseif nb > 0
                 mode_str = 'vzpěr';
-            elseif results.member.n_tension_fail(pp) > 0
+            elseif nt > 0
                 mode_str = 'tah';
             else
                 mode_str = '—';
@@ -349,13 +388,13 @@ if hasResults
 
     % Summary box
     w(fid, '<h2>10. Souhrn</h2>');
-    if results.beta >= 4.7
+    if results.beta >= 4.1
         status_txt = 'VYHOVUJE';
     else
         status_txt = 'NEVYHOVUJE';
     end
     fprintf(fid, '<div class="sbox" style="background:%s;border:2px solid %s;color:%s;">\n', sbg, sb, sc);
-    fprintf(fid, '\\(\\beta = %.3f\\) &nbsp; vs. &nbsp; \\(\\beta_{\\mathrm{target}} = 4{,}7\\) (CC2, 1 rok) &nbsp;&rarr;&nbsp; <strong>%s</strong>\n', results.beta, status_txt);
+    fprintf(fid, '\\(\\beta = %.3f\\) &nbsp; vs. &nbsp; \\(\\beta_{\\mathrm{target}} = 4{,}1\\) (JRC TR Tab. B.2, ocel + sníh) &nbsp;&rarr;&nbsp; <strong>%s</strong>\n', results.beta, status_txt);
     w(fid, '</div>');
 else
     w(fid, '<h2>9. Výsledky</h2>');
@@ -365,20 +404,8 @@ end
 %% ── Budoucí vylepšení ────────────────────────────────────────────────
 w(fid, '<h2>11. Budoucí vylepšení</h2>');
 w(fid, '<ol>');
-w(fid, '<li><strong>Automatický výpočet \(\mu_1\) ze sklonu střechy</strong> dle EN 1991-1-3 Tab. 5.2:<br>');
-w(fid, '<ul style="margin-top:4px;">');
-w(fid, '<li>\(0° \leq \alpha \leq 30°\) &rarr; \(\mu_1 = 0{,}80\)</li>');
-w(fid, '<li>\(30° < \alpha < 60°\) &rarr; \(\mu_1 = 0{,}80 \cdot (60-\alpha)/30\)</li>');
-w(fid, '<li>\(\alpha \geq 60°\) &rarr; \(\mu_1 = 0\)</li>');
-w(fid, '</ul>');
-w(fid, 'Nyní natvrdo \(\mu_1 = 0{,}80\) (platí pro plochou/mírně skloněnou střechu). Vstupem by byl <code>params.slope</code>.</li>');
-w(fid, '<li><strong>Volba \(C_e\) podle topografie terénu</strong> dle EN 1991-1-3 Tab. 5.1:<br>');
-w(fid, '<ul style="margin-top:4px;">');
-w(fid, '<li>Windswept (obnažená) &rarr; \(C_e = 0{,}8\)</li>');
-w(fid, '<li>Normal (běžná) &rarr; \(C_e = 1{,}0\) (výchozí)</li>');
-w(fid, '<li>Sheltered (chráněná) &rarr; \(C_e = 1{,}2\)</li>');
-w(fid, '</ul>');
-w(fid, 'Zavést parametr <code>params.terrain_exposure</code> ∈ {<code>''windswept''</code>, <code>''normal''</code>, <code>''sheltered''</code>}.</li>');
+w(fid, '<li><strong>Rozšíření o sání větru</strong> — přidat náhodné veličiny \(v_b\) a \(c_p\) a druhou limitní funkci pro uplift (tah v dolním pásu).</li>');
+w(fid, '<li><strong>Importance Sampling / FORM</strong> pro efektivnější odhad malých \(P_f\) (&lt; 10<sup>−6</sup>) při zachování přesnosti.</li>');
 w(fid, '</ol>');
 
 %% ── Patička ──────────────────────────────────────────────────────────
