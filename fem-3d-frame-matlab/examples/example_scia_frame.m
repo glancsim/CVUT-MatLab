@@ -401,13 +401,18 @@ Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
 plotModeShapeFn(nodes, beams, kinematic, Results, 2);
 
 fprintf('\n=== Critical load multipliers (first 10 modes) ===\n');
+fprintf('  (negative lambda = buckling under reversed load direction)\n');
 for i = 1:length(Results.values)
     lam = Results.values(i);
     if lam > 0
-        fprintf('  Mode %2d:  lambda_cr = %10.4f   =>  F_cr = %.2f kN\n', ...
-                i, lam, lam * 1);   % reference load = 1 kN per force
+        fprintf('  Mode %2d:  lambda_cr = %10.4f\n', i, lam);
+    else
+        fprintf('  Mode %2d:  lambda_cr = %10.4f  (reversed)\n', i, lam);
     end
 end
+
+% Indices of positive-eigenvalue modes — used for MAC comparison
+pos_idx = find(Results.values > 0);
 
 %% -----------------------------------------------------------------------
 %  MAC COMPARISON — MATLAB vs. Scia Engineer
@@ -419,8 +424,11 @@ end
 %    3. Run macComparisonFn to compute the MAC matrix
 %
 %  Scia eigenvalues (reference):
-%    Mode 1:  lambda_cr = 548.06
-%    Mode 2:  lambda_cr = 557.04
+%    Mode  1:  lambda_cr =  548.06     Mode  6:  lambda_cr = 1011.53
+%    Mode  2:  lambda_cr =  557.04     Mode  7:  lambda_cr = 1144.51
+%    Mode  3:  lambda_cr =  870.74     Mode  8:  lambda_cr = 1156.52
+%    Mode  4:  lambda_cr =  905.90     Mode  9:  lambda_cr = 1565.50
+%    Mode  5:  lambda_cr = 1008.60     Mode 10:  lambda_cr = 1646.05
 % -----------------------------------------------------------------------
 scia_csv = fullfile(fileparts(mfilename('fullpath')), 'scia_modes.csv');
 % If scia_modes.csv is stored elsewhere, set the path explicitly, e.g.:
@@ -429,8 +437,13 @@ scia_csv = fullfile(fileparts(mfilename('fullpath')), 'scia_modes.csv');
 if exist(scia_csv, 'file')
     [scia_phi, node_map] = sciaImportFn(scia_csv, nodes, kinematic);
 
+    % Pass only positive-eigenvalue modes to MAC comparison
+    Results_pos         = Results;
+    Results_pos.values  = Results.values(pos_idx);
+    Results_pos.vectors = Results.vectors(:, pos_idx);
+
     [macMatrix, passed, details] = macComparisonFn( ...
-        nodes, beams, kinematic, Results, scia_phi);
+        nodes, beams, kinematic, Results_pos, scia_phi);
 
     % --- MAC matrix heatmap ---
     figure('Name', 'MAC matrix — MATLAB vs. Scia');
