@@ -17,7 +17,7 @@
 % Náhodné veličiny dle JRC TR "Reliability background of the Eurocodes" (2024),
 % Table 3.7, Annex A + ČSN EN 1991-1-3 ed. 2.
 %
-% Cílový index spolehlivosti: β_t = 4.7 (CC2, 1 rok — Q1 je roční maximum, MC produkuje roční Pf)
+% Cílový index spolehlivosti: β_t = 4.1 (JCSS, sériový systém, ocel, sníh, 1 rok)
 %
 % Prerekvizita: UQLab framework (https://www.uqlab.com/)
 %
@@ -91,8 +91,10 @@ nmembers = numel(members.nodesHead);
 emptyLoads.x.nodes = [];  emptyLoads.x.value = [];
 emptyLoads.z.nodes = [];  emptyLoads.z.value = [];
 
-plotTrussFn(nodes, members, emptyLoads, kinematic, 'Labels', true);
-title('Příhradový vazník 24 m — Warren inverted');
+% plotTrussFn(nodes, members, emptyLoads, kinematic, 'Labels', true);
+
+plotTrussTopologyFn(nodes, members, kinematic, 'Labels', true)
+% title('Truss 24 m — Warren inverted');
 
 fprintf('\nGeometrie: %d prutů, %d uzlů, %d průřezových skupin\n', ...
     nmembers, numel(nodes.x), loadParams.sectionGroups.nGroups);
@@ -105,18 +107,23 @@ fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
 
 %% ── Spolehlivostní posudek ────────────────────────
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
-mcOpts.nSamples  = 1e6;
-mcOpts.batchSize = 1e4;
-mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
+mcOpts.nSamples  = 1e7;
+mcOpts.batchSize = 1e5;
+mcOpts.method    = 'Subset';             % 'MCS' / 'Subset' / 'IS'
 
-% Explicitní hodnoty RV dle okrajových podmínek (viz hlavička):
-%   Ce_mean = 1.0  — kategorie terénu III ("normální"), ČSN EN 1991-1-3 Tab. 5.1
-%   C_t = 1.0      — zateplená střecha (hardcoded v limitStateFastFn)
-%   μ₁ = 0.8       — plochá střecha, sklon 5 % ≤ 30° (Tab. 5.2, případ (i))
-mcOpts.rvOpts.Ce_mean  = 1.00;
-mcOpts.rvOpts.Ce_cov   = 0.15;
-mcOpts.rvOpts.mu1_mean = 0.80;
-mcOpts.rvOpts.mu1_cov  = 0.15;   % JCSS PMC Part 2, Climatic Actions
+% Sníh na zemi — skutečná data stanice (varianta B: Q1 přímo v kN/m²):
+%   Stanice: Letiště Leoše Janáčka Ostrava (Mošnov), 1961–2022 (n = 61 let)
+%   Roční maxima: μ = 0.31 kN/m², COV = 0.61, šikmost = 1.09 ≈ Gumbel (1.14)
+mcOpts.rvOpts.Q1_mean = 0.31;   % [kN/m²]
+mcOpts.rvOpts.Q1_cov  = 0.61;
+
+% μ₁ a Ce jsou deterministické dle prEN 1991-1-3 — jejich variabilita je
+% zahrnuta v θ_Q2 (JRC TR 2024 Annex A, Tab. A.8):
+%   μ₁ = 0.80 — plochá střecha, sklon 5 % ≤ 30° (Tab. 5.2, případ (i))
+%   Ce = 1.00 — kategorie terénu III "normal" (Tab. 5.1)
+%   C_t = 1.0 — zateplená střecha (Tab. D.1)
+mcOpts.mu1 = 0.80;   % tvarový součinitel sněhu (prEN Tab. 5.2)
+mcOpts.Ce  = 1.00;   % součinitel expozice (prEN Tab. 5.1)
 
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
 reliabilityReportFn(results, sections, loadParams);
@@ -127,11 +134,11 @@ convergencePlotFn(results);
 fprintf('\n--- Srovnání ---\n');
 fprintf('  Deterministický max util:  %.3f\n', max(detResults.util_max));
 fprintf('  Probabilistický β:         %.3f\n', results.beta);
-fprintf('  β_cíl (CC2, 1 rok):        4.700\n');
+fprintf('  β_cíl (JCSS, systém):      4.100\n');
 
-if max(detResults.util_max) <= 1.0 && results.beta >= 4.7
+if max(detResults.util_max) <= 1.0 && results.beta >= 4.1
     fprintf('  → Oba posudky: VYHOVUJE\n');
-elseif max(detResults.util_max) > 1.0 && results.beta < 4.7
+elseif max(detResults.util_max) > 1.0 && results.beta < 4.1
     fprintf('  → Oba posudky: NEVYHOVUJE\n');
 else
     fprintf('  → Posudky se LIŠÍ — dílčí součinitele vs. spolehlivost\n');

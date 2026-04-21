@@ -31,7 +31,7 @@ tr.fail td{background:#f8d7da !important;color:#721c24;font-weight:bold;}
 </style>
 </head><body>
 <h1>Spolehlivostní analýza příhradového vazníku</h1>
-<div class="meta"><strong>Metoda:</strong> Monte Carlo simulace (UQLab) &nbsp;|&nbsp; <strong>Norma:</strong> EN 1993-1-1, JRC TR (2024) &nbsp;|&nbsp; <strong>Datum:</strong> 15.04.2026</div>
+<div class="meta"><strong>Metoda:</strong> Monte Carlo simulace (UQLab) &nbsp;|&nbsp; <strong>Norma:</strong> EN 1993-1-1, JRC TR (2024) &nbsp;|&nbsp; <strong>Datum:</strong> 21.04.2026</div>
 <table>
 <tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th><th>Jednotka</th></tr>
 <tr><td>Rozpětí</td><td style="text-align:center">L</td><td style="text-align:right"><strong>24.0</strong></td><td>m</td></tr>
@@ -40,7 +40,7 @@ tr.fail td{background:#f8d7da !important;color:#721c24;font-weight:bold;}
 <tr><td>Modul pružnosti</td><td style="text-align:center">E</td><td style="text-align:right"><strong>210</strong></td><td>GPa</td></tr>
 <tr><td>Počet prutů</td><td style="text-align:center">n<sub>mem</sub></td><td style="text-align:right"><strong>29</strong></td><td>—</td></tr>
 <tr><td>Průřez. skupin</td><td style="text-align:center">n<sub>G</sub></td><td style="text-align:right"><strong>10</strong></td><td>—</td></tr>
-<tr><td>Sníh na zemi (char.)</td><td style="text-align:center">s<sub>k</sub></td><td style="text-align:right"><strong>1.00</strong></td><td>kN/m²</td></tr>
+<tr><td>Sníh na zemi (char., norma)</td><td style="text-align:center">s<sub>k</sub></td><td style="text-align:right"><strong>1.00</strong></td><td>kN/m²</td></tr>
 </table>
 <h2>1. Popis metody</h2>
 <p>Cílem analýzy je ověřit systémovou spolehlivost příhradového vazníku
@@ -57,12 +57,12 @@ libovolného prutu způsobí kolaps celé konstrukce (staticky určitá soustava
 <p class="ref">Kde \(\Phi^{-1}\) je inverzní standardní normální distribuční funkce.</p>
 <h3>1.2 Cílová spolehlivost</h3>
 <div class="wbox">
-Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}7\) &nbsp;(CC2, referenční období 1 rok — roční maxima)<br>
-\(\beta_{50\text{let}} = 3{,}8\) odpovídá \(\beta_{1\text{rok}} = 4{,}7\) při 50 nezávislých ročních maximech.<br>
-<span class="ref">EN 1990:2002, Tab. B.2; JRC TR (2024), Tab. 3.1; MC produkuje roční P_f</span>
+Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}1\) &nbsp;(ocel + sníh, referenční období 1 rok)<br>
+Dle JRC TR „Reliability background of the Eurocodes" (2024), Tab. B.2 pro materiál ocel a zatížení sněhem.<br>
+<span class="ref">JRC TR (2024), Tab. B.2; MC produkuje roční P_f (Q1 = roční max.)</span>
 </div>
 <h2>2. Náhodné veličiny</h2>
-<p>Model zahrnuje \(n_{\mathrm{dim}} = n_G + 9\) náhodných veličin (NV), tj. <strong>19 NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Annex&nbsp;A (Tab.&nbsp;A.2, A.5, A.16, A.22, A.25) a EN 1991-1-3.</p>
+<p>Model zahrnuje \(n_{\mathrm{dim}} = n_G + 7\) náhodných veličin (NV), tj. <strong>17 NV</strong> pro tuto konstrukci. Parametry dle JRC&nbsp;TR (2024), Annex&nbsp;A (Tab.&nbsp;A.2, A.5, A.8, A.16, A.22, A.25) a EN 1991-1-3.</p>
 <table>
 <tr><th>NV</th><th>Popis</th><th>Distribuce</th><th>Střední hodnota</th><th>COV</th><th>Zdroj</th></tr>
 <tr><td>\(R_1\)</td><td>Mez kluzu (multiplikátor)</td><td>Lognormal</td><td style="text-align:right">1.2000</td><td style="text-align:right">0.050</td><td>JRC TR 2024 Annex A, Tab. A.16</td></tr>
@@ -78,13 +78,12 @@ Cílový index spolehlivosti: \(\beta_{\mathrm{target}} = 4{,}7\) &nbsp;(CC2, re
 <tr><td>\(d_{10}\)</td><td>Průměr CHS sk. 10 (D=38 mm)</td><td>Normal</td><td style="text-align:right">0.0380 m</td><td style="text-align:right">0.005</td><td>JCSS PMC Part 3.02; EN 10210-2</td></tr>
 <tr><td>\(G_s\)</td><td>Vlastní tíha (multiplik.)</td><td>Normal</td><td style="text-align:right">0.995</td><td style="text-align:right">0.025</td><td>JRC TR 2024 Annex A, Tab. A.2</td></tr>
 <tr><td>\(G_P\)</td><td>Stálé zatížení (multiplik.)</td><td>Normal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.100</td><td>JRC TR 2024 Annex A, Tab. A.5</td></tr>
-<tr><td>\(Q_1\)</td><td>Sníh na zemi (roční max)</td><td>Gumbel</td><td style="text-align:right">0.5888</td><td style="text-align:right">0.200</td><td>EN 1991-1-3 (s_k = 98%-fraktil roč. max)</td></tr>
-<tr><td>\(\theta_{Q2}\)</td><td>Model. nejist. sněhu (čas. inv.)</td><td>Lognormal</td><td style="text-align:right">0.810</td><td style="text-align:right">0.260</td><td>JRC TR 2024, str. 134</td></tr>
-<tr><td>\(\mu_1\)</td><td>Tvarový souč. sněhu</td><td>Lognormal</td><td style="text-align:right">0.800</td><td style="text-align:right">0.150</td><td>EN 1991-1-3 Tab. 5.2; JCSS PMC Part 2</td></tr>
-<tr><td>\(C_e\)</td><td>Souč. expozice</td><td>Lognormal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.150</td><td>EN 1991-1-3 odd. 7.3 a 7.5</td></tr>
+<tr><td>\(Q_1\)</td><td>Sníh na zemi — roční max [kN/m²]</td><td>Gumbel</td><td style="text-align:right">0.3100 kN/m²</td><td style="text-align:right">0.610</td><td>Letiště Ostrava Mošnov, 1961–2022 (n=61 let)</td></tr>
+<tr><td>\(\theta_{Q2}\)</td><td>Model. nejist. sněhu (čas. inv.)</td><td>Lognormal</td><td style="text-align:right">0.810</td><td style="text-align:right">0.260</td><td>JRC TR 2024 Annex A, Tab. A.8</td></tr>
 <tr><td>\(\theta_b\)</td><td>Model. nejist. (vzpěr)</td><td>Lognormal</td><td style="text-align:right">1.150</td><td style="text-align:right">0.050</td><td>JRC TR 2024 Annex A, Tab. A.25</td></tr>
 <tr><td>\(\theta_E\)</td><td>Model. nejist. (účinek zat.)</td><td>Lognormal</td><td style="text-align:right">1.000</td><td style="text-align:right">0.050</td><td>JRC TR 2024 Annex A, Tab. A.22</td></tr>
-<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn.: &theta;<sub>R</sub> (model. nejistota tahu) není samostatnou NV — dle JRC TR 2024 Tab. A.25 pozn. (4) je pokryta v R<sub>1</sub> a d<sub>sg</sub>. V LSF se nahrazuje konstantou 1,0.</td></tr>
+<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn. 1: &theta;<sub>R</sub> (model. nejistota tahu) není samostatnou NV — dle JRC TR 2024 Tab. A.25 pozn. (4) je pokryta v R<sub>1</sub> a d<sub>sg</sub>. V LSF se nahrazuje konstantou 1,0.</td></tr>
+<tr><td colspan="6" class="ref" style="font-style:italic;">Pozn. 2: &mu;<sub>1</sub> a C<sub>e</sub> nejsou náhodné veličiny — jejich variabilita je zahrnuta v &theta;<sub>Q2</sub> (JRC TR 2024 Annex A, Tab. A.8). Hodnoty deterministicky dle prEN 1991-1-3: &mu;<sub>1</sub> = 0,80 (Tab. 5.2, sklon &le; 30°), C<sub>e</sub> = 1,0 (Tab. 5.1, kat. III).</td></tr>
 </table>
 <h3>2.1 Normalizace \(R_1\) a \(Q_1\)</h3>
 <p>NV jsou normalizovány tak, aby charakteristická hodnota odpovídala fraktilu 1,0:</p>
@@ -95,21 +94,23 @@ Pro ocel S235–S420 platí \(f_{y,m}/f_{y,k} = 1 + 4 \cdot V_{f_y}\), kde \(f_{
 Pro \(V_{R_1} = 0.050\): &nbsp; \(\mu_{R_1} = 1.2000\), &nbsp; \(f_y = R_1 \cdot f_{y,k}\) &#10003;
 </div>
 <div class="fbox">
-<strong>Sníh \(Q_1\)</strong> (Gumbel, roční maximum — 98% fraktil = \(s_k\)):<br>
-\(s_k\) je definováno v EN 1991-1-3 jako 98%-fraktil <strong>ročního maxima</strong> sněhu na zemi.
-\(Q_1\) proto reprezentuje roční maximum, MC simulace produkuje roční \(P_f\), a platí \(\beta_{\mathrm{target}} = 4{,}7\).<br>
-\[x_{0{,}98} = \mu \cdot \left(1 + K_{98} \cdot V\right), \quad K_{98} = \frac{\sqrt{6}}{\pi}\left(\gamma + \ln(-\ln 0{,}98)\right) \approx 2{,}593\]
-\[\mu_{Q_1} = \frac{1}{1 + K_{98} \cdot V_{Q_1}}\]
-Pro \(V_{Q_1} = 0.20\): &nbsp; \(\mu_{Q_1} = 0.5888\), &nbsp; \(s_g = Q_1 \cdot s_k\), &nbsp; \(s_g(98\%) = s_k\) &#10003;
+<strong>Sníh \(Q_1\)</strong> (Gumbel, roční maximum — skutečná data stanice):<br>
+\(Q_1\) je přímo ve fyzikálních jednotkách [kN/m²] — bez normalizace přes \(s_k\).
+MC simulace produkuje roční \(P_f\), platí \(\beta_{\mathrm{target}} = 4{,}1\) (JRC TR Tab. B.2).<br>
+<strong>Stanice:</strong> Letiště Leoše Janáčka Ostrava (Mošnov), 1961–2022 (\(n = 61\) let)<br>
+\[\mu_{Q_1} = 0.3100 \text{ kN/m}^2, \quad V_{Q_1} = 0.61, \quad \sigma_{Q_1} = 0.1891 \text{ kN/m}^2\]
+Šikmost výběru: 1,09 (Gumbel: teor. 1,14 — dobrá shoda). &ensp; \(s_g = Q_1\) [kN/m²] (přímé fyzikální jednotky).
 </div>
 <h2>3. Model zatížení</h2>
 <p>Uvažuje se kombinace stálého a sněhového zatížení <strong>bez dílčích součinitelů</strong>
 (ty jsou nahrazeny náhodnými veličinami).</p>
 <h3>3.1 Sníh na střeše</h3>
 <div class="fbox">
-\[s_{\mathrm{roof}} = \theta_{Q2} \cdot \mu_1 \cdot C_e \cdot C_t \cdot Q_1 \cdot s_k\]
-kde \(C_t = 1{,}0\) (tepelný součinitel).<br>
-<span class="ref">EN 1991-1-3:2025, Eq. 7.3; JRC TR Tab. 3.7</span>
+\[s_{\mathrm{roof}} = \theta_{Q2} \cdot \mu_1 \cdot C_e \cdot C_t \cdot Q_1\]
+kde \(Q_1\) [kN/m²] je roční maximum sněhu na zemi přímo ze staničních dat — \(s_k\) se v LSF nepoužívá.<br>
+\(\mu_1\), \(C_e\), \(C_t\) jsou <strong>deterministické</strong> — jejich variabilita je zahrnuta v \(\theta_{Q2}\) (JRC TR 2024 Annex A, Tab. A.8).<br>
+\(\mu_1 = 0{,}80\) (prEN Tab. 5.2, sklon \(\leq 30°\)), &ensp; \(C_e = 1{,}0\) (prEN Tab. 5.1, kat. III), &ensp; \(C_t = 1{,}0\) (zateplená střecha).<br>
+<span class="ref">EN 1991-1-3:2025, Eq. 7.3; JRC TR 2024 Annex A, Tab. A.8</span>
 </div>
 <h3>3.2 Skládání účinků zatížení</h3>
 <p>Osová síla v prutu \(p\) se získá superpozicí:</p>
@@ -200,46 +201,34 @@ zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 % (CO
 <h2>9. Výsledky</h2>
 <table>
 <tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th></tr>
-<tr><td>Pravděpodobnost selhání</td><td>\(P_f\)</td><td style="text-align:right"><strong>5.2000e-05</strong></td></tr>
-<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>3.881</strong></td></tr>
-<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">13.9 %%</td></tr>
-<tr><td>Metoda</td><td>—</td><td style="text-align:right">MCS</td></tr>
-<tr><td>Počet vyhodnocení modelu</td><td>\(N_{\mathrm{eval}}\)</td><td style="text-align:right">1e+06</td></tr>
-<tr><td>Max. povolený počet vzorků</td><td>\(N_{\mathrm{max}}\)</td><td style="text-align:right">1e+06</td></tr>
-<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">52</td></tr>
-<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">8.6 s</td></tr>
+<tr><td>Pravděpodobnost poruchy</td><td>\(P_f\)</td><td style="text-align:right"><strong>1.0960e-05</strong></td></tr>
+<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>4.244</strong></td></tr>
+<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">3.7 %%</td></tr>
+<tr><td>Metoda</td><td>—</td><td style="text-align:right">Subset</td></tr>
+<tr><td>Počet vyhodnocení modelu</td><td>\(N_{\mathrm{eval}}\)</td><td style="text-align:right">5e+05</td></tr>
+<tr><td>Max. povolený počet vzorků</td><td>\(N_{\mathrm{max}}\)</td><td style="text-align:right">1e+07</td></tr>
+<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">12073</td></tr>
+<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">2.8 s</td></tr>
 </table>
 <p class="ref"><em>Subset Simulation a Importance Sampling jsou adaptivní metody — počet vyhodnocení bývá výrazně nižší než nastavená horní mez.</em></p>
 <h3>9.1 Kritičnost jednotlivých prutů</h3>
 <p>Podíl vzorků, ve kterých byl daný prut nejslabším článkem sériového systému. Ukazují se jen pruty s nenulovým podílem, seřazené sestupně.</p>
 <table>
 <tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%]</th><th>Převažující mód</th></tr>
-<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">83.5</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">16.5</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
-<tr><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">58.5</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">41.3</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.1</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">0.1</td><td style="text-align:center">vzpěr</td></tr>
 </table>
 <h2>10. Souhrn</h2>
-<div class="sbox" style="background:#f8d7da;border:2px solid #f5c6cb;color:#721c24;">
-\(\beta = 3.881\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 4{,}7\) (CC2, 1 rok) &nbsp;&rarr;&nbsp; <strong>NEVYHOVUJE</strong>
+<div class="sbox" style="background:#d4edda;border:2px solid #c3e6cb;color:#155724;">
+\(\beta = 4.244\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 4{,}1\) (JRC TR Tab. B.2, ocel + sníh) &nbsp;&rarr;&nbsp; <strong>VYHOVUJE</strong>
 </div>
 <h2>11. Budoucí vylepšení</h2>
 <ol>
-<li><strong>Automatický výpočet \(\mu_1\) ze sklonu střechy</strong> dle EN 1991-1-3 Tab. 5.2:<br>
-<ul style="margin-top:4px;">
-<li>\(0° \leq \alpha \leq 30°\) &rarr; \(\mu_1 = 0{,}80\)</li>
-<li>\(30° < \alpha < 60°\) &rarr; \(\mu_1 = 0{,}80 \cdot (60-\alpha)/30\)</li>
-<li>\(\alpha \geq 60°\) &rarr; \(\mu_1 = 0\)</li>
-</ul>
-Nyní natvrdo \(\mu_1 = 0{,}80\) (platí pro plochou/mírně skloněnou střechu). Vstupem by byl <code>params.slope</code>.</li>
-<li><strong>Volba \(C_e\) podle topografie terénu</strong> dle EN 1991-1-3 Tab. 5.1:<br>
-<ul style="margin-top:4px;">
-<li>Windswept (obnažená) &rarr; \(C_e = 0{,}8\)</li>
-<li>Normal (běžná) &rarr; \(C_e = 1{,}0\) (výchozí)</li>
-<li>Sheltered (chráněná) &rarr; \(C_e = 1{,}2\)</li>
-</ul>
-Zavést parametr <code>params.terrain_exposure</code> ∈ {<code>'windswept'</code>, <code>'normal'</code>, <code>'sheltered'</code>}.</li>
+<li><strong>Rozšíření o sání větru</strong> — přidat náhodné veličiny \(v_b\) a \(c_p\) a druhou limitní funkci pro uplift (tah v dolním pásu).</li>
+<li><strong>Importance Sampling / FORM</strong> pro efektivnější odhad malých \(P_f\) (&lt; 10<sup>−6</sup>) při zachování přesnosti.</li>
 </ol>
 <hr style="margin-top:30px;border:none;border-top:1px solid #ccc;">
-<p class="ref">Vygenerováno: 15.04.2026 18:54 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
+<p class="ref">Vygenerováno: 21.04.2026 21:36 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
 </body></html>

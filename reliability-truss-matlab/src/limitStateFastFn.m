@@ -17,12 +17,18 @@ function g_sys = limitStateFastFn(X, params)
 % Per-member tracking: identical to limitStateFn — uses persistent storage.
 % Call limitStateFastFn('get_store') / limitStateFastFn('reset').
 %
+% RV ordering: [R1, d_1..d_nG, G_s, G_P, Q1, theta_Q2, theta_b, theta_E]
+% mu1 and Ce are DETERMINISTIC (their variability included in theta_Q2 per
+% JRC TR 2024 Annex A, Tab. A.8) — passed via params.mu1 and params.Ce.
+%
 % INPUTS:
-%   X      - (N × nDim) matrix of RV realizations
+%   X      - (N × nDim) matrix of RV realizations (nDim = nG + 7)
 %   params - struct (same as limitStateFn) with extra precomputed fields:
 %     .N_perm   (nmembers×1) member forces [N] for unit permanent load
 %     .N_snow   (nmembers×1) member forces [N] for unit snow load (1 kN/m²)
 %     .N_sw     (nmembers×1) member forces [N] for unit self-weight
+%     .mu1      deterministic snow shape factor (prEN Tab. 5.2)
+%     .Ce       deterministic exposure coefficient (prEN Tab. 5.1)
 %
 % (c) S. Glanc, 2026
 
@@ -63,16 +69,17 @@ G_s   = X(:, nG+2);
 G_P   = X(:, nG+3);
 Q1    = X(:, nG+4);
 tQ2   = X(:, nG+5);
-mu1   = X(:, nG+6);
-Ce    = X(:, nG+7);
+% mu1 a Ce jsou deterministické — variabilita zahrnuta v tQ2 (JRC TR Tab. A.8)
+mu1_det = params.mu1;              % prEN Tab. 5.2
+Ce_det  = params.Ce;               % prEN Tab. 5.1
 % tR = 1.0  (θ_R není samostatná RV — pokryto R1 a d_sg, JRC TR Tab. A.25 pozn. 4)
-tb    = X(:, nG+8);
-tE    = X(:, nG+9);
+tb    = X(:, nG+6);
+tE    = X(:, nG+7);
 
 % --- Derived quantities (vectorized over samples) ---
 f_y = R1 * f_y_nom;                              % (N×1) R1_mean = 1+4·V (JRC TR Tab. A.16)
-s_g = Q1 * s_k;                                  % (N×1) ground snow [kN/m²] (Q1 = roční max, 98%-fraktil = s_k)
-s_roof = tQ2 .* mu1 .* Ce .* s_g;               % (N×1) roof snow [kN/m²] (EN 1991-1-3 Eq. 7.3, C_t=1)
+s_g = Q1;                                         % (N×1) ground snow [kN/m²] ze staničních dat
+s_roof = tQ2 .* mu1_det .* Ce_det .* s_g;        % (N×1) roof snow [kN/m²] (EN 1991-1-3 Eq. 7.3, C_t=1)
 
 % --- CHS properties per sample per group ---
 % A(k,sg) = pi/4 * (d^2 - (d-2t)^2) = pi * t * (d - t)

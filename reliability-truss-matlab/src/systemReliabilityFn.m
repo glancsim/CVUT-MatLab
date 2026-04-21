@@ -48,6 +48,9 @@ if ~isfield(opts, 'batchSize'), opts.batchSize  = 1e4;    end
 if ~isfield(opts, 'method'),    opts.method     = 'MCS';  end
 if ~isfield(opts, 'rvOpts'),    opts.rvOpts     = struct(); end
 if ~isfield(opts, 'verbose'),   opts.verbose    = true;   end
+% mu1 a Ce jsou deterministické (variabilita zahrnuta v theta_Q2, JRC TR Tab. A.8)
+if ~isfield(opts, 'mu1'), opts.mu1 = 0.80; end   % prEN Tab. 5.2 (sklon ≤ 30°)
+if ~isfield(opts, 'Ce'),  opts.Ce  = 1.00; end   % prEN Tab. 5.1 (kat. III "normal")
 
 nmembers = numel(members.nodesHead);
 nG       = loadParams.sectionGroups.nGroups;
@@ -117,7 +120,12 @@ end
 lsParams.nGroups    = nG;
 lsParams.nmembers   = nmembers;
 lsParams.f_y_nom    = loadParams.f_y;
-lsParams.s_k        = loadParams.s_k;
+lsParams.s_k        = loadParams.s_k;   % pro referenci; v LSF se nepoužívá
+lsParams.mu1        = opts.mu1;          % deterministicky dle prEN Tab. 5.2
+lsParams.Ce         = opts.Ce;           % deterministicky dle prEN Tab. 5.1
+% Q1 parametry pro report
+if isfield(opts.rvOpts, 'Q1_mean'), lsParams.Q1_mean = opts.rvOpts.Q1_mean; else lsParams.Q1_mean = 0.308; end
+if isfield(opts.rvOpts, 'Q1_cov'),  lsParams.Q1_cov  = opts.rvOpts.Q1_cov;  else lsParams.Q1_cov  = 0.61;  end
 lsParams.t_nom      = t_nom;
 lsParams.alpha_imp  = alpha_imp;
 lsParams.Lcr        = Lcr;
@@ -241,11 +249,11 @@ if opts.verbose
     fprintf('  β      = %.3f\n', results.beta);
     fprintf('  CoV(Pf)= %.1f %%\n', results.Pf_CoV * 100);
     fprintf('  Vzorky = %.0e  (selhání: %d)\n', results.nSamples, results.nFailures);
-    fprintf('  β_cíl  = 4.7  (CC2, 1 rok — roční maxima)\n');
-    if results.beta >= 4.7
-        fprintf('  Stav:  VYHOVUJE (β ≥ 4.7)\n');
+    fprintf('  β_cíl  = 4.1  (JRC TR Tab. B.2, ocel + sníh, 1 rok)\n');
+    if results.beta >= 4.1
+        fprintf('  Stav:  VYHOVUJE (β ≥ 4.1)\n');
     else
-        fprintf('  Stav:  NEVYHOVUJE (β < 4.7)\n');
+        fprintf('  Stav:  NEVYHOVUJE (β < 4.1)\n');
     end
     fprintf('──────────────────────────────────────────────\n');
 
@@ -261,9 +269,17 @@ if opts.verbose
         for k = 1:numel(show)
             p = show(k);
             type_str = char(classification.type(p));
-            if results.member.n_buckling_fail(p) > results.member.n_tension_fail(p)
+            nb = results.member.n_buckling_fail(p);
+            nt = results.member.n_tension_fail(p);
+            if nb > 0 && nt > 0
+                if nb >= nt
+                    mode_str = 'vzpěr/tah';
+                else
+                    mode_str = 'tah/vzpěr';
+                end
+            elseif nb > 0
                 mode_str = 'vzpěr';
-            elseif results.member.n_tension_fail(p) > 0
+            elseif nt > 0
                 mode_str = 'tah';
             else
                 mode_str = '—';
