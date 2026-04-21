@@ -16,6 +16,7 @@ Projekt implementuje FEM analýzu nosníkových a příhradových konstrukcí v 
 | `fem-2d-frame-matlab/` | **aktivní** | 2D rámové konstrukce — `src/`, `tests/`, `examples/` |
 | `fem-truss-2d-matlab/` | **aktivní** | 2D příhradové konstrukce — `src/`, `tests/`, `examples/` |
 | `en-truss-design-matlab/` | **aktivní** | Posudek příhrad dle EN 1993-1-1 — `src/`, `examples/` |
+| `reliability-truss-matlab/` | **aktivní** | Spolehlivostní analýza příhrad Monte Carlo (UQLab) — `src/`, `examples/` |
 | `Diplomka/` | obsolete | původní kód diplomové práce, regresní testy 1–12 |
 
 > **`Diplomka/` je obsolete** — slouží jen pro archivaci a regresní testy (Tests 1–12 s OOFEM verifikací).
@@ -750,10 +751,171 @@ stabilitySolverFn / linearSolverFn
 
 ---
 
+## MAC verifikace — MATLAB vs. Scia Engineer
+
+Modul pro porovnání vlastních tvarů stabilitní analýzy mezi MATLAB solverem a Scia Engineer pomocí **MAC (Modal Assurance Criterion)**.
+
+### Funkce (`fem-3d-frame-matlab/src/`)
+
+| Funkce | Popis |
+|--------|-------|
+| `macCriterionFn(Phi_A, Phi_B)` | Čistý vektorizovaný výpočet MAC matice |
+| `sciaImportFn(csvFile, nodes, kinematic)` | Import CSV ze Scia, matching uzlů dle souřadnic, remapování na MATLAB DOF pořadí |
+| `macComparisonFn(nodes, beams, kinematic, Results, scia_phi)` | Orchestrace: extrakce φ na původních uzlech, výpočet MAC, pass/fail výstup |
+
+### `macCriterionFn`
+
+```matlab
+macMatrix = macCriterionFn(Phi_A, Phi_B)
+% Phi_A: (ndof × nA),  Phi_B: (ndof × nB)
+% → macMatrix: (nA × nB),  hodnoty v [0, 1]
+```
+
+Vzorec (abs kvůli libovolnému znaménku eigenvektoru):
+```
+MAC(i,j) = |Φ_A(:,i)' · Φ_B(:,j)|²  /  (‖Φ_A(:,i)‖² · ‖Φ_B(:,j)‖²)
+```
+
+### `sciaImportFn`
+
+```matlab
+[scia_phi, node_map] = sciaImportFn(csvFile, nodes, kinematic)
+[scia_phi, node_map] = sciaImportFn(csvFile, nodes, kinematic, 'Tolerance', 1e-3)
+[scia_phi, node_map] = sciaImportFn(csvFile, nodes, kinematic, 'CoordScale', 1e-3)
+```
+
+**Očekávaný CSV formát:**
+```
+mode,node_id,x,y,z,ux,uy,uz,rx,ry,rz
+1,1,0.000,0.000,0.000,0.0,0.0,0.0,0.0,0.0,0.0
+1,2,1.000,0.000,0.000,0.285,0.005,...
+```
+- `x,y,z` v metrech — klíčové pro spatial matching
+- `ux,uy,uz` v metrech (Scia exportuje mm → dělit 1000)
+- `rx,ry,rz` v radiánech (Scia exportuje mrad → dělit 1000)
+- `node_id` slouží jen pro diagnostiku — matching probíhá dle souřadnic
+
+**Volitelné parametry:**
+- `'Tolerance'` — max vzdálenost uzlů [m] pro matching, default 1e-3
+- `'CoordScale'` — škálování souřadnic ze Scia (1e-3 pokud Scia exportuje v mm)
+- `'DofOrder'` — permutace DOFů pokud Scia používá jiné pořadí než [ux,uy,uz,rx,ry,rz]
+
+### `macComparisonFn`
+
+```matlab
+[macMatrix, passed, details] = macComparisonFn(nodes, beams, kinematic, Results, scia_phi)
+[macMatrix, passed, details] = macComparisonFn(..., macThreshold)  % default 0.90
+```
+
+- Extrahuje `matlab_phi = Results.vectors(1:ndofs_orig, :)` — pouze původní fyzické uzly (bez diskretizačních)
+- `ndofs_orig = max(max(codeNumbersFn(beams_tmp, nodes_tmp)))` — rekonstruováno interně z `beams` + `kinematic`
+- `details.diagonal_mac`, `details.best_match`, `details.best_match_idx`
+
+### Záporné eigenvalues — důležité!
+
+`stabilitySolverFn` může vrátit záporné vlastní čísla. Záporný λ = vzpěr při **obráceném smyslu zatížení** (tažené pruty). Scia záporné módy standardně nezobrazuje.
+
+**Před MAC porovnáním vždy filtrovat:**
+```matlab
+pos_idx = find(Results.values > 0);
+Results_pos.values  = Results.values(pos_idx);
+Results_pos.vectors = Results.vectors(:, pos_idx);
+[macMatrix, passed, details] = macComparisonFn(nodes, beams, kinematic, Results_pos, scia_phi);
+```
+
+Bez filtrace by MATLAB mód 1 (záporný) byl porovnáván se Scia módem 1 (kladným) → MAC FAIL.
+
+### Typický workflow
+
+```matlab
+% 1. Stabilita
+Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
+
+% 2. Import Scia (CSV musí mít souřadnice v m, posuny v m, rotace v rad)
+[scia_phi, ~] = sciaImportFn('scia_modes.csv', nodes, kinematic);
+
+% 3. Filtr záporných módů
+pos_idx = find(Results.values > 0);
+Results_pos.values  = Results.values(pos_idx);
+Results_pos.vectors = Results.vectors(:, pos_idx);
+
+% 4. MAC
+[macMatrix, passed, details] = macComparisonFn(nodes, beams, kinematic, Results_pos, scia_phi);
+
+% 5. Heatmap
+figure; imagesc(macMatrix); colorbar; clim([0 1]); colormap(flipud(gray));
+xlabel('Scia mód'); ylabel('MATLAB mód');
+```
+
+### Příklady (`fem-3d-frame-matlab/examples/`)
+
+| Soubor | Průřez sloupů | CSV dat | λ₁ (Scia) |
+|--------|--------------|---------|-----------|
+| `example_scia_frame.m` | IPE240 | `scia_modes.csv` — 10 módů | 548.06 |
+| `example_scia_frame_shs_columns.m` | SHS 240×240×15 → kolaps diagonál | `scia_modes_shs.csv` — 10 módů | 1413.39 |
+
+**SHS 240×240×15 vlastnosti:**
+- A = 1.350×10⁻² m², Iy = Iz = 1.1441×10⁻⁴ m⁴
+- IT = 1.7086×10⁻⁴ m⁴ (Bredt: `4·A_m²·t/s = 4·225²·15/900 mm⁴`)
+
+### Generování CSV ze Scia exportu (Python)
+
+Scia exportuje Excel s listy v **obráceném pořadí** (mód 10 = první list). Jednotky: mm a mrad.
+
+```python
+import pandas as pd, re
+
+all_sheets = pd.read_excel('output.xlsx', sheet_name=None, dtype=str)
+
+# Seřadit dle eigenvalue vzestupně
+sheet_list = []
+for name, df in all_sheets.items():
+    lam = float(re.search(r'[\d,]+$', df['Stav'].iloc[0]).group().replace(',', '.'))
+    sheet_list.append((lam, df))
+sheet_list.sort(key=lambda x: x[0])
+
+rows = []
+for mode_idx, (lam, df) in enumerate(sheet_list, start=1):
+    for _, row in df.iterrows():
+        node_num = int(str(row['Jméno']).replace('N', ''))
+        x, y, z = xyz[node_num - 1]   # souřadnice z MATLAB modelu
+        rows.append({
+            'mode': mode_idx, 'node_id': node_num,
+            'x': x, 'y': y, 'z': z,
+            'ux': float(str(row['Ux [mm]']).replace(',', '.'))   / 1000,
+            'uy': float(str(row['Uy [mm]']).replace(',', '.'))   / 1000,
+            'uz': float(str(row['Uz [mm]']).replace(',', '.'))   / 1000,
+            'rx': float(str(row['Φx [mrad]']).replace(',', '.')) / 1000,
+            'ry': float(str(row['Φy [mrad]']).replace(',', '.')) / 1000,
+            'rz': float(str(row['Φz [mrad]']).replace(',', '.')) / 1000,
+        })
+
+pd.DataFrame(rows).to_csv('scia_modes.csv', index=False, float_format='%.9f')
+```
+
+### Záludnosti MAC modulu
+
+1. **Záporné eigenvalues**: vždy filtrovat `pos_idx = find(Results.values > 0)` před MAC — viz výše.
+
+2. **Jednotky v CSV**: Scia exportuje mm a mrad → v CSV musí být m a rad. Dělit 1000.
+
+3. **Pořadí listů v Excel exportu ze Scia**: listy jsou v obráceném pořadí — třídit dle eigenvalue.
+
+4. **Český desetinný oddělovač**: Scia exportuje `285,9` místo `285.9` → `.replace(',', '.')` při parsování.
+
+5. **node_id vs. souřadnice**: `sciaImportFn` matchuje uzly dle prostorových souřadnic, ne dle `node_id`. Číslování uzlů v Scia a MATLABu se může lišit — ale pokud sedí, číslo Ni = index i v MATLAB.
+
+6. **`ndofs_orig` extrakce**: `macComparisonFn` rekonstruuje `ndofs_orig` voláním `codeNumbersFn` — potřebuje `beams.nodesHead`, `beams.nodesEnd`, `beams.sections`, `beams.angles` a `kinematic`.
+
+---
+
 ## Chronologie změn
 
 | Datum | Commit | Popis |
 |-------|--------|-------|
+| 2026-04-21 | `8484354` | `scia_modes.csv` rozšířen na 10 módů; filtr záporných eigenvalues před MAC |
+| 2026-04-21 | `ccb10d5` | `example_scia_frame_shs_columns` — SHS 240×240×15 sloupy, kolaps diagonál |
+| 2026-04-21 | `bb59257` | `macCriterionFn`, `sciaImportFn`, `macComparisonFn` — MAC verifikace vs. Scia |
 | 2026-04-08 | `26a0ffb` | `trussHallInputFn` — symetrické skupiny průřezů diagonál a svislic; `reportFn` dynamická tabulka |
 | 2026-03-27 | `01e036e` | `stabilitySolverFn` — relaxační parametr dle Evgrafov (2005), `K_reg = K + ε·I` |
 | 2026-03-27 | `3973a00` | `criticalLoadFn` — Cholesky-transformace → spolehlivý eigenvalue solver |
