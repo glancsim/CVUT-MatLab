@@ -101,26 +101,30 @@ fprintf(fid, '<tr><td>Sníh na zemi (char., norma)</td><td style="text-align:cen
 w(fid, '</table>');
 
 %% ── Schéma vazníku (topology plot jako base64 PNG) ───────────────────
-if hasResults && isfield(results.params, 'kinematic')
-    try
-        set(0, 'DefaultFigureVisible', 'off');
-        plotTrussTopologyFn(nodes, members, results.params.kinematic, 'Labels', true);
-        set(0, 'DefaultFigureVisible', 'on');
-        fig = gcf;
-        set(fig, 'Color', 'w', 'Position', [0 0 1100 320]);
-        tmpPng = [tempname '.png'];
-        exportgraphics(fig, tmpPng, 'Resolution', 144, 'BackgroundColor', 'white');
-        close(fig);
-        fid_img = fopen(tmpPng, 'rb');
-        img_bytes = fread(fid_img, Inf, 'uint8=>uint8');
-        fclose(fid_img);
-        delete(tmpPng);
-        b64 = matlab.net.base64encode(img_bytes);
-        w(fid, '<h3 style="color:var(--navy);font-size:11pt;margin-top:18px;">Schéma příhradového vazníku</h3>');
-        fprintf(fid, '<img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;padding:6px;background:#fff;" alt="Schéma příhradového vazníku">\n', b64);
-    catch
-        % skip if plotTrussTopologyFn unavailable or exportgraphics fails
+try
+    loads_dummy.x.nodes = []; loads_dummy.x.value = [];
+    loads_dummy.z.nodes = []; loads_dummy.z.value = [];
+    kin_plot = [];
+    if hasResults && isfield(results.params, 'kinematic')
+        kin_plot = results.params.kinematic;
     end
+    set(0, 'DefaultFigureVisible', 'off');
+    plotTrussFn(nodes, members, loads_dummy, kin_plot, 'Labels', true);
+    set(0, 'DefaultFigureVisible', 'on');
+    fig = gcf;
+    set(fig, 'Color', 'w', 'Position', [0 0 1100 320]);
+    tmpPng = [tempname '.png'];
+    exportgraphics(fig, tmpPng, 'Resolution', 144, 'BackgroundColor', 'white');
+    close(fig);
+    fid_img = fopen(tmpPng, 'rb');
+    img_bytes = fread(fid_img, Inf, 'uint8=>uint8');
+    fclose(fid_img);
+    delete(tmpPng);
+    b64 = matlab.net.base64encode(img_bytes);
+    w(fid, '<h3 style="color:var(--navy);font-size:11pt;margin-top:18px;">Schéma příhradového vazníku</h3>');
+    fprintf(fid, '<img src="data:image/png;base64,%s" style="max-width:100%%;border:1px solid #dee2e6;border-radius:4px;padding:6px;background:#fff;" alt="Schéma příhradového vazníku">\n', b64);
+catch ME
+    fprintf(2, 'reliabilityReportHtmlFn: topology plot selhal: %s\n', ME.message);
 end
 
 %% ── 2. Popis metody ─────────────────────────────────────────────────
