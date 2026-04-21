@@ -26,7 +26,7 @@ fprintf('║  Sériový systém (příhradový vazník)                         
 fprintf('╠══════════════════════════════════════════════════════════════════╣\n');
 fprintf('║  Zatížení:     G + S (gravitace + sníh)                        ║\n');
 fprintf('║  Norma:        EN 1993-1-1, JRC TR Tab. 3.7                    ║\n');
-fprintf('║  Cílový β:     4.7 (CC2, 1 rok — roční maxima)                 ║\n');
+fprintf('║  Cílový β:     4.1 (JRC TR Tab. B.2, ocel + sníh, 1 rok)      ║\n');
 fprintf('╚══════════════════════════════════════════════════════════════════╝\n');
 
 %% 2. Random variables
@@ -57,10 +57,10 @@ fprintf('  Vzorky       = %.0e\n', results.nSamples);
 fprintf('  Selhání      = %d\n', results.nFailures);
 fprintf('  Čas výpočtu  = %.1f s\n', results.elapsed);
 
-if results.beta >= 4.7
-    fprintf('  Posudek:     VYHOVUJE  (β = %.2f ≥ 4.7)\n', results.beta);
+if results.beta >= 4.1
+    fprintf('  Posudek:     VYHOVUJE  (β = %.2f ≥ 4.1)\n', results.beta);
 else
-    fprintf('  Posudek:     NEVYHOVUJE  (β = %.2f < 4.7)\n', results.beta);
+    fprintf('  Posudek:     NEVYHOVUJE  (β = %.2f < 4.1)\n', results.beta);
 end
 
 %% 4. Cross-check with JRC Table 3.8

@@ -4,17 +4,20 @@ function InputOpts = defineRandomVariablesFn(loadParams, sections, opts)
 % Random variables based on JRC TR "Reliability background of the Eurocodes"
 % (2024), Table 3.7, Annex A, and EN 1991-1-3:2025.
 %
-% Variable ordering in UQLab vector X (nDim = nGroups + 9):
+% Variable ordering in UQLab vector X (nDim = nGroups + 7):
 %   X(1)              = R1       — yield strength multiplier (Lognormal)
 %   X(2 .. nG+1)      = d_1..d_nG — CHS outer diameters per section group [m]
 %   X(nG+2)           = G_s      — self-weight multiplier (Normal)
 %   X(nG+3)           = G_P      — permanent load multiplier (Normal)
 %   X(nG+4)           = Q1       — ground snow annual max, normalized (Gumbel)
 %   X(nG+5)           = theta_Q2 — snow time-invariant model uncert. (Lognormal)
-%   X(nG+6)           = mu1      — snow shape factor (Lognormal)
-%   X(nG+7)           = Ce       — exposure coefficient (Lognormal)
-%   X(nG+8)           = theta_b  — resistance model uncert. buckling (Lognormal)
-%   X(nG+9)           = theta_E  — load effect model uncert. (Lognormal)
+%   X(nG+6)           = theta_b  — resistance model uncert. buckling (Lognormal)
+%   X(nG+7)           = theta_E  — load effect model uncert. (Lognormal)
+%
+% NOTE: mu1 (snow shape factor) and Ce (exposure coefficient) are NOT random
+% variables — their variability is already included in theta_Q2 per JRC TR 2024
+% Annex A, Tab. A.8. They are treated deterministically per prEN 1991-1-3
+% (Tab. 5.2 and Tab. 5.1 respectively) and passed via params.mu1 / params.Ce.
 %
 % NOTE: theta_R (tension resistance model uncertainty) is NOT a separate RV.
 % Per JRC TR 2024 Annex A, Tab. A.25 note (4), model uncertainty for axial
@@ -29,12 +32,14 @@ function InputOpts = defineRandomVariablesFn(loadParams, sections, opts)
 %     .d_cov                  (default: 0.005)
 %     .G_s_mean, .G_s_cov     (default: 0.995, 0.025) — JRC TR 2024 Annex A, Tab. A.2
 %     .G_P_mean, .G_P_cov     (default: 1.00, 0.10)  — JRC TR 2024 Annex A, Tab. A.5
-%     .Q1_cov                 (default: 0.20, mean auto-computed: 98%-fraktil=1, roční max)
-%     .tQ2_mean, .tQ2_cov     (default: 0.81, 0.26)  — JRC TR 2024, str. 134
-%     .mu1_mean, .mu1_cov     (default: 0.80, 0.15) — EN 1991-1-3 Tab. 5.2, sklon ≤ 30°; JCSS PMC Part 2
-%     .Ce_mean, .Ce_cov       (default: 1.00, 0.15)  — EN 1991-1-3 odd. 7.3 a 7.5
+%     .Q1_mean                (default: 0.308 kN/m²) — Letiště Ostrava, 1961–2022: μ=31.4 mm w.e.
+%     .Q1_cov                 (default: 0.61) — COV z výběrového vzorku (n=62 let)
+%     .tQ2_mean, .tQ2_cov     (default: 0.81, 0.26)  — JRC TR 2024 Annex A, Tab. A.8
 %     .tb_mean, .tb_cov       (default: 1.15, 0.05)  — JRC TR 2024 Annex A, Tab. A.25
 %     .tE_mean, .tE_cov       (default: 1.00, 0.05)  — JRC TR 2024 Annex A, Tab. A.22
+%
+% NOTE: mu1 and Ce are NOT configurable here — they are deterministic and
+% passed to the LSF via lsParams.mu1 / lsParams.Ce (see systemReliabilityFn).
 %
 % OUTPUTS:
 %   InputOpts - UQLab input options struct (pass to uq_createInput)
@@ -57,14 +62,10 @@ def = struct( ...
     'G_s_dist', 'Gaussian', ...
     'G_P_mean', 1.00,  'G_P_cov', 0.10, ...        % JRC TR 2024 Annex A, Tab. A.5
     'G_P_dist', 'Gaussian', ...
-    'Q1_cov',   0.20, ...                           % roční max Gumbel; EN 1991-1-3 (s_k = 98%-fraktil ročního max)
+    'Q1_mean',  0.31,  'Q1_cov', 0.61, ...          % Letiště Ostrava Mošnov 1961–2022: μ=0.31 kN/m², COV=0.61, šikmost=1.09 (n=61, Gumbel)
     'Q1_dist',  'Gumbel', ...
-    'tQ2_mean', 0.81,  'tQ2_cov', 0.26, ...        % JRC TR 2024, str. 134
+    'tQ2_mean', 0.81,  'tQ2_cov', 0.26, ...        % JRC TR 2024 Annex A, Tab. A.8 (zahrnuje var. mu1, Ce, Ct)
     'tQ2_dist', 'Lognormal', ...
-    'mu1_mean', 0.80,  'mu1_cov', 0.15, ...        % EN 1991-1-3 Tab. 5.2; COV dle JCSS PMC Part 2, Climatic Actions
-    'mu1_dist', 'Lognormal', ...
-    'Ce_mean',  1.00,  'Ce_cov',  0.15, ...        % EN 1991-1-3 odd. 7.3 a 7.5
-    'Ce_dist',  'Lognormal', ...
     'tb_mean',  1.15,  'tb_cov',  0.05, ...        % JRC TR 2024 Annex A, Tab. A.25 — column/buckling
     'tb_dist',  'Lognormal', ...
     'tE_mean',  1.00,  'tE_cov',  0.05, ...        % JRC TR 2024 Annex A, Tab. A.22 — axial forces
@@ -111,40 +112,29 @@ InputOpts.Marginals(idx).Name = 'G_P';
 InputOpts.Marginals(idx).Type = def.G_P_dist;
 InputOpts.Marginals(idx).Moments = [def.G_P_mean, def.G_P_mean * def.G_P_cov];
 
-% nG+4. Ground snow annual maximum Q1 (normalized Gumbel)
-%   Q1 is normalized so that its 98% fractile = 1.0 (= s_k, characteristic value).
-%   s_k is defined in EN 1991-1-3 as the 98%-fractile of the annual maximum
-%   ground snow → Q1 represents annual maximum, β_target = 4.7 (not 50-yr).
-%   For Gumbel: x_0.98 = μ·(1 + K98·V), where K98 = (√6/π)·(γ + ln(-ln(0.98))) = 2.593
-%   → μ = 1 / (1 + K98·V)
-K98_gumbel = (sqrt(6)/pi) * (0.5772 + abs(log(-log(0.98))));  % ≈ 2.593
-Q1_mean = 1.0 / (1 + K98_gumbel * def.Q1_cov);
+% nG+4. Ground snow annual maximum Q1 — skutečná data stanice
+%   Q1 je přímo ve fyzikálních jednotkách [kN/m²] — bez normalizace přes s_k.
+%   Parametry ze skutečných měření ročních maxim vodní hodnoty sněhu.
+%   Stanice: Letiště Leoše Janáčka Ostrava, 1961–2022 (n=62 let)
+%   μ = 31.4 mm w.e. = 0.308 kN/m²; COV = σ/μ = 0.61; σ = 0.188 kN/m²
+%   Šikmost výběru = 0.86 (Gumbel: teor. ~1.14 — přijato Gumbel rozdělení).
+Q1_mean = def.Q1_mean;
 Q1_std  = Q1_mean * def.Q1_cov;
 idx = idx + 1;
 InputOpts.Marginals(idx).Name = 'Q1';
 InputOpts.Marginals(idx).Type = def.Q1_dist;
 InputOpts.Marginals(idx).Moments = [Q1_mean, Q1_std];
-fprintf('  Q1 (Gumbel, roční max): mean = %.4f, COV = %.2f, 98%%-fraktil ≈ 1.0 = s_k\n', Q1_mean, def.Q1_cov);
+fprintf('  Q1 (Gumbel, skutečná data): mean = %.4f kN/m², COV = %.2f, σ = %.4f kN/m²\n', Q1_mean, def.Q1_cov, Q1_std);
 
 % nG+5. Snow time-invariant model uncertainty theta_Q2
+%   JRC TR 2024 Annex A, Tab. A.8 — zahrnuje variabilitu mu1, Ce i Ct
+%   mu1 a Ce jsou proto deterministické (viz params.mu1, params.Ce)
 idx = idx + 1;
 InputOpts.Marginals(idx).Name = 'theta_Q2';
 InputOpts.Marginals(idx).Type = def.tQ2_dist;
 InputOpts.Marginals(idx).Moments = [def.tQ2_mean, def.tQ2_mean * def.tQ2_cov];
 
-% nG+6. Snow shape factor mu1
-idx = idx + 1;
-InputOpts.Marginals(idx).Name = 'mu1';
-InputOpts.Marginals(idx).Type = def.mu1_dist;
-InputOpts.Marginals(idx).Moments = [def.mu1_mean, def.mu1_mean * def.mu1_cov];
-
-% nG+7. Exposure coefficient Ce
-idx = idx + 1;
-InputOpts.Marginals(idx).Name = 'Ce';
-InputOpts.Marginals(idx).Type = def.Ce_dist;
-InputOpts.Marginals(idx).Moments = [def.Ce_mean, def.Ce_mean * def.Ce_cov];
-
-% nG+8. Resistance model uncertainty (buckling) theta_b
+% nG+6. Resistance model uncertainty (buckling) theta_b
 %   JRC TR 2024 Annex A, Tab. A.25 — Column / compression member buckling
 %   NOTE: theta_R (tension) is NOT a separate RV — covered by R1 and d_sg per Tab. A.25 note (4)
 idx = idx + 1;
@@ -152,13 +142,13 @@ InputOpts.Marginals(idx).Name = 'theta_b';
 InputOpts.Marginals(idx).Type = def.tb_dist;
 InputOpts.Marginals(idx).Moments = [def.tb_mean, def.tb_mean * def.tb_cov];
 
-% nG+9. Load effect model uncertainty theta_E
+% nG+7. Load effect model uncertainty theta_E
 %   JRC TR 2024 Annex A, Tab. A.22 — Axial forces in frames
 idx = idx + 1;
 InputOpts.Marginals(idx).Name = 'theta_E';
 InputOpts.Marginals(idx).Type = def.tE_dist;
 InputOpts.Marginals(idx).Moments = [def.tE_mean, def.tE_mean * def.tE_cov];
 
-fprintf('Reliability RV: %d náhodných veličin (%d průřez. skupin + 9 modelových)\n', idx, nG);
+fprintf('Reliability RV: %d náhodných veličin (%d průřez. skupin + 7 modelových)\n', idx, nG);
 
 end
