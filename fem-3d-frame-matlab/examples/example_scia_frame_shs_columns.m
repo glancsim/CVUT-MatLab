@@ -398,21 +398,21 @@ loads.ry.nodes = zeros(0,1);  loads.ry.value = zeros(0,1);
 loads.rz.nodes = zeros(0,1);  loads.rz.value = zeros(0,1);
 
 %% Optional: visualise structure
-plotStructureFn(nodes, beams, loads, kinematic);
+% plotStructureFn(nodes, beams, loads, kinematic);
 
 %% -----------------------------------------------------------------------
 %  RUN STABILITY ANALYSIS
 % -----------------------------------------------------------------------
 Results = stabilitySolverFn(sections, nodes, ndisc, kinematic, beams, loads);
-plotModeShapeFn(nodes, beams, kinematic, Results, 2);
+% plotModeShapeFn(nodes, beams, kinematic, Results, 2);
 
 fprintf('\n=== Critical load multipliers (first 10 modes) ===\n');
 for i = 1:length(Results.values)
     lam = Results.values(i);
-    if lam > 0
+    % if lam > 0
         fprintf('  Mode %2d:  lambda_cr = %10.4f   =>  F_cr = %.2f kN\n', ...
                 i, lam, lam * 1);
-    end
+    % end
 end
 
 %% -----------------------------------------------------------------------
