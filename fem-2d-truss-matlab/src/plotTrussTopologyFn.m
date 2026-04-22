@@ -97,7 +97,7 @@ h_nodes = scatter(nodes.x, nodes.z, 25, ...
 % SUPPORTS (clean symbols)
 % -------------------------
 h_sup = [];
-if nargin >= 4 && ~isempty(kinematic)
+if nargin >= 3 && ~isempty(kinematic)
 
     if isfield(kinematic,'z')
         nds = kinematic.z.nodes;
@@ -186,7 +186,7 @@ if ~isempty(h_sup)
 end
 
 % legend(leg_h, leg_l, 'Location', 'best');
-exportgraphics(gcf, 'truss_topology.tif', 'Resolution', 600)
+% exportgraphics(gcf, 'truss_topology.tif', 'Resolution', 600)
 
 hold off;
 

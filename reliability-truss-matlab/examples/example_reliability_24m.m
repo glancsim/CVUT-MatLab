@@ -109,7 +109,7 @@ fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
 mcOpts.nSamples  = 1e7;
 mcOpts.batchSize = 1e5;
-mcOpts.method    = 'Subset';             % 'MCS' / 'Subset' / 'IS'
+mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
 
 % Sníh na zemi — skutečná data stanice (varianta B: Q1 přímo v kN/m²):
 %   Stanice: Letiště Leoše Janáčka Ostrava (Mošnov), 1961–2022 (n = 61 let)
@@ -126,9 +126,12 @@ mcOpts.mu1 = 0.80;   % tvarový součinitel sněhu (prEN Tab. 5.2)
 mcOpts.Ce  = 1.00;   % součinitel expozice (prEN Tab. 5.1)
 
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
-reliabilityReportFn(results, sections, loadParams);
+% reliabilityReportFn(results, sections, loadParams);
 reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);
 convergencePlotFn(results);
+
+
+plotTrussBetaFn(nodes, members, results, kinematic);
 
 %% ── Srovnání deterministického a probabilistického posudku ────────────
 fprintf('\n--- Srovnání ---\n');
