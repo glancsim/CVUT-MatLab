@@ -201,28 +201,27 @@ zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 % (CO
 <h2>9. Výsledky</h2>
 <table>
 <tr><th>Veličina</th><th>Symbol</th><th>Hodnota</th></tr>
-<tr><td>Pravděpodobnost poruchy</td><td>\(P_f\)</td><td style="text-align:right"><strong>1.0000e-05</strong></td></tr>
-<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>4.265</strong></td></tr>
-<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">10.0 %%</td></tr>
+<tr><td>Pravděpodobnost poruchy</td><td>\(P_f\)</td><td style="text-align:right"><strong>1.3500e-05</strong></td></tr>
+<tr><td>Index spolehlivosti</td><td>\(\beta\)</td><td style="text-align:right"><strong>4.197</strong></td></tr>
+<tr><td>Koef. variace odhadu</td><td>\(\mathrm{CoV}(\hat{P}_f)\)</td><td style="text-align:right">8.6 %%</td></tr>
 <tr><td>Metoda</td><td>—</td><td style="text-align:right">MCS</td></tr>
 <tr><td>Počet vyhodnocení modelu</td><td>\(N_{\mathrm{eval}}\)</td><td style="text-align:right">1e+07</td></tr>
 <tr><td>Max. povolený počet vzorků</td><td>\(N_{\mathrm{max}}\)</td><td style="text-align:right">1e+07</td></tr>
-<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">100</td></tr>
-<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">99.0 s</td></tr>
+<tr><td>Počet selhání</td><td>\(n_f\)</td><td style="text-align:right">135</td></tr>
+<tr><td>Čas výpočtu</td><td>—</td><td style="text-align:right">28.5 s</td></tr>
 </table>
 <p class="ref"><em>Subset Simulation a Importance Sampling jsou adaptivní metody — počet vyhodnocení bývá výrazně nižší než nastavená horní mez.</em></p>
 <h3>9.1 Kritičnost jednotlivých prutů</h3>
 <p>Podíl vzorků, ve kterých byl daný prut nejslabším článkem sériového systému. Ukazují se jen pruty s nenulovým podílem, seřazené sestupně.</p>
 <table>
 <tr><th>Prut</th><th>Typ</th><th>Profil</th><th>Kritický [%]</th><th>Převažující mód</th></tr>
-<tr><td style="text-align:center">26</td><td>Diagonála</td><td style="text-align:center">44×3.2</td><td style="text-align:right">96.7</td><td style="text-align:center">—</td></tr>
-<tr><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">3.3</td><td style="text-align:center">vzpěr</td></tr>
+<tr><td style="text-align:center">19</td><td>Svislice</td><td style="text-align:center">38×3.2</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
 <tr><td style="text-align:center">10</td><td>Horní pás</td><td style="text-align:center">108×5.0</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
 <tr><td style="text-align:center">23</td><td>Diagonála</td><td style="text-align:center">82×3.6</td><td style="text-align:right">0.0</td><td style="text-align:center">vzpěr</td></tr>
 </table>
 <h2>10. Souhrn</h2>
 <div class="sbox" style="background:#d4edda;border:2px solid #c3e6cb;color:#155724;">
-\(\beta = 4.265\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 4{,}1\) (JRC TR Tab. B.2, ocel + sníh) &nbsp;&rarr;&nbsp; <strong>VYHOVUJE</strong>
+\(\beta = 4.197\) &nbsp; vs. &nbsp; \(\beta_{\mathrm{target}} = 4{,}1\) (JRC TR Tab. B.2, ocel + sníh) &nbsp;&rarr;&nbsp; <strong>VYHOVUJE</strong>
 </div>
 <h2>11. Budoucí vylepšení</h2>
 <ol>
@@ -230,5 +229,5 @@ zanedbává vliv variability \(EA\) na rozdělení sil — chyba &lt; 0,01 % (CO
 <li><strong>Importance Sampling / FORM</strong> pro efektivnější odhad malých \(P_f\) (&lt; 10<sup>−6</sup>) při zachování přesnosti.</li>
 </ol>
 <hr style="margin-top:30px;border:none;border-top:1px solid #ccc;">
-<p class="ref">Vygenerováno: 22.04.2026 17:55 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
+<p class="ref">Vygenerováno: 22.04.2026 20:41 &nbsp;|&nbsp; Software: MATLAB + UQLab &nbsp;|&nbsp; Autor: S. Glanc</p>
 </body></html>

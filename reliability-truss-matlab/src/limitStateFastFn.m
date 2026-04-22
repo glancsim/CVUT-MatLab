@@ -140,7 +140,9 @@ end
 % Accumulate running counts (O(nmembers) memory, not O(N*nmembers))
 n_tension_batch  = sum(fail_mode_batch == 1, 1)';   % (nmem×1)
 n_buckling_batch = sum(fail_mode_batch == 2, 1)';   % (nmem×1)
-crit_batch       = histcounts(crit_member_batch, (0.5:1:nmem+0.5))';
+% Track critical member only for failure samples (g_sys <= 0)
+fail_mask = g_sys <= 0;
+crit_batch = histcounts(crit_member_batch(fail_mask), (0.5:1:nmem+0.5))';
 
 if isempty(store)
     store.critical_count  = crit_batch;
