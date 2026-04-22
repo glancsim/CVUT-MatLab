@@ -130,19 +130,19 @@ results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, m
 reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);
 convergencePlotFn(results);
 
-
 plotTrussBetaFn(nodes, members, results, kinematic);
 
-%% ── Srovnání deterministického a probabilistického posudku ────────────
-fprintf('\n--- Srovnání ---\n');
-fprintf('  Deterministický max util:  %.3f\n', max(detResults.util_max));
-fprintf('  Probabilistický β:         %.3f\n', results.beta);
-fprintf('  β_cíl (JCSS, systém):      4.100\n');
 
-if max(detResults.util_max) <= 1.0 && results.beta >= 4.1
-    fprintf('  → Oba posudky: VYHOVUJE\n');
-elseif max(detResults.util_max) > 1.0 && results.beta < 4.1
-    fprintf('  → Oba posudky: NEVYHOVUJE\n');
-else
-    fprintf('  → Posudky se LIŠÍ — dílčí součinitele vs. spolehlivost\n');
-end
+% %% ── Srovnání deterministického a probabilistického posudku ────────────
+% fprintf('\n--- Srovnání ---\n');
+% fprintf('  Deterministický max util:  %.3f\n', max(detResults.util_max));
+% fprintf('  Probabilistický β:         %.3f\n', results.beta);
+% fprintf('  β_cíl (JCSS, systém):      4.100\n');
+% 
+% if max(detResults.util_max) <= 1.0 && results.beta >= 4.1
+%     fprintf('  → Oba posudky: VYHOVUJE\n');
+% elseif max(detResults.util_max) > 1.0 && results.beta < 4.1
+%     fprintf('  → Oba posudky: NEVYHOVUJE\n');
+% else
+%     fprintf('  → Posudky se LIŠÍ — dílčí součinitele vs. spolehlivost\n');
+% end
