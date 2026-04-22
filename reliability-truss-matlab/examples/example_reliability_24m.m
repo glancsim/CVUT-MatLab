@@ -93,7 +93,7 @@ emptyLoads.z.nodes = [];  emptyLoads.z.value = [];
 
 % plotTrussFn(nodes, members, emptyLoads, kinematic, 'Labels', true);
 
-plotTrussTopologyFn(nodes, members, kinematic, 'Labels', true)
+plotTrussTopologyFn(nodes, members, kinematic, 'Labels', true);
 % title('Truss 24 m — Warren inverted');
 
 fprintf('\nGeometrie: %d prutů, %d uzlů, %d průřezových skupin\n', ...
@@ -128,6 +128,28 @@ mcOpts.Ce  = 1.00;   % součinitel expozice (prEN Tab. 5.1)
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
 % reliabilityReportFn(results, sections, loadParams);
 reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);
+
+%% ── Q/G poměr (všechny pruty) ────────────────────────────────────────────
+% Proměnné / stálé zatížení v síle prutu (nominální hodnoty, G_P=G_s=1)
+s_roof_nom = mcOpts.mu1 * mcOpts.Ce * params.s_k;  % [kN/m²]
+
+N_G_all = results.params.N_perm + results.params.N_sw;  % (nmembers×1) stálé [N]
+N_Q_all = s_roof_nom * results.params.N_snow;            % (nmembers×1) sněhové [N]
+alpha_Q = N_Q_all ./ (N_Q_all + N_G_all);   % (nmembers×1) ∈ [0,1]: 0=pouze stálé, 1=pouze proměnné
+
+% Výpis pro nejkritičnější pruty (seřazeno dle critical_pct)
+crit_pct = results.member.critical_pct;
+[~, order] = sort(crit_pct, 'descend');
+show = order(crit_pct(order) > 0);
+
+fprintf('\n── α_Q — nejkritičnější pruty ──────────────────────\n');
+fprintf('  %4s  %-14s  %8s  %8s\n', 'č.', 'Typ', 'Krit.%', 'α_Q');
+for k = 1:numel(show)
+    p = show(k);
+    fprintf('  %4d  %-14s  %7.1f%%  %8.3f\n', ...
+        p, char(results.classification.type(p)), crit_pct(p), alpha_Q(p));
+end
+fprintf('────────────────────────────────────────────────────\n');
 convergencePlotFn(results);
 
 plotTrussBetaFn(nodes, members, results, kinematic);
