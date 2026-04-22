@@ -751,6 +751,98 @@ stabilitySolverFn / linearSolverFn
 
 ---
 
+## Modul `reliability-truss-matlab` — vizualizace a výkonnost
+
+### `plotTrussBetaFn` — vizualizace kritičnosti prutů
+
+Umístění: `reliability-truss-matlab/src/plotTrussBetaFn.m`
+
+```matlab
+h = plotTrussBetaFn(nodes, members, results, kinematic)
+```
+
+Vykreslí příhradovou konstrukci s pruty barevně rozlišenými podle kritičnosti ze systémové spolehlivostní analýzy.
+
+**Metrika: `results.member.critical_pct`** — podíl systémových selhání, v nichž byl daný prut nejslabším článkem (argmin g hodnot). Správná metrika pro "co optimalizovat":
+- **Zelená (0 %)** — nikdy kritický → kandidát na zmenšení průřezu
+- **Červená (80–100 %)** — dominantní příčina kolapsu → zvětšit průřez
+
+**Diskrétní barevné pásy po 20 % relativně k nejkritičtějšímu prutu:**
+
+| Pás | Barva |
+|-----|-------|
+| 0 % | Zelená (fixní) |
+| 0–20 % | Světle zelená |
+| 20–40 % | Žlutá |
+| 40–60 % | Oranžová |
+| 60–80 % | Tmavě oranžová |
+| 80–100 % | Červená (fixní) |
+
+**Adaptivní barvy** — barvy se interpolují dle počtu přítomných skupin:
+- 1 nenulová skupina → červená
+- 2 nenulové skupiny → žlutá + červená
+- 3+ skupin → plný gradient světle zelená→červená
+
+---
+
+### Proč `critical_pct` místo per-member beta
+
+**Per-member beta z `−Φ⁻¹(sum(g≤0)/n)` je nespolehlivý** při malém počtu vzorků:
+
+Pro β_sys ≈ 4.3 → P_f,sys ≈ 8.5×10⁻⁶. Počet selhání prutu i v 1e7 vzorcích:
+- Dominantní prut: ~82 selhání (CoV ~11 %) — ok
+- Druhý prut (3.3 %): ~3 selhání (CoV ~58 %) — nespolehlivé
+- Ostatní (0 %): 0 selhání → beta = Inf → vždy zelený (ŠPATNĚ)
+
+**`critical_pct` je robustní** protože sleduje pořadí g hodnot (argmin) — tato událost nastane v každém vzorku, ne jen při systémovém selhání. Již při 100 systémových selháních (1e7 vzorků) je odhad stabilní.
+
+**Vztah mezi `critical_pct` a β_i** (pro silně korelované pruty se sdílenými zatíženími):
+
+$$\beta_i \approx -\Phi^{-1}\!\left(\frac{\text{crit\_pct}(i)}{100} \times P_{f,sys}\right)$$
+
+Lze použít pro převod na betovou škálu po dokončení analýzy.
+
+---
+
+### Paměťová optimalizace `limitStateFastFn` — running counts
+
+**Původní store (SMAZÁNO):** akumuloval celé matice `g_member` a `fail_mode`:
+- 1e7 vzorků × 29 prutů × 8 B = **4.6 GB**
+- 1e8 vzorků → **47 GB** → crash na 32 GB RAM
+
+**Nový store:** pouze průběžné součty (running counts):
+
+```matlab
+store.critical_count   % (nmembers×1) histogram nejslabšího článku
+store.n_tension_fail   % (nmembers×1) počet tahových selhání
+store.n_buckling_fail  % (nmembers×1) počet vzpěrných selhání
+store.nEval            % (scalar) celkový počet vyhodnocení
+```
+
+Paměť: **< 1 KB** bez ohledu na počet vzorků. Výsledky `critical_pct`, `n_tension_fail`, `n_buckling_fail` jsou identické.
+
+**Ztráta:** `results.member.g_member` se již neukládá. Nepoužívá se v žádné aktivní funkci.
+
+**Výkonnostní srovnání (29 prutů, 1e7 vzorků):**
+- Před optimalizací: ~150 s
+- Po optimalizaci: ~99 s (**~34 % zrychlení**)
+
+---
+
+### Doporučený počet vzorků pro publikaci
+
+| Vzorky | Čas (~29 prutů) | Selhání (β≈4.3) | CoV Pf |
+|--------|----------------|-----------------|--------|
+| 1e6 | ~10 s | ~8 | ~35 % |
+| 1e7 | ~99 s | ~85 | ~10 % |
+| **1e8** | **~17 min** | **~850** | **~3 %** |
+
+Pro vizualizaci `critical_pct` stačí 1e7 (100+ selhání → stabilní pořadí kritičnosti). Pro publikační kvalitu β_sys doporučeno 1e8.
+
+**`batchSize = 1e6`** — doporučeno pro 1e8 (méně overhead, RAM ~230 MB per batch).
+
+---
+
 ## MAC verifikace — MATLAB vs. Scia Engineer
 
 Modul pro porovnání vlastních tvarů stabilitní analýzy mezi MATLAB solverem a Scia Engineer pomocí **MAC (Modal Assurance Criterion)**.
@@ -913,6 +1005,8 @@ pd.DataFrame(rows).to_csv('scia_modes.csv', index=False, float_format='%.9f')
 
 | Datum | Commit | Popis |
 |-------|--------|-------|
+| 2026-04-22 | `15b36ad` | `limitStateFastFn` — store přepracován na running counts, paměť O(nmembers) místo O(n×m); `systemReliabilityFn` přizpůsoben |
+| 2026-04-22 | `89a7d71` | `plotTrussBetaFn` — vizualizace kritičnosti prutů diskrétními pásy; `example_reliability_24m.m` aktualizován |
 | 2026-04-21 | `8484354` | `scia_modes.csv` rozšířen na 10 módů; filtr záporných eigenvalues před MAC |
 | 2026-04-21 | `ccb10d5` | `example_scia_frame_shs_columns` — SHS 240×240×15 sloupy, kolaps diagonál |
 | 2026-04-21 | `bb59257` | `macCriterionFn`, `sciaImportFn`, `macComparisonFn` — MAC verifikace vs. Scia |
@@ -958,3 +1052,9 @@ pd.DataFrame(rows).to_csv('scia_modes.csv', index=False, float_format='%.9f')
 9. **`displacements.global` je sparse**: vždy `full()` před indexací nebo výpisem.
 
 10. **Malé pruty → singulární K + lokální boulení**: pruty s `r_outer ≈ 0` způsobují `RCOND ≈ 1e-24` v `EndForcesFn` a zaplaví eigenvalue výsledky lokálními módy. Fix: `stabilitySolverFn(..., 'oofem', 1e-8)` — relaxační parametr přidá `ε·I` ke K (Evgrafov 2005).
+
+11. **`gca` jako proměnná shadowuje built-in** (MATLAB): zápis `gca.Property = value` vytvoří lokální struct `gca` a MATLAB pak odmítne `gca` jako funkci **v celé funkci** (i na řádcích před přiřazením). Fix: vždy `ax = gca; ax.Property = value`.
+
+12. **Per-member beta z MC je nespolehlivý** (`reliability-truss-matlab`): `−Φ⁻¹(sum(g≤0)/n)` dává Inf pro pruty které nikdy neselhají v izolaci, přestože jsou nejčastěji nejslabším článkem systému. Používat `critical_pct` pro vizualizaci a optimalizační rozhodnutí.
+
+13. **`limitStateFastFn` store a RAM při 1e8+**: původní store akumuloval `g_member` (nSamples×nmembers) → 47 GB při 1e8. Opraveno v commit `15b36ad` — store nyní drží jen running counts (< 1 KB).
