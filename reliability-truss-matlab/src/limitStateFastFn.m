@@ -137,15 +137,21 @@ end
 % Series system: min over all members
 [g_sys, crit_member_batch] = min(g_member_batch, [], 2);
 
-% Append to persistent store
+% Accumulate running counts (O(nmembers) memory, not O(N*nmembers))
+n_tension_batch  = sum(fail_mode_batch == 1, 1)';   % (nmem×1)
+n_buckling_batch = sum(fail_mode_batch == 2, 1)';   % (nmem×1)
+crit_batch       = histcounts(crit_member_batch, (0.5:1:nmem+0.5))';
+
 if isempty(store)
-    store.g_member        = g_member_batch;
-    store.fail_mode       = fail_mode_batch;
-    store.critical_member = crit_member_batch;
+    store.critical_count  = crit_batch;
+    store.n_tension_fail  = n_tension_batch;
+    store.n_buckling_fail = n_buckling_batch;
+    store.nEval           = N_samples;
 else
-    store.g_member        = [store.g_member;        g_member_batch];
-    store.fail_mode       = [store.fail_mode;       fail_mode_batch];
-    store.critical_member = [store.critical_member;  crit_member_batch];
+    store.critical_count  = store.critical_count  + crit_batch;
+    store.n_tension_fail  = store.n_tension_fail  + n_tension_batch;
+    store.n_buckling_fail = store.n_buckling_fail + n_buckling_batch;
+    store.nEval           = store.nEval           + N_samples;
 end
 
 end

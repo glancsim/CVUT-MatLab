@@ -226,18 +226,12 @@ results.elapsed        = elapsed;
 % módů selhání, které jsou interpretačně platné pro všechny metody.
 memberStore = limitStateFastFn('get_store', []);
 if ~isempty(memberStore)
-    nEval = size(memberStore.g_member, 1);
+    nEval = memberStore.nEval;
 
-    % Critical member histogram: how often each member is the weakest link
-    results.member.critical_count = histcounts(memberStore.critical_member, ...
-        (0.5 : 1 : nmembers+0.5))';   % (nmembers×1)
-    results.member.critical_pct = results.member.critical_count / nEval * 100;
-
-    % Dominant failure mode per member (tension vs buckling)
-    results.member.n_tension_fail  = sum(memberStore.fail_mode == 1, 1)';
-    results.member.n_buckling_fail = sum(memberStore.fail_mode == 2, 1)';
-
-    results.member.g_member = memberStore.g_member;
+    results.member.critical_count  = memberStore.critical_count;
+    results.member.critical_pct    = memberStore.critical_count / nEval * 100;
+    results.member.n_tension_fail  = memberStore.n_tension_fail;
+    results.member.n_buckling_fail = memberStore.n_buckling_fail;
 else
     results.member = struct();
 end
