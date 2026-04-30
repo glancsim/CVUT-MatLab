@@ -17,3 +17,6 @@ fem-stability-matlab/tests/gen_ref_*.m
 *.tif
 *.tiff
 en-truss-design-matlab/examples/posudek_vaznik_30m.html
+reliability-truss-matlab/examples/topology.fig
+reliability-truss-matlab/examples/critical_members.fig
+reliability-truss-matlab/examples/convergence.fig

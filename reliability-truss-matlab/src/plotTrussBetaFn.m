@@ -149,25 +149,31 @@ scatter(nodes.x, nodes.z, 25, ...
 % -------------------------
 % SUPPORTS
 % -------------------------
-if nargin >= 4 && ~isempty(kinematic)
-    if isfield(kinematic, 'z')
+if nargin >= 3 && ~isempty(kinematic)
+
+    if isfield(kinematic,'z')
         nds = kinematic.z.nodes;
+
         for i = 1:numel(nds)
-            xn = nodes.x(nds(i));
-            zn = nodes.z(nds(i)) - 0.75;
-            plot(xn, zn, '^', ...
+            x = nodes.x(nds(i));
+            z = nodes.z(nds(i)) - 0.75;
+
+            plot(x, z, '^', ...
                 'MarkerSize', 8, ...
                 'MarkerFaceColor', 'k', ...
                 'MarkerEdgeColor', 'k');
+
         end
-        if isfield(kinematic, 'x')
-            nds_x = kinematic.x.nodes;
-            for i = 1:numel(nds_x)
-                xn = nodes.x(nds_x(i));
-                zn = nodes.z(nds_x(i)) - 0.75 - 0.5;
-                plot([xn-0.5 xn+0.5], [zn zn], 'k', 'LineWidth', 2);
-            end
+
+    if isfield(kinematic,'x')
+        nds = kinematic.x.nodes;
+
+        for i = 1:numel(nds)
+            plot([x-0.5 x+0.5], ...
+                 [z-0.5 z-0.5], ...
+                 'k', 'LineWidth', 2);
         end
+    end
     end
 end
 

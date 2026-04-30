@@ -49,7 +49,7 @@ p1 = CHS(0.108,  0.005);    % TR 108×5     — horní pás
 p2 = CHS(0.159,  0.005);    % TR 159×5     — dolní pás
 p3 = CHS(0.0825, 0.0036);   % TR 82.5×3.6  — vnější diagonály
 p4 = CHS(0.0445, 0.0032);   % TR 44.5×3.2  — vnitřní diagonály
-p5 = CHS(0.038,  0.0036);   % TR 38×3.2    — svislice
+p5 = CHS(0.038,  0.0040);   % TR 38×3.2    — svislice
 
 profiles = [p1 p2 p3 p4 p5];
 nProf = numel(profiles);
@@ -107,8 +107,8 @@ fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
 
 %% ── Spolehlivostní posudek ────────────────────────
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
-mcOpts.nSamples  = 1e7;
-mcOpts.batchSize = 1e6;
+mcOpts.nSamples  = 1e6;
+mcOpts.batchSize = 1e5;
 mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
 
 % Sníh na zemi — skutečná data stanice (varianta B: Q1 přímo v kN/m²):
