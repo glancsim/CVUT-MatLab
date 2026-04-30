@@ -21,18 +21,19 @@
 %% -----------------------------------------------------------------------
 %  SECTION PROPERTIES
 %  sec 1 = IPE240   sec 2 = L 300×200×20×25
+%  L-section: principal axes (Iy=I_u, Iz=I_v, α=21.84°) — matches Scia
 % -----------------------------------------------------------------------
-sections.A  = [3.912e-3;  1.050e-2];   % [m²]
-sections.Iy = [3.892e-5;  9.384e-5];   % [m⁴]  major-axis bending
-sections.Iz = [2.840e-6;  3.789e-5];   % [m⁴]  minor-axis bending
-sections.Ix = [1.288e-7;  1.842e-6];   % [m⁴]  St. Venant torsion
+sections.A  = [3.912e-3;  1.100e-2];   % [m²]
+sections.Iy = [3.892e-5;  1.1653e-4];  % [m⁴]  principal major axis I_u
+sections.Iz = [2.840e-6;  1.9794e-5];  % [m⁴]  principal minor axis I_v
+sections.Ix = [1.288e-7;  1.9696e-6];  % [m⁴]  St. Venant torsion
 sections.E  = [210e9;     210e9];       % [Pa]
 sections.v  = [0.3;       0.3];         % [-]
 
 %% -----------------------------------------------------------------------
 %  DISCRETISATION
 % -----------------------------------------------------------------------
-ndisc = 4;
+ndisc = 1;
 
 %% -----------------------------------------------------------------------
 %  NODES   (row i = node Ni, columns: x  y  z  [m])
@@ -411,8 +412,58 @@ for i = 1:length(Results.values)
     end
 end
 
-% Indices of positive-eigenvalue modes — used for MAC comparison
-pos_idx = find(Results.values > 0);
+% Positive eigenvalue modes sorted ascending — used for MAC comparison
+pos_mask = Results.values > 0;
+[~, sort_pos] = sort(Results.values(pos_mask));
+pos_vecs_all  = Results.vectors(:, pos_mask);
+Results_pos         = Results;
+Results_pos.values  = Results.values(pos_mask);
+Results_pos.values  = Results_pos.values(sort_pos);
+Results_pos.vectors = pos_vecs_all(:, sort_pos);
+
+%% -----------------------------------------------------------------------
+%  EIGENVALUE COMPARISON — MATLAB vs. Scia Engineer
+% -----------------------------------------------------------------------
+scia_lambdas = [
+     548.06;   % SL1/ 1
+     557.04;   % SL1/ 2
+     870.74;   % SL1/ 3
+     905.90;   % SL1/ 4
+    1008.60;   % SL1/ 5
+    1011.53;   % SL1/ 6
+    1144.51;   % SL1/ 7
+    1156.52;   % SL1/ 8
+    1565.50;   % SL1/ 9
+    1646.05;   % SL1/10
+    1822.17;   % SL1/11
+    1928.26;   % SL1/12
+    2054.19;   % SL1/13
+    2084.02;   % SL1/14
+    2094.69;   % SL1/15
+    2249.99;   % SL1/16
+    2288.39;   % SL1/17
+    2510.15;   % SL1/18
+    2661.04;   % SL1/19
+    3226.55;   % SL1/20
+];
+
+matlab_lambdas = sort(Results.values(Results.values > 0));
+n_cmp = min(numel(matlab_lambdas), numel(scia_lambdas));
+
+fprintf('\n=== Porovnání vlastních čísel: MATLAB vs. Scia ===\n');
+fprintf('  MATLAB: %d kladných, %d záporných λ_cr\n', ...
+        numel(matlab_lambdas), sum(Results.values <= 0));
+if n_cmp == 0
+    fprintf('  Žádné kladné vlastní číslo nenalezeno. Results.values:\n');
+    fprintf('    %10.4f\n', Results.values);
+else
+    fprintf('  %-6s  %12s  %12s  %10s\n', 'Mód', 'MATLAB', 'Scia', 'Chyba [%]');
+    fprintf('  %s\n', repmat('-', 1, 46));
+    for i = 1:n_cmp
+        err = (matlab_lambdas(i) - scia_lambdas(i)) / scia_lambdas(i) * 100;
+        fprintf('  %-6d  %12.4f  %12.4f  %+10.4f\n', i, matlab_lambdas(i), scia_lambdas(i), err);
+    end
+end
 
 %% -----------------------------------------------------------------------
 %  MAC COMPARISON — MATLAB vs. Scia Engineer
@@ -422,13 +473,6 @@ pos_idx = find(Results.values > 0);
 %       (see sciaImportFn help for the expected CSV format)
 %    2. Run sciaImportFn to map Scia nodes → MATLAB DOF ordering
 %    3. Run macComparisonFn to compute the MAC matrix
-%
-%  Scia eigenvalues (reference):
-%    Mode  1:  lambda_cr =  548.06     Mode  6:  lambda_cr = 1011.53
-%    Mode  2:  lambda_cr =  557.04     Mode  7:  lambda_cr = 1144.51
-%    Mode  3:  lambda_cr =  870.74     Mode  8:  lambda_cr = 1156.52
-%    Mode  4:  lambda_cr =  905.90     Mode  9:  lambda_cr = 1565.50
-%    Mode  5:  lambda_cr = 1008.60     Mode 10:  lambda_cr = 1646.05
 % -----------------------------------------------------------------------
 scia_csv = fullfile(fileparts(mfilename('fullpath')), 'scia_modes.csv');
 % If scia_modes.csv is stored elsewhere, set the path explicitly, e.g.:
@@ -436,11 +480,6 @@ scia_csv = fullfile(fileparts(mfilename('fullpath')), 'scia_modes.csv');
 
 if exist(scia_csv, 'file')
     [scia_phi, node_map] = sciaImportFn(scia_csv, nodes, kinematic);
-
-    % Pass only positive-eigenvalue modes to MAC comparison
-    Results_pos         = Results;
-    Results_pos.values  = Results.values(pos_idx);
-    Results_pos.vectors = Results.vectors(:, pos_idx);
 
     [macMatrix, passed, details] = macComparisonFn( ...
         nodes, beams, kinematic, Results_pos, scia_phi);

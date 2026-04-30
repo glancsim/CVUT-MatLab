@@ -35,18 +35,19 @@ addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src'));
 %  SECTION PROPERTIES
 %  sec 1 = SHS 240×240×15  |  sec 2 = L 300×200×20×25  |  sec 3 = IPE240
 % -----------------------------------------------------------------------
+%  L-section: principal axes (Iy=I_u, Iz=I_v, α=21.84°) — matches Scia
 %                           CS1 SHS        CS2 L-sec      CS3 IPE240
-sections.A  = [1.350e-2;   1.050e-2;   3.912e-3];   % [m²]
-sections.Iy = [1.1441e-4;  9.384e-5;   3.892e-5];   % [m⁴]
-sections.Iz = [1.1441e-4;  3.789e-5;   2.840e-6];   % [m⁴]
-sections.Ix = [1.7086e-4;  1.842e-6;   1.288e-7];   % [m⁴]  (Bredt for SHS)
+sections.A  = [1.350e-2;   1.100e-2;   3.912e-3];   % [m²]
+sections.Iy = [1.1441e-4;  1.1653e-4;  3.892e-5];   % [m⁴]  principal major I_u
+sections.Iz = [1.1441e-4;  1.9794e-5;  2.840e-6];   % [m⁴]  principal minor I_v
+sections.Ix = [1.7658e-4;  1.9696e-6;  1.288e-7];   % [m⁴]  (Bredt SHS; Sv.Venant L)
 sections.E  = [210e9;      210e9;      210e9];       % [Pa]
 sections.v  = [0.3;        0.3;        0.3];         % [-]
 
 %% -----------------------------------------------------------------------
 %  DISCRETISATION
 % -----------------------------------------------------------------------
-ndisc = 4;
+ndisc = 1;
 
 %% -----------------------------------------------------------------------
 %  NODES   (row i = node Ni, columns: x  y  z  [m])
@@ -416,6 +417,50 @@ for i = 1:length(Results.values)
 end
 
 %% -----------------------------------------------------------------------
+%  EIGENVALUE COMPARISON — MATLAB vs. Scia Engineer
+% -----------------------------------------------------------------------
+scia_lambdas = [
+    1413.39;   % SL1/ 1
+    1522.14;   % SL1/ 2
+    2269.34;   % SL1/ 3
+    2387.57;   % SL1/ 4
+    3026.40;   % SL1/ 5
+    3146.77;   % SL1/ 6
+    4048.07;   % SL1/ 7
+    4181.71;   % SL1/ 8
+    4197.27;   % SL1/ 9
+    4492.95;   % SL1/10
+    4990.34;   % SL1/11
+    5102.22;   % SL1/12
+    5623.87;   % SL1/13
+    5962.72;   % SL1/14
+    6044.42;   % SL1/15
+    6288.13;   % SL1/16
+    6675.90;   % SL1/17
+    7192.11;   % SL1/18
+    7989.80;   % SL1/19
+    8595.11;   % SL1/20
+];
+
+matlab_lambdas = sort(Results.values(Results.values > 0));
+n_cmp = min(numel(matlab_lambdas), numel(scia_lambdas));
+
+fprintf('\n=== Porovnání vlastních čísel: MATLAB vs. Scia ===\n');
+fprintf('  MATLAB: %d kladných, %d záporných λ_cr\n', ...
+        numel(matlab_lambdas), sum(Results.values <= 0));
+if n_cmp == 0
+    fprintf('  Žádné kladné vlastní číslo nenalezeno. Results.values:\n');
+    fprintf('    %10.4f\n', Results.values);
+else
+    fprintf('  %-6s  %12s  %12s  %10s\n', 'Mód', 'MATLAB', 'Scia', 'Chyba [%]');
+    fprintf('  %s\n', repmat('-', 1, 46));
+    for i = 1:n_cmp
+        err = (matlab_lambdas(i) - scia_lambdas(i)) / scia_lambdas(i) * 100;
+        fprintf('  %-6d  %12.4f  %12.4f  %+10.4f\n', i, matlab_lambdas(i), scia_lambdas(i), err);
+    end
+end
+
+%% -----------------------------------------------------------------------
 %  MAC COMPARISON — MATLAB vs. Scia Engineer
 %
 %  Export buckling modes from Scia (SHS column variant) and save as
@@ -430,8 +475,17 @@ scia_csv = fullfile(fileparts(mfilename('fullpath')), 'scia_modes_shs.csv');
 if exist(scia_csv, 'file')
     [scia_phi, ~] = sciaImportFn(scia_csv, nodes, kinematic);
 
+    % Filter and sort positive eigenvalue modes before MAC comparison
+    pos_mask = Results.values > 0;
+    [~, sort_pos] = sort(Results.values(pos_mask));
+    pos_vecs_all  = Results.vectors(:, pos_mask);
+    Results_pos         = Results;
+    Results_pos.values  = Results.values(pos_mask);
+    Results_pos.values  = Results_pos.values(sort_pos);
+    Results_pos.vectors = pos_vecs_all(:, sort_pos);
+
     [macMatrix, passed, details] = macComparisonFn( ...
-        nodes, beams, kinematic, Results, scia_phi);
+        nodes, beams, kinematic, Results_pos, scia_phi);
 
     figure('Name', 'MAC matrix — MATLAB vs. Scia (SHS columns)');
     imagesc(macMatrix);
