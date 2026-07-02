@@ -8,8 +8,11 @@ konstrukce má redundanci: selhání jednoho prutu vede k **redistribuci sil**, 
 kolapsu. Systémová spolehlivost proto vyžaduje modelování postupného selhávání (progressive
 collapse) nebo enumeraci dominantních selhávacích módů (cut-sets).
 
-> **Stav: ve vývoji.** Struktura složek založena dle `reliability-truss-matlab`. Metodika a
-> implementace budou doplněny — viz `metodika.md`.
+**Stav: implementováno a ověřeno.** Null-space metoda (Wei & Deng 2022) pro hledání
+minimálních cut-sets + Cornell index / equivalent planes / PNET (Rodrigues da Silva et al.
+2024) pro výpočet systémové `Pf`. Ověřeno proti oběma zdrojovým paperům
+(`β_sys ≈ 3.001` na 3-podlažní příhradě) i nezávislou brute-force progressive-collapse
+Monte Carlo. Metodika viz `metodika.md`.
 
 ## Struktura
 
@@ -17,9 +20,23 @@ collapse) nebo enumeraci dominantních selhávacích módů (cut-sets).
 system-reliability-truss-matlab/
 ├── src/                  ← Zdrojové funkce (algoritmus systémové spolehlivosti)
 ├── examples/             ← Referenční příklady (staticky neurčité příhrady)
-├── tests/                ← Validační testy
+├── tests/                ← Validační testy (progressiveCollapseMCFn — nezávislý MC oracle)
 └── metodika.md           ← Metodický podklad (RV, limitní funkce, algoritmus)
 ```
+
+## Zdrojové soubory (`src/`)
+
+| Funkce | Popis |
+|--------|-------|
+| `equilibriumMatrixFn` | Rovnovážná matice `A` a její null space `V` (SVD) |
+| `nullSpaceCutSetsFn` | Hledání všech minimálních cut-sets (Lemma 1 + Lemma 2, Wei & Deng) |
+| `reducedStructureInfluenceFn` | Vlivové koeficienty `b_ij`, `a_il` na redukované konstrukci |
+| `sequenceLimitStateFn` | Limitní funkce sekvence selhání `g_i(d,X)` |
+| `cornellIndexFn` | Cornell index `β_p` pro danou failure sequence |
+| `mostProbableSequenceFn` | Nejpravděpodobnější permutace prvků cut-setu |
+| `equivalentPlaneFn` | Ekvivalentní lineární performance function pro cut-set |
+| `pnetSystemReliabilityFn` | PNET agregace cut-setů → `β_sys` |
+| `systemReliabilityFn` | Orchestrátor celého pipeline |
 
 ## Závislosti
 
