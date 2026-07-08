@@ -17,6 +17,7 @@ Projekt implementuje FEM analýzu nosníkových a příhradových konstrukcí v 
 | `fem-truss-2d-matlab/` | **aktivní** | 2D příhradové konstrukce — `src/`, `tests/`, `examples/` |
 | `en-truss-design-matlab/` | **aktivní** | Posudek příhrad dle EN 1993-1-1 — `src/`, `examples/` |
 | `reliability-truss-matlab/` | **aktivní** | Spolehlivostní analýza příhrad Monte Carlo (UQLab) — `src/`, `examples/` |
+| `system-reliability-truss-matlab/` | **aktivní** | Systémová spolehlivost staticky neurčitých příhrad (cut-sets + PNET) — `src/`, `examples/`, `tests/` |
 | `Diplomka/` | obsolete | původní kód diplomové práce, regresní testy 1–12 |
 
 > **`Diplomka/` je obsolete** — slouží jen pro archivaci a regresní testy (Tests 1–12 s OOFEM verifikací).
@@ -913,6 +914,7 @@ pd.DataFrame(rows).to_csv('scia_modes.csv', index=False, float_format='%.9f')
 
 | Datum | Commit | Popis |
 |-------|--------|-------|
+| 2026-07-02 | `5db5383` | Nový modul `system-reliability-truss-matlab` — systémová spolehlivost staticky neurčitých příhrad (null-space cut-sets dle Wei & Deng 2022 + Cornell index/equivalent planes/PNET dle Rodrigues da Silva et al. 2024) |
 | 2026-04-21 | `8484354` | `scia_modes.csv` rozšířen na 10 módů; filtr záporných eigenvalues před MAC |
 | 2026-04-21 | `ccb10d5` | `example_scia_frame_shs_columns` — SHS 240×240×15 sloupy, kolaps diagonál |
 | 2026-04-21 | `bb59257` | `macCriterionFn`, `sciaImportFn`, `macComparisonFn` — MAC verifikace vs. Scia |
