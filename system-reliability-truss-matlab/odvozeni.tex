@@ -1,0 +1,565 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[czech]{babel}
+\usepackage[margin=2.7cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{mathrsfs}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Věta}
+\newtheorem{definition}{Definice}
+\newtheorem{corollary}{Důsledek}
+\newtheorem{remark}{Poznámka}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\dimspan}{\operatorname{dim}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+
+\title{Systémová spolehlivost staticky neurčitých příhrad\\
+\large Kompletní odvození: Fáze A -- C\\
+\normalsize (null-space cut-sets podle Wei \& Deng 2022 + Cornell index / equivalent planes / PNET podle Rodrigues da Silva et al. 2024)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\bigskip
+\noindent\textbf{Poznámka k tomuto dokumentu.} Cílem je odvodit \emph{proč} algoritmus implementovaný
+v \code{system-reliability-truss-matlab/src/} funguje, ne jen zopakovat vzorce z pramenů. Kde je to
+možné, je uveden i důkaz. Odkazy na konkrétní soubory/řádky (\code{soubor.m:řádek}) ukazují, kde přesně
+je daný krok v kódu implementován, aby šlo teorii a implementaci propojit 1:1.
+
+\section{Motivace a rozdíl oproti staticky určité příhradě}
+
+U staticky určité příhrady (modul \code{reliability-truss-matlab}) platí: síla v každém prutu je
+jednoznačně určena rovnováhou, takže selhání \emph{jediného} prutu = ztráta rovnováhy = kolaps celé
+konstrukce. Systém je tedy \textbf{sériový}:
+\[
+  g_{\mathrm{sys}}(\mathbf X) = \min_{p=1,\dots,n_{\mathrm{el}}} g_p(\mathbf X).
+\]
+
+U staticky neurčité příhrady existuje $g_H>0$ nadbytečných prutů (stavů samo-napětí). Selhání jednoho
+prutu vede k \textbf{redistribuci} vnitřních sil na zbylou konstrukci -- ta nemusí zkolabovat. Ke kolapsu
+(mechanismu) dojde, až se odstraní dostatečně velká \emph{množina} prutů. Systémová spolehlivost proto
+vyžaduje:
+
+\begin{enumerate}[label=(\Alph*)]
+  \item najít \textbf{všechny minimální množiny prutů} (tzv. \emph{cut-sets}), jejichž současné odstranění
+        způsobí mechanismus (a žádná jejich vlastní podmnožina mechanismus nezpůsobí),
+  \item pro každý cut-set spočítat, jak se síly \textbf{přerozdělují}, když pruty selhávají postupně
+        v nějakém pořadí (\emph{failure sequence}),
+  \item spočítat pravděpodobnost, že \emph{celý} cut-set selže (paralelní systém), tyto pravděpodobnosti
+        přes všechny cut-sety zkombinovat do jednoho systémového čísla $\beta_{\mathrm{sys}}$.
+\end{enumerate}
+
+Tomu přesně odpovídají Fáze A, B, C níže.
+
+\section{Fáze A -- Rovnovážná matice, null space a minimální cut-sets}
+\label{sec:faze-a}
+
+Zdrojové soubory: \code{equilibriumMatrixFn.m}, \code{nullSpaceCutSetsFn.m}.
+
+\subsection{Odvození rovnovážné matice $A$}
+
+Uvažujme 2D pin-jointed příhradu s $N$ volnými (neuvázanými) stupni volnosti uzlů a $n_{\mathrm{el}}$ pruty.
+Nechť $\mathbf d\in\R^N$ je vektor uzlových posunů (volné DOFy), $\mathbf t\in\R^{n_{\mathrm{el}}}$ vektor
+osových sil v prutech (kladně = tah).
+
+\paragraph{Kompatibilita.} Prodloužení prutu $k$ mezi uzly $h$ (hlava) a $e$ (pata) je projekce relativního
+posunu do osy prutu:
+\[
+  e_k = \mathbf u_k^\top(\mathbf d_e - \mathbf d_h), \qquad
+  \mathbf u_k = \frac{1}{L_k}(\Delta x_k, \Delta z_k) \ \text{(jednotkový směrový vektor hlava→pata)}.
+\]
+Zapsáno přes globální DOF vektor $\mathbf d$: $e_k = \mathbf a_k^\top \mathbf d$, kde $\mathbf a_k\in\R^N$ má
+nenulové složky jen ve 4 řádcích odpovídajících uzlům $h,e$ (v kódu: \code{codeNumbersFn}). Sestavením
+$A := [\mathbf a_1,\dots,\mathbf a_{n_{\mathrm{el}}}]\in\R^{N\times n_{\mathrm{el}}}$ dostaneme kompatibilní
+vztah pro všechny pruty najednou:
+\[
+  \mathbf e = A^\top \mathbf d.
+\]
+
+\paragraph{Rovnováha (kontragredience).} Princip virtuálních prací: vnější virtuální práce = vnitřní
+virtuální práce pro libovolné $\delta\mathbf d$:
+\[
+  \mathbf f^\top \delta\mathbf d \;=\; \sum_k t_k\,\delta e_k \;=\; \sum_k t_k\,(\mathbf a_k^\top\delta\mathbf d)
+  \;=\; \Big(\sum_k t_k \mathbf a_k\Big)^{\!\top}\delta\mathbf d \;=\; (A\mathbf t)^\top \delta\mathbf d.
+\]
+Protože to platí pro \emph{libovolné} $\delta \mathbf d$, plyne $\mathbf f = A\mathbf t$ -- tedy \textbf{stejná}
+matice $A$, která popisuje kompatibilitu ($\mathbf e=A^\top\mathbf d$), popisuje i rovnováhu
+($\mathbf f = A\mathbf t$). Toto je klasický výsledek teorie tuhosti/mechanismů (Pellegrino \& Calladine
+1986) a je důvodem, proč se $A$ říká \emph{rovnovážná matice} (equilibrium matrix), přestože vznikla
+z kompatibility. Znaménková konvence jednotlivých sloupců $\mathbf a_k$ je věc volby (v kódu
+\code{equilibriumMatrixFn.m:42-54} je hlava $+[c,s]$, pata $-[c,s]$) -- simultánní obrácení znaménka
+celého sloupce nemění $\rank(A)$ ani jeho nulový prostor, což je jediné, na čem dále záleží.
+
+\subsection{Dvě fundamentální podmnožiny -- stavy samo-napětí a mechanismy}
+
+Z rozkladu $\R^{n_{\mathrm{el}}} = \operatorname{null}(A)\oplus(\text{ostatní})$ a věty o dimenzi
+jádra a obrazu (rank--nullity):
+
+\begin{itemize}
+  \item $\operatorname{null}(A) = \{\mathbf s : A\mathbf s = 0\}$ -- vektory vnitřních sil, které jsou
+        v rovnováze \textbf{bez jakéhokoli vnějšího zatížení} -- tzv. \textbf{stavy samo-napětí}
+        (self-stress states). Jejich počet je
+        \[
+          g_H := \dim\operatorname{null}(A) = n_{\mathrm{el}} - \rank(A)
+        \]
+        -- to je přesně \textbf{stupeň statické neurčitosti}.
+  \item $\operatorname{null}(A^\top) = \{\mathbf d: A^\top\mathbf d=0\}$ -- posuny, které nezpůsobí
+        prodloužení \emph{žádného} prutu -- tj. \textbf{mechanismy}. Protože jsme už odečetli podepřené
+        DOFy (žádné volné tuhé pohyby), platí: konstrukce je \textbf{kinematicky stabilní} (bez
+        mechanismu) $\iff \operatorname{null}(A^\top)=\{0\} \iff \rank(A) = N$.
+\end{itemize}
+
+V dalším textu předpokládáme (Fáze A pracuje s neporušenou konstrukcí), že $\rank(A)=N$, tj. konstrukce
+je stabilní a $g_H = n_{\mathrm{el}}-N \geq 0$ je počet nadbytečných prutů. Necht' $V\in\R^{n_{\mathrm{el}}
+\times g_H}$ je ortonormální báze $\operatorname{null}(A)$ (v kódu získaná ze SVD:
+\code{nullSpaceCutSetsFn.m:97-104}, $AV=0$).
+
+\subsection{Lemma 1 -- nutný prut (\emph{necessary bar}, cut-set velikosti 1)}
+
+\begin{lemma}[Necessary bar]
+Prut $i$ je \emph{nutný} (jeho samotné odstranění způsobí mechanismus, tj. $\rank(A_{-i}) = N-1$)
+právě tehdy, když $i$-tý řádek $V_i$ matice $V$ je nulový, tj. $s_i = 0$ pro \textbf{každý} stav
+samo-napětí $\mathbf s\in\operatorname{null}(A)$.
+\end{lemma}
+
+\begin{proof}
+Odstranění prutu $i$ z matice $A$ = odstranění sloupce $\mathbf a_i$, čímž vznikne
+$A_{-i}\in\R^{N\times(n_{\mathrm{el}}-1)}$. Protože se odstraňuje jeden sloupec, $\rank(A_{-i})\in\{N-1,N\}$.
+
+\smallskip
+\noindent($\Leftarrow$, existuje $\mathbf s$ se $s_i\neq0$ $\Rightarrow$ prut NENÍ nutný): Z
+$A\mathbf s=0$ plyne $\sum_k s_k\mathbf a_k = 0$, tedy
+\[
+  \mathbf a_i = -\frac1{s_i}\sum_{k\neq i} s_k\, \mathbf a_k \ \in\ \operatorname{span}\{\mathbf a_k:k\neq i\}.
+\]
+Přidání $\mathbf a_i$ tedy nerozšíří rozpětí sloupců, takže $\operatorname{span}(A)=\operatorname{span}
+(A_{-i})$ a $\rank(A_{-i})=\rank(A)=N$ -- žádný mechanismus.
+
+\smallskip
+\noindent($\Rightarrow$, kontrapozitivně: pokud $\rank(A_{-i})=N$, pak existuje $\mathbf s$ se
+$s_i\neq0$): Je-li $\rank(A_{-i})=N$, pak $\mathbf a_i\in\operatorname{span}\{\mathbf a_k:k\neq i\}$,
+tj. existují $c_k$ takové, že $\mathbf a_i = \sum_{k\neq i} c_k \mathbf a_k$. Položme
+$s_i:=1,\ s_k:=-c_k\ (k\neq i)$. Pak
+\[
+  \sum_k s_k \mathbf a_k = \mathbf a_i - \sum_{k\neq i} c_k\mathbf a_k = 0,
+\]
+takže $\mathbf s\in\operatorname{null}(A)$ a $s_i=1\neq0$ -- QED (kontrapozice dává původní tvrzení).
+\end{proof}
+
+Toto přesně odpovídá kódu \code{nullSpaceCutSetsFn.m:113-125}: řádky $V$ s normou $\approx0$
+$\Rightarrow$ cut-set velikosti 1.
+
+\subsection{Lemma 2 -- obecný cut-set (zobecnění Lemma 1)}
+
+\begin{lemma}[Cut-set kritérium]
+Necht' $Q\subseteq\{1,\dots,n_{\mathrm{el}}\}$, $|Q|=k$, a $V_Q\in\R^{k\times g_H}$ je submatice $V$
+tvořená řádky $Q$. Pak
+\[
+  \rank(A_{-Q}) \;=\; N - \big(k - \rank(V_Q)\big).
+\]
+Speciálně, odstranění $Q$ způsobí mechanismus $\iff \rank(V_Q) < k$.
+\end{lemma}
+
+\begin{proof}
+Označme $e_{Q}\subset\R^{n_{\mathrm{el}}}$ souřadnicový podprostor odpovídající indexům $Q$ (dimenze
+$k$) a $e_{Q^c}$ jeho komplement (dimenze $n_{\mathrm{el}}-k$). Sloupcový prostor $A_{-Q}$ je právě
+obraz $A(e_{Q^c})$ (obraz vektorů, které mají nulové složky v $Q$). Podle věty o dimenzi jádra a obrazu
+aplikované na zúžené zobrazení $A|_{e_{Q^c}}$:
+\[
+  \dim A(e_{Q^c}) \;=\; \dim e_{Q^c} \;-\; \dim\big(e_{Q^c}\cap \operatorname{null}(A)\big)
+  \;=\; (n_{\mathrm{el}}-k) - \dim\big(\operatorname{null}(A)\cap e_{Q^c}\big).
+\]
+Nyní $\operatorname{null}(A)\cap e_{Q^c} = \{\mathbf s = V\mathbf c : V_Q\mathbf c = 0\}$ (stavy
+samo-napětí, které mají nulovou sílu ve VŠECH prutech $Q$) $=V\cdot\operatorname{null}(V_Q)$, což má
+dimenzi $\dim\operatorname{null}(V_Q) = g_H - \rank(V_Q)$ (rank--nullity pro $V_Q:\R^{g_H}\to\R^k$;
+$V$ má plnou sloupcovou hodnost $g_H$, takže $V\cdot(\cdot)$ zachovává dimenzi).
+
+Dosazením a s využitím $n_{\mathrm{el}} - g_H = N$:
+\[
+  \rank(A_{-Q}) = (n_{\mathrm{el}}-k) - (g_H-\rank(V_Q)) = (n_{\mathrm{el}}-g_H) - k + \rank(V_Q)
+  = N - k + \rank(V_Q).
+\]
+Mechanismus nastane $\iff \rank(A_{-Q}) < N \iff \rank(V_Q) < k$. \qed
+\end{proof}
+
+\begin{remark}
+Pro $k=1$ dostáváme přesně Lemma 1 zpět ($\rank(V_{\{i\}})\in\{0,1\}$, $<1 \iff$ nulový řádek).
+\end{remark}
+
+\begin{corollary}[Maximální velikost cut-setu]
+Protože $V_Q$ má nejvýše $g_H$ sloupců, platí vždy $\rank(V_Q)\le g_H$. Pro $k=g_H+1$ je tedy
+$\rank(V_Q)\le g_H < k$ \textbf{triviálně}, nezávisle na geometrii -- libovolná $(g_H{+}1)$-tice prutů
+je (dependentní) kandidát na cut-set. Žádný cut-set nemůže mít víc než $g_H+1$ prvků.
+\end{corollary}
+
+\subsection{Minimalita}
+
+$Q$ (s $\rank(V_Q)<k$) je \textbf{minimální} cut-set, právě když žádná jeho vlastní podmnožina už
+mechanismus nezpůsobuje, tj. \textbf{každá} $(k{-}1)$-podmnožina $Q'\subset Q$ splňuje
+$\rank(V_{Q'}) = k-1$ (plná hodnost). Je-li totiž nějaká $(k{-}1)$-podmnožina sama dependentní, byla by
+už (menším) cut-setem, a $Q$ by ho jen zbytečně obsahoval navíc -- není tedy minimální.
+
+\subsection{Algoritmus (\code{nullSpaceCutSetsFn.m})}
+
+\begin{algorithm}[h]
+\caption{Nalezení všech minimálních cut-sets}
+\begin{algorithmic}[1]
+\State Sestav $A$ (\code{equilibriumMatrixFn}); SVD $\Rightarrow$ $\rank(A)$, $g_H = n_{\mathrm{el}}-\rank(A)$, báze $V$ jádra
+\If{$g_H = 0$} \Return $\emptyset$ (staticky určitá, žádná redundance) \EndIf
+\State Řádky $V$ s normou $\approx 0$ $\Rightarrow$ cut-sets $\{i\}$ (Lemma 1); odstraň tyto řádky $\to V'$ ($b'\times g_H$)
+\For{$k = 2,\dots,g_H+1$}
+    \For{každou $k$-podmnožinu $Q$ z $b'$ zbylých řádků}
+        \If{$\rank(V'_Q) < k$} \Comment{Lemma 2 -- dependentní}
+            \If{každá $(k{-}1)$-podmnožina $Q$ má plnou hodnost $k{-}1$} \Comment{minimalita}
+                \State přidej $Q$ (přepočtenou zpět na původní čísla prutů) do seznamu cut-setů
+            \EndIf
+        \EndIf
+    \EndFor
+\EndFor
+\State \Return seznam cut-setů (deduplikován jako množiny)
+\end{algorithmic}
+\end{algorithm}
+
+Cena: pro $k=2,\dots,g_H{+}1$ testujeme $\binom{b'}{k}$ podmnožin -- proveditelné, protože $g_H$ bývá
+malé ($\le\!\sim\!7$ i pro reálné konstrukce, viz \code{metodika.md}).
+
+\subsection{Zjištěná mezera v algoritmu Wei \& Deng (2022) pro $k=g_H+1$}
+
+Wei \& Deng (2022) ve své vlastní kapitole 4 zaznamenávají cut-set jen tehdy, pokud koeficienty
+$\gamma_p = (V_b^\top)^{-1}\mathbf v_p$ (rozklad sloupce $p$ do zvolené báze $g_H$ sloupců) obsahují
+\textbf{alespoň jednu nulu}. To ale strukturálně nemůže zachytit cut-sety velikosti přesně $g_H+1$,
+u kterých je -- podle Corollary výše -- dependence \textbf{triviální} (plyne z počtu stupňů volnosti, ne
+z konkrétních hodnot $\gamma_p$), takže obecně \textbf{žádný} $\gamma_p$ v žádné použitelné bázi nemusí
+mít nulovou složku, i když jde o platný minimální cut-set.
+
+\textbf{Konkrétní ověřený příklad} (15-prutová příhrada z Wei \& Deng, kap. 6.1, geometrie ověřena
+pixel-přesně z jejich Fig. 3): trojice $\{1,3,8\}$ je stabilní, staticky určitá podmnožina
+($\rank(V_{\{1,3,8\}})=3=g_H$, tedy platná báze $V_b$). Přidáním libovolného dalšího prutu z báze
+disjunktní čtveřice, např. prutu 10, vznikne $\{1,3,8,10\}$ -- matematicky nutně mechanismus
+($\rank(V_Q)\le g_H=3 < 4=k$), ověřeno i přímým výpočtem $\rank(A_{-Q})$ na plné matici a robustností
+vůči perturbaci geometrie o $0{,}01\,\%$. Wei \& Deng ve své Tabulce 1 pro $p=10$ s bází $\{1,3,8\}$
+uvádí $\gamma=[-1,1,1]$ (žádná nula) $\Rightarrow$ nezaznamenáno -- ačkoli jde o platný minimální
+cut-set. Náš kompletní (Lemma 1 + Lemma 2, bez zkratek algoritmu) postup najde touto cestou navíc
+\textbf{25} cut-setů velikosti 4 (tvaru $\{$jeden z $[1,2,5,11,12]\}\times\{$jeden z
+$[3,4,7,14,15]\}\times\{8,10\}$), celkem $32+25=57$ oproti publikovaným 32. Numericky na výsledné
+$\beta_{\mathrm{sys}}$ to nemá prakticky vliv (cut-sety velikosti $g_H{+}1$ mají vyšší $\beta_p$, tedy
+zanedbatelný příspěvek a navíc vysokou korelaci s menšími podmnožinami, které PNET stejně pohltí) --
+implementace v \code{nullSpaceCutSetsFn.m} proto úmyslně \emph{nereplikuje} tuto mezeru a hledá úplně.
+
+\section{Fáze B -- Vlivové koeficienty na redukované konstrukci}
+\label{sec:faze-b}
+
+Zdrojový soubor: \code{reducedStructureInfluenceFn.m}.
+
+Fáze B je čistě FEM (žádné náhodné veličiny) a poskytuje "stavební kameny" pro linearizovanou mezní
+funkci ve Fázi C. Pro danou (postupně redukovanou -- tj. s odstraněnými pruty) konstrukci potřebujeme
+dvě věci:
+
+\subsection{Koeficient $b_{ij}$ -- vliv vnějšího zatížení}
+
+$b_{ij}$ := osová síla v prutu $i$ vyvolaná \textbf{jednotkovým} zatížením typu $j$ (jednotková síla /
+kombinace) aplikovaným na konstrukci, ze které jsou už odstraněny pruty v $Q\ (=\code{removedMembers})$.
+Získá se přímo řešením redukované soustavy tuhosti:
+\[
+  K_{Q}\,\mathbf d = \mathbf f_j \quad(\text{jednotkové zatížení } j) \;\Longrightarrow\;
+  b_{ij} = N_i(\mathbf d) \quad \text{(zpětný výpočet osové síly v prutu $i$)}.
+\]
+Protože FEM je lineární, skutečná síla v prutu $i$ od zatížení $\mathbf P=(P_1,\dots,P_{n_L})$ na TÉŽE
+redukované konstrukci je pak přímo superpozicí:
+\[
+  N_i \;=\; \sum_j b_{ij}\,P_j.
+\]
+V kódu: \code{reducedStructureInfluenceFn.m:93-100} (\code{linearSolverFn} na \code{membersRed}, sloupec
+1 z \code{endForces.local}).
+
+\subsection{Koeficient $a_{il}$ -- vliv zbytkové síly z redistribuce}
+
+Když prut $l$ selže (křehce nebo tažně), do okamžiku selhání nesl sílu $\eta_l R_l$ ($\eta_l\in[0,1]$:
+$0$=křehké/žádná zbytková síla, $1$=plně tažné/celá síla se přenese). Tato síla se v okamžiku selhání
+"uvolní" jako pár samo-vyrovnaných sil na koncových uzlech prutu $l$ (ve směru jeho původní osy) a
+zbytek konstrukce ji musí převzít. $a_{il}$ := osová síla v prutu $i$ od \textbf{jednotkové} takové
+samo-vyrovnané dvojice sil, na konstrukci, ze které je prut $l$ (a případně další už selhané pruty)
+odstraněn:
+\[
+  \mathbf f_l = (+u_x,+u_z)\big|_{\text{uzel hlava}(l)} \ \oplus\ (-u_x,-u_z)\big|_{\text{uzel pata}(l)}
+  \qquad (u_x,u_z)=\text{směrové kosiny prutu } l.
+\]
+V kódu: \code{reducedStructureInfluenceFn.m:110-128}. Skutečná zbytková síla je $\eta_l R_l$, takže
+příspěvek do celkové síly v prutu $i$ je opět superpozicí: $a_{il}\cdot(\eta_l R_l)$.
+
+\subsection{Poznámka k singularitě}
+
+Jakmile odstraněná množina prutů obsahuje celý cut-set, $K_Q$ je singulární (mechanismus) --
+\code{linearSolverFn} vydá varování o RCOND. Toto varování je \emph{spolehlivý} signál mechanismu
+(viz \code{metodika.md} kap. 6); samotná konečnost výsledku \code{b\_ij}/\code{a\_il} se na to
+nedá spolehnout (zpětná substituce na singulární matici stále vrátí nějaké konečné, ale fyzikálně
+nesmyslné číslo).
+
+\section{Fáze C -- Limitní funkce, Cornellův index, ekvivalentní roviny, PNET}
+\label{sec:faze-c}
+
+Zdrojové soubory: \code{sequenceLimitStateFn.m}, \code{cornellIndexFn.m},
+\code{mostProbableSequenceFn.m}, \code{equivalentPlaneFn.m}, \code{pnetSystemReliabilityFn.m},
+\code{systemReliabilityFn.m}.
+
+\subsection{Linearizovaná mezní funkce prutu $i$ na pozici sekvence}
+\label{sec:c1}
+
+Uvažujme konkrétní \textbf{uspořádanou} posloupnost selhávání (permutaci) cut-setu,
+$(1),(2),\dots,(m)$ (v kódu \code{sequence}), a soustřeďme se na prvek na pozici $\mathrm{pos}$,
+$i=\mathrm{sequence}(\mathrm{pos})$, poté co už selhaly pruty na pozicích $1,\dots,\mathrm{pos}{-}1$.
+
+\paragraph{Odvození $g_i$ ze superpozice.} Na konstrukci redukované o pruty $1,\dots,\mathrm{pos}{-}1$
+(Fáze B) je celková síla v ještě stojícím prutu $i$ (lineární superpozice vnějšího zatížení a
+zbytkových sil z dřívějších selhání):
+\[
+  N_i \;=\; \sum_j b_{ij} P_j \;+\; \sum_{l<i} a_{il}\,\eta_l R_l.
+\]
+Prut $i$ přežije, dokud $|N_i| \le R_i$ (kapacita $R_i$); porušen je ve směru daném znaménkem $N_i$, tj.
+podmínkou přežití je $\operatorname{sign}(N_i)\cdot N_i \le R_i$. Definujeme bezpečnostní rezervu (mezní
+funkci) tak, aby $g_i>0$ znamenalo "přežil", $g_i\le0$ "selhal":
+\[
+  \boxed{\;g_i \;=\; R_i \;-\; \operatorname{sign}(N_i)\Big(\sum_j b_{ij}P_j + \sum_{l<i} a_{il}\,\eta_l R_l\Big)\;}
+  \tag{C.1}
+\]
+což je přesně rov. 14 v metodika.md / rov. 36 u Wei \& Deng. Znaménko $\operatorname{sign}(N_i)$ se v
+implementaci bere ze \textbf{středního} (očekávaného) kombinovaného zatížení na téže redukované
+konstrukci (\code{sequenceLimitStateFn.m:112-116}) -- jednoznačná volba, když působí víc nezávislých
+zatížení současně.
+
+\paragraph{Standardizace na sdílený gaussovský vektor $U$.} Aby $g_i$ vyšlo \textbf{přesně lineární}
+v nezávislých standardizovaných normálních veličinách (nutná podmínka pro Cornellův index níže),
+modelujeme kapacitu i zatížení přímo jako gaussovské náhodné veličiny:
+\[
+  R_i = \mu_{R,g(i)} + \sigma_{R,g(i)}\,U_{g(i)}, \qquad P_j = \mu_{P,j} + \sigma_{P,j}\,U_{n_G+j},
+\]
+kde $g(i)\in\{1,\dots,n_G\}$ je index skupiny průřezu prutu $i$ (pruty stejného typu sdílí TUTÉŽ
+náhodnou veličinu $R$, tedy $\rho=1$ uvnitř skupiny) a
+$U=(U_1,\dots,U_{n_G},U_{n_G+1},\dots,U_{n_G+n_L})\sim\mathcal N(\mathbf 0,I)$ je jeden sdílený vektor
+přes \textbf{celou} analýzu (\code{sequenceLimitStateFn.m:70-74}). Dosazením do (C.1) a sečtením podle
+složek $U$ dostaneme $g_i$ jako lineární formu
+\[
+  g_i \;=\; \overline g_i \;+\; \mathbf c_i^\top U, \qquad \overline g_i:=\mathbb E[g_i],
+\]
+kde (srovnej \code{sequenceLimitStateFn.m:118-140}):
+\[
+\begin{aligned}
+  \overline g_i &= \mu_{R,g(i)} - \operatorname{sign}(N_i)\Big[\sum_j b_{ij}\mu_{P,j}
+        + \sum_{l<i} a_{il}\,\eta_l\,\mu_{R,g(l)}\Big], \\[4pt]
+  c_i[\,g(i)\,] &\mathrel{+}= \sigma_{R,g(i)}, \\
+  c_i[\,n_G+j\,] &\mathrel{-}= \operatorname{sign}(N_i)\cdot b_{ij}\cdot\sigma_{P,j} \qquad(\forall j),\\
+  c_i[\,g(l)\,] &\mathrel{-}= \operatorname{sign}(N_i)\cdot a_{il}\,\eta_l\cdot\sigma_{R,g(l)}
+        \qquad(\forall l<i,\ \eta_l\neq0).
+\end{aligned}
+\tag{C.2}
+\]
+Protože složky $U$ jsou nezávislé a jednotkového rozptylu,
+\[
+  \Var[g_i] \;=\; \|\mathbf c_i\|_2^2 \;=\; \sum_m c_i[m]^2. \tag{C.3}
+\]
+(\code{seq(pos).coeffU}, \code{.meanG}, \code{.varG} v kódu -- (C.2)--(C.3) jsou \code{sequenceLimitStateFn.m:120-140}
+doslovně.)
+
+\subsection{Cornellův index sekvence -- paralelní systém}
+\label{sec:c2}
+
+Sekvence (jako celek) selže, jen když selžou \textbf{všechny} její prvky současně (paralelní podsystém):
+$\{g_1<0\}\cap\dots\cap\{g_m<0\}$. Standardizujme:
+\[
+  Z_i := \frac{g_i}{\mathrm{sd}_i},\qquad \mathrm{sd}_i := \sqrt{\Var[g_i]} = \|\mathbf c_i\|,
+  \qquad \beta_i := \frac{\overline g_i}{\mathrm{sd}_i}.
+\]
+Protože $g_i$ je gaussovská (lineární kombinace gaussovských $U$), $Z_i\sim\mathcal N(\beta_i,1)$ a
+\[
+  P(g_i<0) = P(Z_i<0) = \Phi(-\beta_i).
+\]
+
+\paragraph{Korelace mezi prvky.} Definujme jednotkový vektor citlivosti $\alpha_i := \mathbf c_i/\mathrm{sd}_i$
+(jednotkový, protože $\mathrm{sd}_i=\|\mathbf c_i\|$). Pak, protože $U$ má nezávislé jednotkové složky:
+\[
+  \Cov(Z_i,Z_j) = \frac{\Cov(g_i,g_j)}{\mathrm{sd}_i\,\mathrm{sd}_j}
+  = \frac{\mathbf c_i^\top \mathbf c_j}{\mathrm{sd}_i\,\mathrm{sd}_j} = \alpha_i^\top \alpha_j =: \rho_{ij}.
+\tag{C.4}
+\]
+(V implementaci \code{cornellIndexFn.m:47} se $\rho=\alpha\alpha^\top$ počítá přesně takto; kód navíc
+bere $\alpha_i^{\mathrm{code}} = -\mathbf c_i/\mathrm{sd}_i$ -- opačné znaménko oproti mému $\alpha_i$ výše
+-- což je jen globální konvence: protože $\rho_{ij}=\alpha_i^\top\alpha_j$ je bilineární, simultánní
+obrácení znaménka VŠECH $\alpha_i$ dá stejné $\rho$, takže výsledek je totožný.)
+
+\paragraph{Sdružená pravděpodobnost.} $Z=(Z_1,\dots,Z_m)^\top \sim \mathcal N(\beta,\rho)$
+(vícerozměrně normální s vektorem středních hodnot $\beta$ a korelační maticí $\rho$ z (C.4)). Chceme
+\[
+  P_{f,p} := P\Big(\bigcap_i \{Z_i<0\}\Big) = P(Z\le \mathbf 0).
+\]
+Standardní vícerozměrná normální CDF je definována pro $Y\sim\mathcal N(\mathbf 0,\Sigma)$ jako
+$\Phi_m(\mathbf x;\Sigma)=P(Y\le\mathbf x)$. Substitucí $Y:=Z-\beta\sim\mathcal N(\mathbf 0,\rho)$:
+\[
+  P_{f,p} = P(Z\le\mathbf 0) = P(Y\le -\beta) = \Phi_m(-\beta;\rho).
+\tag{C.5}
+\]
+a systémový (sekvenční) index spolehlivosti sekvence
+\[
+  \boxed{\;\beta_p := -\Phi^{-1}\big(\Phi_m(-\beta;\rho)\big)\;}
+\tag{C.6}
+\]
+-- (C.5)--(C.6) jsou přesně Wei \& Deng rov. 38--39 a odpovídají \code{cornellIndexFn.m:47-78}
+(\code{mvncdf((-betaVec)', zeros(1,m), rho)}).
+
+\begin{remark}[Kontrola pro $m=1$]
+Pro jediný prvek $\Phi_m$ degeneruje na $\Phi$, takže $\beta_p = -\Phi^{-1}(\Phi(-\beta_1)) = \beta_1$
+-- konzistentní s jednorozměrným případem (\code{cornellIndexFn.m:26-31}).
+\end{remark}
+
+\subsection{Nejpravděpodobnější sekvence -- reprezentant cut-setu}
+\label{sec:c3}
+
+Cut-set z Fáze A je \textbf{neuspořádaná} množina; $\beta_p$ z (C.6) ale závisí na pořadí (protože
+$b_{ij},a_{il}$ z Fáze B jsou počítány na postupně redukované konstrukci, a $a_{il}$ existuje jen
+pro $l$ selhavší dříve). \code{mostProbableSequenceFn.m} tedy vyzkouší \textbf{všechny} permutace
+$\pi$ prutů cut-setu, pro každou spočte $\beta_p(\pi)$ podle (C.1)--(C.6), a vybere
+\[
+  \beta_p^{\ast} := \min_{\pi\in\mathrm{Perm}(\text{cut-set})} \beta_p(\pi)
+\]
+(nejnižší $\beta_p$ = nejpravděpodobnější, tedy "reprezentativní", pořadí selhávání). Proveditelné jen
+díky tomu, že $|{\rm cut\text{-}set}|\le g_H+1$ je malé (max. $5!=120$ permutací pro $g_H\le4$ typické
+konstrukce).
+
+\subsection{Ekvivalentní lineární rovina (linearizace reprezentanta)}
+\label{sec:c4}
+
+Problém: $\beta_p$ z (C.6) NENÍ lineární funkce $U$ (vzniklo z $\Phi_m$), takže různé cut-sety
+nelze mezi sebou přímo korelačně srovnávat (PNET níže potřebuje $\rho_{kl}=\tilde\alpha_k^\top
+\tilde\alpha_l$ mezi cut-sety). Wei \& Deng navrhují nahradit reprezentanta cut-setu $k$ jedním
+\textbf{ekvivalentním lineárním} výkonovým funkcionálem
+\[
+  \tilde Z_k = \tilde\alpha_k^\top U + \tilde\beta_k,
+\]
+určeným dvěma požadavky:
+\begin{enumerate}
+  \item stejná pravděpodobnost: $\tilde\beta_k := \beta_p^\ast$ (rov. 45),
+  \item stejná \textbf{prvořádová citlivost} $\beta_p$ na malé posunutí středních hodnot $U$
+        (rov. 46--47).
+\end{enumerate}
+
+\paragraph{Odvození citlivosti.} Uvažujme myšlený posun středních hodnot $U\to U+\varepsilon$
+($\varepsilon\in\R^n$ malé). Protože $Z_i=\alpha_i^\top U+\beta_i$, posun o $\varepsilon$ posune
+efektivní $\beta_i$ o $\alpha_i^\top\varepsilon$:
+\[
+  \beta_i(\varepsilon) = \beta_i + \alpha_i^\top \varepsilon.
+\]
+$\beta_p$ je funkcí $\beta$ (přes (C.6), s $\rho$ fixní -- $\rho$ na $\varepsilon$ nezávisí, protože
+posun středních hodnot nemění korelaci). Definujme $\beta_p(\varepsilon) := \beta_p(\beta(\varepsilon))$
+přes (C.6) a hledejme
+\[
+  \operatorname{grad}_j := \frac{\partial \beta_p(\varepsilon)}{\partial \varepsilon_j}\bigg|_{\varepsilon=0}
+  = \sum_i \frac{\partial\beta_p}{\partial\beta_i}\cdot\frac{\partial\beta_i(\varepsilon)}{\partial\varepsilon_j}
+  = \sum_i \frac{\partial\beta_p}{\partial\beta_i}\,\alpha_i(j).
+\]
+Analytická derivace $\partial\beta_p/\partial\beta_i$ přes $\Phi_m^{-1}$/mnohorozměrnou CDF nemá v MATLABu
+uzavřený tvar (Genz algoritmus pro \code{mvncdf} nedává gradient), takže se počítá
+\textbf{centrální diferencí} přesně podle parametrizace výše:
+\[
+  \operatorname{grad}_j \approx \frac{\beta_p(\beta + h\,\alpha_{:,j}) - \beta_p(\beta - h\,\alpha_{:,j})}{2h},
+  \qquad h=10^{-3},
+\tag{C.7}
+\]
+kde $\beta_p(\cdot)$ značí (C.6) vyhodnocené s posunutým vektorem $\beta$ ($\alpha_{:,j}$ = $j$-tý
+sloupec matice $\alpha$, tj. citlivost všech $m$ prvků sekvence na $U_j$). Přesně toto počítá
+\code{equivalentPlaneFn.m:53-63}. Nakonec normalizace na jednotkovou délku:
+\[
+  \tilde\alpha_k := \frac{\operatorname{grad}}{\|\operatorname{grad}\|}. \tag{C.8}
+\]
+
+\subsection{PNET -- agregace přes všechny cut-sety}
+\label{sec:c5}
+
+Máme $q$ cut-setů, každý reprezentovaný lineárním $(\tilde\beta_k,\tilde\alpha_k)_{k=1}^q$ z
+(C.6)--(C.8). Chceme \emph{systémovou} pravděpodobnost poruchy
+\[
+  P_{f,\mathrm{sys}} = P\Big(\bigcup_{k=1}^q \{\tilde Z_k < 0\}\Big).
+\]
+Přímý výpočet $q$-rozměrného sdruženého integrálu (typicky $q\sim10^1$--$10^2$) je numericky
+neúnosný/nestabilní. PNET (Probabilistic NETwork) tento problém obchází pomocí korelace mezi cut-sety,
+$\rho_{kl} = \tilde\alpha_k^\top\tilde\alpha_l$ (stejná bilineární forma jako (C.4), teď mezi
+reprezentanty cut-setů):
+
+\begin{algorithm}[h]
+\caption{PNET seskupení a kombinace}
+\begin{algorithmic}[1]
+\State Seřaď cut-sety vzestupně podle $\tilde\beta_k$ (nejnižší = nejnebezpečnější první)
+\While{existuje neseskupený cut-set}
+  \State $r \gets$ aktuálně nejhorší (nejnižší $\tilde\beta$) neseskupený cut-set (nový reprezentant)
+  \State spočti $\rho_{r,k} = \tilde\alpha_r^\top\tilde\alpha_k$ pro všechny neseskupené $k$
+  \State všechny $k$ s $\rho_{r,k}\ge \rho_0$ (typicky $0{,}7$--$0{,}85$) přiřaď do skupiny reprezentanta $r$
+\EndWhile
+\State $w$ skupin, každá s reprezentativním $\beta_i := \tilde\beta_{r_i}$
+\State $P_{f,\mathrm{sys}} = 1-\prod_{i=1}^w(1-\Phi(-\beta_i))$; \quad $\beta_{\mathrm{sys}}=-\Phi^{-1}(P_{f,\mathrm{sys}})$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Zdůvodnění kroku 8 (nezávislý sériový systém).} Cut-sety uvnitř jedné skupiny jsou (skoro)
+\textbf{plně korelované} ($\rho\ge\rho_0$) s reprezentantem -- prakticky "stejná" informace o poruše,
+tedy se počítají jen jednou (přes reprezentanta). Mezi RŮZNÝMI skupinami je korelace $<\rho_0$ (podle
+konstrukce), tedy se aproximují jako \textbf{nezávislé}. Pro nezávislé jevy $E_1,\dots,E_w$ platí
+klasicky
+\[
+  P(\text{přežití}) = P\Big(\bigcap_i \overline{E_i}\Big) = \prod_i P(\overline{E_i}) = \prod_i(1-P(E_i))
+  \;\Longrightarrow\; P_{f,\mathrm{sys}} = 1-\prod_i(1-P_{f,i}),
+\tag{C.9}
+\]
+což je přesně krok 8 (Wei \& Deng rov. 48) a \code{pnetSystemReliabilityFn.m:65-67}. Toto je
+\textbf{přesné} pro skutečně nezávislé jevy a \textbf{aproximace} v tom rozsahu, v jakém
+skupiny nejsou zcela nezávislé (řízeno prahem $\rho_0$ -- kompromis mezi přesností a výpočetní
+náročností plného $q$-rozměrného integrálu).
+
+\subsection{Orchestrace celého pipeline (\code{systemReliabilityFn.m})}
+
+\begin{algorithm}[h]
+\caption{Systémová spolehlivost staticky neurčité příhrady -- celý postup A--C}
+\begin{algorithmic}[1]
+\State \textbf{Fáze A}: $A\gets$\code{equilibriumMatrixFn}; $(\text{cutSets}, g_H)\gets$\code{nullSpaceCutSetsFn}$(A)$
+\For{každý cut-set $c=1,\dots,q$}
+    \State \textbf{Fáze C.3}: $(\pi^\ast,\beta_p^\ast) \gets$ \code{mostProbableSequenceFn} (brute-force přes permutace, uvnitř volá \textbf{Fáze B} + \textbf{C.1--C.2})
+    \State \textbf{Fáze C.4}: $(\tilde\beta_c,\tilde\alpha_c)\gets$\code{equivalentPlaneFn}$(\alpha,\beta\,|\,\pi^\ast)$
+\EndFor
+\State \textbf{Fáze C.5}: $(\beta_{\mathrm{sys}}, P_{f,\mathrm{sys}}, \text{skupiny})\gets$\code{pnetSystemReliabilityFn}$(\tilde\beta,\tilde\alpha,\rho_0)$
+\State \Return $\beta_{\mathrm{sys}}$ + diagnostika (\code{betaPerCutSet}, \code{pnetGroups}, ...)
+\end{algorithmic}
+\end{algorithm}
+
+\section{Shrnutí a ověření}
+
+\begin{itemize}
+  \item \textbf{Fáze A} (čistě lineární algebra, $O(1)$ SVD + kombinatorika): $A\to$ null space
+        $V\to$ Lemma 1/2 $\to$ všechny minimální cut-sety + $g_H$.
+  \item \textbf{Fáze B} (čisté FEM, žádné RV): pro danou redukovanou konstrukci $b_{ij}$ (vliv
+        zatížení), $a_{il}$ (vliv zbytkové síly) superpozicí.
+  \item \textbf{Fáze C} (pravděpodobnost): (C.1)--(C.3) linearizovaná mezní funkce $\to$
+        (C.4)--(C.6) Cornellův index sekvence (paralelní systém, \code{mvncdf}) $\to$ (C.3)
+        nejhorší permutace cut-setu $\to$ (C.7)--(C.8) linearizace do ekvivalentní roviny $\to$
+        (C.9) PNET kombinace nezávislých skupin $\to \beta_{\mathrm{sys}}$.
+\end{itemize}
+
+Celý pipeline byl ověřen na třech referenčních příkladech ze zdrojových článků (viz \code{metodika.md}):
+3-prutová a 15-prutová příhrada (Wei \& Deng, shoda cut-setů), 3-podlažní příhrada
+($\beta_{\mathrm{sys}}=3{,}0011$ implementace vs. $3{,}001162$ paper vs. $3{,}013374$ MCS $10^7$
+vzorků -- rozdíl $-0{,}41\,\%$), a nezávisle přes brute-force progressive-collapse Monte Carlo
+(\code{progressiveCollapseMCFn.m}, $\beta_{\mathrm{MC}}\approx3{,}02$--$3{,}04$).
+
+\end{document}

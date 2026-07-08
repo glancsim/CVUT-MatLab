@@ -21,7 +21,8 @@ system-reliability-truss-matlab/
 ├── src/                  ← Zdrojové funkce (algoritmus systémové spolehlivosti)
 ├── examples/             ← Referenční příklady (staticky neurčité příhrady)
 ├── tests/                ← Validační testy (progressiveCollapseMCFn — nezávislý MC oracle)
-└── metodika.md           ← Metodický podklad (RV, limitní funkce, algoritmus)
+├── metodika.md           ← Metodický podklad (RV, limitní funkce, algoritmus)
+└── odvozeni.tex/.pdf     ← Kompletní matematické odvození Fáze A–C (důkazy Lemma 1/2, Cornell/PNET)
 ```
 
 ## Zdrojové soubory (`src/`)
