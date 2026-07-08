@@ -22,3 +22,7 @@ reliability-truss-matlab/examples/critical_members.fig
 reliability-truss-matlab/examples/convergence.fig
 reliability-truss-matlab/examples/truss_topology_preview.png
 reliability-truss-matlab/examples/plotTrussBeta_preview.png
+*.png
+reliability-truss-matlab/examples/IPW2026/reliability_results_practice.mat
+*.mat
+*.fig

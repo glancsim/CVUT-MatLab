@@ -26,7 +26,9 @@
 clear; close all;
 
 %% ── Cesty k modulům ──────────────────────────────────────────────────
-root     = fileparts(fileparts(mfilename('fullpath')));  % reliability-truss-matlab/
+thisDir  = fileparts(mfilename('fullpath'));
+if isempty(thisDir), thisDir = pwd; end   % fallback: CWD
+root     = fileparts(fileparts(thisDir));  % IPW2026/ → examples/ → reliability-truss-matlab/
 srcDir   = fullfile(root, 'src');
 designDir = fullfile(root, '..', 'en-truss-design-matlab', 'src');
 femDir   = fullfile(root, '..', 'fem-2d-truss-matlab', 'src');
@@ -36,6 +38,10 @@ addpath(designDir);
 addpath(femDir);
 
 % Inicializace UQLab
+uqlab_core = 'C:\Install\UQLab\core';
+if exist(uqlab_core, 'dir') && isempty(which('uqlab'))
+    addpath(uqlab_core);
+end
 uqlab;
 
 %% ── Průřezy (stejné jako example_truss_hall_30m.m) ───────────────────
@@ -49,7 +55,7 @@ p1 = CHS(0.108,  0.005);    % TR 108×5     — horní pás
 p2 = CHS(0.159,  0.005);    % TR 159×5     — dolní pás
 p3 = CHS(0.0825, 0.0036);   % TR 82.5×3.6  — vnější diagonály
 p4 = CHS(0.0445, 0.0032);   % TR 44.5×3.2  — vnitřní diagonály
-p5 = CHS(0.038,  0.0036);   % TR 38×3.2    — svislice
+p5 = CHS(0.038,  0.0032);   % TR 38×3.2    — svislice
 
 profiles = [p1 p2 p3 p4 p5];
 nProf = numel(profiles);
@@ -107,7 +113,7 @@ fprintf('  Max. využití: %.3f (prut %d)\n', max(detResults.util_max), ...
 
 %% ── Spolehlivostní posudek ────────────────────────
 fprintf('\n====== FÁZE 3: Plný běh ======\n');
-mcOpts.nSamples  = 1e7;
+mcOpts.nSamples  = 1e8;
 mcOpts.batchSize = 1e6;
 mcOpts.method    = 'MCS';             % 'MCS' / 'Subset' / 'IS'
 
@@ -128,6 +134,9 @@ mcOpts.Ce  = 1.00;   % součinitel expozice (prEN Tab. 5.1)
 results = systemReliabilityFn(nodes, members, sections, kinematic, loadParams, mcOpts);
 % reliabilityReportFn(results, sections, loadParams);
 reliabilityReportHtmlFn(results, params, nodes, members, sections, loadParams);
+
+% Uložení výsledků pro figures_paper.m (Fig 4 — component reliability)
+save(fullfile(thisDir, 'reliability_results.mat'), 'results', 'detResults');
 
 %% ── Q/G poměr (všechny pruty) ────────────────────────────────────────────
 % Proměnné / stálé zatížení v síle prutu (nominální hodnoty, G_P=G_s=1)
