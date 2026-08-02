@@ -1,0 +1,342 @@
+=== run_mc START  01-Aug-2026 17:13:48 ===
+===============================================================
+MC cross-check of beta_sys -- Warren X-brace truss
+MATLAB 9.14.0.2337262 (R2023a) Update 5   started 01-Aug-2026 17:13:48
+chunks = 28, samples/chunk = 3571429, planned total = 100000012
+seeds  = 1001 .. 1028
+===============================================================
+
+areas [cm^2] = [7.79481 6.49091 1.48074 4.67493]
+beta_min = 3.909383 (expect 3.909383), member 11
+Pf_min   = 4.62660874e-05 (expect 4.62660874e-05)
+setup checks PASSED
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 28 workers.
+parpool: 28 workers (chunks: 28)
+  progress   0.50 %  |  5.000e+05 / 1.000e+08 samples  |  922 s elapsed  |  ETA 183463 s
+  progress   1.00 %  |  1.000e+06 / 1.000e+08 samples  |  925 s elapsed  |  ETA 91569 s
+  progress   1.50 %  |  1.500e+06 / 1.000e+08 samples  |  932 s elapsed  |  ETA 61198 s
+  progress   2.00 %  |  2.000e+06 / 1.000e+08 samples  |  934 s elapsed  |  ETA 45764 s
+  progress   2.50 %  |  2.500e+06 / 1.000e+08 samples  |  937 s elapsed  |  ETA 36543 s
+  progress   3.00 %  |  3.000e+06 / 1.000e+08 samples  |  937 s elapsed  |  ETA 30296 s
+  progress   3.50 %  |  3.500e+06 / 1.000e+08 samples  |  948 s elapsed  |  ETA 26138 s
+  progress   4.00 %  |  4.000e+06 / 1.000e+08 samples  |  952 s elapsed  |  ETA 22848 s
+  progress   4.50 %  |  4.500e+06 / 1.000e+08 samples  |  954 s elapsed  |  ETA 20246 s
+  progress   5.00 %  |  5.000e+06 / 1.000e+08 samples  |  955 s elapsed  |  ETA 18145 s
+  progress   5.50 %  |  5.500e+06 / 1.000e+08 samples  |  961 s elapsed  |  ETA 16512 s
+  progress   6.00 %  |  6.000e+06 / 1.000e+08 samples  |  963 s elapsed  |  ETA 15087 s
+  progress   6.50 %  |  6.500e+06 / 1.000e+08 samples  |  965 s elapsed  |  ETA 13882 s
+  progress   7.00 %  |  7.000e+06 / 1.000e+08 samples  |  967 s elapsed  |  ETA 12848 s
+  progress   7.50 %  |  7.500e+06 / 1.000e+08 samples  |  968 s elapsed  |  ETA 11939 s
+  progress   8.00 %  |  8.000e+06 / 1.000e+08 samples  |  969 s elapsed  |  ETA 11144 s
+  progress   8.50 %  |  8.500e+06 / 1.000e+08 samples  |  974 s elapsed  |  ETA 10485 s
+  progress   9.00 %  |  9.000e+06 / 1.000e+08 samples  |  975 s elapsed  |  ETA 9859 s
+  progress   9.50 %  |  9.500e+06 / 1.000e+08 samples  |  975 s elapsed  |  ETA 9289 s
+  progress  10.00 %  |  1.000e+07 / 1.000e+08 samples  |  976 s elapsed  |  ETA 8784 s
+  progress  10.50 %  |  1.050e+07 / 1.000e+08 samples  |  977 s elapsed  |  ETA 8328 s
+  progress  11.00 %  |  1.100e+07 / 1.000e+08 samples  |  977 s elapsed  |  ETA 7905 s
+  progress  11.50 %  |  1.150e+07 / 1.000e+08 samples  |  982 s elapsed  |  ETA 7557 s
+  progress  12.00 %  |  1.200e+07 / 1.000e+08 samples  |  984 s elapsed  |  ETA 7216 s
+  progress  12.50 %  |  1.250e+07 / 1.000e+08 samples  |  992 s elapsed  |  ETA 6944 s
+  progress  13.00 %  |  1.300e+07 / 1.000e+08 samples  |  994 s elapsed  |  ETA 6653 s
+  progress  13.50 %  |  1.350e+07 / 1.000e+08 samples  |  999 s elapsed  |  ETA 6401 s
+  progress  14.00 %  |  1.400e+07 / 1.000e+08 samples  |  1048 s elapsed  |  ETA 6438 s
+  progress  14.50 %  |  1.450e+07 / 1.000e+08 samples  |  1835 s elapsed  |  ETA 10823 s
+  progress  15.00 %  |  1.500e+07 / 1.000e+08 samples  |  1843 s elapsed  |  ETA 10446 s
+  progress  15.50 %  |  1.550e+07 / 1.000e+08 samples  |  1853 s elapsed  |  ETA 10105 s
+  progress  16.00 %  |  1.600e+07 / 1.000e+08 samples  |  1860 s elapsed  |  ETA 9768 s
+  progress  16.50 %  |  1.650e+07 / 1.000e+08 samples  |  1869 s elapsed  |  ETA 9456 s
+  progress  17.00 %  |  1.700e+07 / 1.000e+08 samples  |  1877 s elapsed  |  ETA 9162 s
+  progress  17.50 %  |  1.750e+07 / 1.000e+08 samples  |  1889 s elapsed  |  ETA 8903 s
+  progress  18.00 %  |  1.800e+07 / 1.000e+08 samples  |  1897 s elapsed  |  ETA 8640 s
+  progress  18.50 %  |  1.850e+07 / 1.000e+08 samples  |  1913 s elapsed  |  ETA 8425 s
+  progress  19.00 %  |  1.900e+07 / 1.000e+08 samples  |  1917 s elapsed  |  ETA 8170 s
+  progress  19.50 %  |  1.950e+07 / 1.000e+08 samples  |  1920 s elapsed  |  ETA 7924 s
+  progress  20.00 %  |  2.000e+07 / 1.000e+08 samples  |  1922 s elapsed  |  ETA 7686 s
+  progress  20.50 %  |  2.050e+07 / 1.000e+08 samples  |  1925 s elapsed  |  ETA 7463 s
+  progress  21.00 %  |  2.100e+07 / 1.000e+08 samples  |  1925 s elapsed  |  ETA 7240 s
+  progress  21.50 %  |  2.150e+07 / 1.000e+08 samples  |  1926 s elapsed  |  ETA 7031 s
+  progress  22.00 %  |  2.200e+07 / 1.000e+08 samples  |  1927 s elapsed  |  ETA 6831 s
+  progress  22.50 %  |  2.250e+07 / 1.000e+08 samples  |  1931 s elapsed  |  ETA 6650 s
+  progress  23.00 %  |  2.300e+07 / 1.000e+08 samples  |  1939 s elapsed  |  ETA 6490 s
+  progress  23.50 %  |  2.350e+07 / 1.000e+08 samples  |  1944 s elapsed  |  ETA 6327 s
+  progress  24.00 %  |  2.400e+07 / 1.000e+08 samples  |  1944 s elapsed  |  ETA 6155 s
+  progress  24.50 %  |  2.450e+07 / 1.000e+08 samples  |  1947 s elapsed  |  ETA 5999 s
+  progress  25.00 %  |  2.500e+07 / 1.000e+08 samples  |  1949 s elapsed  |  ETA 5846 s
+  progress  25.50 %  |  2.550e+07 / 1.000e+08 samples  |  1950 s elapsed  |  ETA 5696 s
+  progress  26.00 %  |  2.600e+07 / 1.000e+08 samples  |  1959 s elapsed  |  ETA 5575 s
+  progress  26.50 %  |  2.650e+07 / 1.000e+08 samples  |  1979 s elapsed  |  ETA 5488 s
+  progress  27.00 %  |  2.700e+07 / 1.000e+08 samples  |  1979 s elapsed  |  ETA 5350 s
+  progress  27.50 %  |  2.750e+07 / 1.000e+08 samples  |  1995 s elapsed  |  ETA 5259 s
+  progress  28.00 %  |  2.800e+07 / 1.000e+08 samples  |  2081 s elapsed  |  ETA 5351 s
+  progress  28.50 %  |  2.850e+07 / 1.000e+08 samples  |  2749 s elapsed  |  ETA 6897 s
+  progress  29.00 %  |  2.900e+07 / 1.000e+08 samples  |  2770 s elapsed  |  ETA 6782 s
+  progress  29.50 %  |  2.950e+07 / 1.000e+08 samples  |  2776 s elapsed  |  ETA 6634 s
+  progress  30.00 %  |  3.000e+07 / 1.000e+08 samples  |  2790 s elapsed  |  ETA 6510 s
+  progress  30.50 %  |  3.050e+07 / 1.000e+08 samples  |  2800 s elapsed  |  ETA 6381 s
+  progress  31.00 %  |  3.100e+07 / 1.000e+08 samples  |  2803 s elapsed  |  ETA 6239 s
+  progress  31.50 %  |  3.150e+07 / 1.000e+08 samples  |  2835 s elapsed  |  ETA 6165 s
+  progress  32.00 %  |  3.200e+07 / 1.000e+08 samples  |  2843 s elapsed  |  ETA 6042 s
+  progress  32.50 %  |  3.250e+07 / 1.000e+08 samples  |  2863 s elapsed  |  ETA 5947 s
+  progress  33.00 %  |  3.300e+07 / 1.000e+08 samples  |  2867 s elapsed  |  ETA 5821 s
+  progress  33.50 %  |  3.350e+07 / 1.000e+08 samples  |  2870 s elapsed  |  ETA 5698 s
+  progress  34.00 %  |  3.400e+07 / 1.000e+08 samples  |  2871 s elapsed  |  ETA 5573 s
+  progress  34.50 %  |  3.450e+07 / 1.000e+08 samples  |  2877 s elapsed  |  ETA 5462 s
+  progress  35.00 %  |  3.500e+07 / 1.000e+08 samples  |  2879 s elapsed  |  ETA 5347 s
+  progress  35.50 %  |  3.550e+07 / 1.000e+08 samples  |  2882 s elapsed  |  ETA 5237 s
+  progress  36.00 %  |  3.600e+07 / 1.000e+08 samples  |  2887 s elapsed  |  ETA 5133 s
+  progress  36.50 %  |  3.650e+07 / 1.000e+08 samples  |  2894 s elapsed  |  ETA 5035 s
+  progress  37.00 %  |  3.700e+07 / 1.000e+08 samples  |  2904 s elapsed  |  ETA 4945 s
+  progress  37.50 %  |  3.750e+07 / 1.000e+08 samples  |  2913 s elapsed  |  ETA 4855 s
+  progress  38.00 %  |  3.800e+07 / 1.000e+08 samples  |  2914 s elapsed  |  ETA 4755 s
+  progress  38.50 %  |  3.850e+07 / 1.000e+08 samples  |  2918 s elapsed  |  ETA 4662 s
+  progress  39.00 %  |  3.900e+07 / 1.000e+08 samples  |  2921 s elapsed  |  ETA 4569 s
+  progress  39.50 %  |  3.950e+07 / 1.000e+08 samples  |  2928 s elapsed  |  ETA 4485 s
+  progress  40.00 %  |  4.000e+07 / 1.000e+08 samples  |  2939 s elapsed  |  ETA 4409 s
+  progress  40.50 %  |  4.050e+07 / 1.000e+08 samples  |  2962 s elapsed  |  ETA 4352 s
+  progress  41.00 %  |  4.100e+07 / 1.000e+08 samples  |  2967 s elapsed  |  ETA 4270 s
+  progress  41.50 %  |  4.150e+07 / 1.000e+08 samples  |  2996 s elapsed  |  ETA 4224 s
+  progress  42.00 %  |  4.200e+07 / 1.000e+08 samples  |  3107 s elapsed  |  ETA 4291 s
+  progress  42.50 %  |  4.250e+07 / 1.000e+08 samples  |  3673 s elapsed  |  ETA 4969 s
+  progress  43.00 %  |  4.300e+07 / 1.000e+08 samples  |  3695 s elapsed  |  ETA 4898 s
+  progress  43.50 %  |  4.350e+07 / 1.000e+08 samples  |  3700 s elapsed  |  ETA 4805 s
+  progress  44.00 %  |  4.400e+07 / 1.000e+08 samples  |  3727 s elapsed  |  ETA 4743 s
+  progress  44.50 %  |  4.450e+07 / 1.000e+08 samples  |  3733 s elapsed  |  ETA 4655 s
+  progress  45.00 %  |  4.500e+07 / 1.000e+08 samples  |  3740 s elapsed  |  ETA 4571 s
+  progress  45.50 %  |  4.550e+07 / 1.000e+08 samples  |  3778 s elapsed  |  ETA 4525 s
+  progress  46.00 %  |  4.600e+07 / 1.000e+08 samples  |  3783 s elapsed  |  ETA 4441 s
+  progress  46.50 %  |  4.650e+07 / 1.000e+08 samples  |  3818 s elapsed  |  ETA 4392 s
+  progress  47.00 %  |  4.700e+07 / 1.000e+08 samples  |  3819 s elapsed  |  ETA 4306 s
+  progress  47.50 %  |  4.750e+07 / 1.000e+08 samples  |  3824 s elapsed  |  ETA 4226 s
+  progress  48.00 %  |  4.800e+07 / 1.000e+08 samples  |  3828 s elapsed  |  ETA 4147 s
+  progress  48.50 %  |  4.850e+07 / 1.000e+08 samples  |  3836 s elapsed  |  ETA 4073 s
+  progress  49.00 %  |  4.900e+07 / 1.000e+08 samples  |  3840 s elapsed  |  ETA 3996 s
+  progress  49.50 %  |  4.950e+07 / 1.000e+08 samples  |  3842 s elapsed  |  ETA 3919 s
+  progress  50.00 %  |  5.000e+07 / 1.000e+08 samples  |  3848 s elapsed  |  ETA 3848 s
+  progress  50.50 %  |  5.050e+07 / 1.000e+08 samples  |  3849 s elapsed  |  ETA 3773 s
+  progress  51.00 %  |  5.100e+07 / 1.000e+08 samples  |  3865 s elapsed  |  ETA 3713 s
+  progress  51.50 %  |  5.150e+07 / 1.000e+08 samples  |  3886 s elapsed  |  ETA 3659 s
+  progress  52.00 %  |  5.200e+07 / 1.000e+08 samples  |  3888 s elapsed  |  ETA 3589 s
+  progress  52.50 %  |  5.250e+07 / 1.000e+08 samples  |  3895 s elapsed  |  ETA 3524 s
+  progress  53.00 %  |  5.300e+07 / 1.000e+08 samples  |  3899 s elapsed  |  ETA 3457 s
+  progress  53.50 %  |  5.350e+07 / 1.000e+08 samples  |  3908 s elapsed  |  ETA 3396 s
+  progress  54.00 %  |  5.400e+07 / 1.000e+08 samples  |  3910 s elapsed  |  ETA 3331 s
+  progress  54.50 %  |  5.450e+07 / 1.000e+08 samples  |  3941 s elapsed  |  ETA 3290 s
+  progress  55.00 %  |  5.500e+07 / 1.000e+08 samples  |  3955 s elapsed  |  ETA 3236 s
+  progress  55.50 %  |  5.550e+07 / 1.000e+08 samples  |  3999 s elapsed  |  ETA 3206 s
+  progress  56.00 %  |  5.600e+07 / 1.000e+08 samples  |  4132 s elapsed  |  ETA 3246 s
+  progress  56.50 %  |  5.650e+07 / 1.000e+08 samples  |  4594 s elapsed  |  ETA 3537 s
+  progress  57.00 %  |  5.700e+07 / 1.000e+08 samples  |  4612 s elapsed  |  ETA 3479 s
+  progress  57.50 %  |  5.750e+07 / 1.000e+08 samples  |  4623 s elapsed  |  ETA 3417 s
+  progress  58.00 %  |  5.800e+07 / 1.000e+08 samples  |  4658 s elapsed  |  ETA 3373 s
+  progress  58.50 %  |  5.850e+07 / 1.000e+08 samples  |  4659 s elapsed  |  ETA 3305 s
+  progress  59.00 %  |  5.900e+07 / 1.000e+08 samples  |  4671 s elapsed  |  ETA 3246 s
+  progress  59.50 %  |  5.950e+07 / 1.000e+08 samples  |  4731 s elapsed  |  ETA 3220 s
+  progress  60.00 %  |  6.000e+07 / 1.000e+08 samples  |  4734 s elapsed  |  ETA 3156 s
+  progress  60.50 %  |  6.050e+07 / 1.000e+08 samples  |  4765 s elapsed  |  ETA 3111 s
+  progress  61.00 %  |  6.100e+07 / 1.000e+08 samples  |  4770 s elapsed  |  ETA 3050 s
+  progress  61.50 %  |  6.150e+07 / 1.000e+08 samples  |  4775 s elapsed  |  ETA 2989 s
+  progress  62.00 %  |  6.200e+07 / 1.000e+08 samples  |  4787 s elapsed  |  ETA 2934 s
+  progress  62.50 %  |  6.250e+07 / 1.000e+08 samples  |  4790 s elapsed  |  ETA 2874 s
+  progress  63.00 %  |  6.300e+07 / 1.000e+08 samples  |  4798 s elapsed  |  ETA 2818 s
+  progress  63.50 %  |  6.350e+07 / 1.000e+08 samples  |  4801 s elapsed  |  ETA 2760 s
+  progress  64.00 %  |  6.400e+07 / 1.000e+08 samples  |  4810 s elapsed  |  ETA 2706 s
+  progress  64.50 %  |  6.450e+07 / 1.000e+08 samples  |  4817 s elapsed  |  ETA 2651 s
+  progress  65.00 %  |  6.500e+07 / 1.000e+08 samples  |  4837 s elapsed  |  ETA 2605 s
+  progress  65.50 %  |  6.550e+07 / 1.000e+08 samples  |  4859 s elapsed  |  ETA 2559 s
+  progress  66.00 %  |  6.600e+07 / 1.000e+08 samples  |  4864 s elapsed  |  ETA 2506 s
+  progress  66.50 %  |  6.650e+07 / 1.000e+08 samples  |  4867 s elapsed  |  ETA 2452 s
+  progress  67.00 %  |  6.700e+07 / 1.000e+08 samples  |  4872 s elapsed  |  ETA 2400 s
+  progress  67.50 %  |  6.750e+07 / 1.000e+08 samples  |  4877 s elapsed  |  ETA 2348 s
+  progress  68.00 %  |  6.800e+07 / 1.000e+08 samples  |  4883 s elapsed  |  ETA 2298 s
+  progress  68.50 %  |  6.850e+07 / 1.000e+08 samples  |  4929 s elapsed  |  ETA 2267 s
+  progress  69.00 %  |  6.900e+07 / 1.000e+08 samples  |  4945 s elapsed  |  ETA 2222 s
+  progress  69.50 %  |  6.950e+07 / 1.000e+08 samples  |  4996 s elapsed  |  ETA 2193 s
+  progress  70.00 %  |  7.000e+07 / 1.000e+08 samples  |  5155 s elapsed  |  ETA 2209 s
+  progress  70.50 %  |  7.050e+07 / 1.000e+08 samples  |  5516 s elapsed  |  ETA 2308 s
+  progress  71.00 %  |  7.100e+07 / 1.000e+08 samples  |  5538 s elapsed  |  ETA 2262 s
+  progress  71.50 %  |  7.150e+07 / 1.000e+08 samples  |  5553 s elapsed  |  ETA 2213 s
+  progress  72.00 %  |  7.200e+07 / 1.000e+08 samples  |  5584 s elapsed  |  ETA 2171 s
+  progress  72.50 %  |  7.250e+07 / 1.000e+08 samples  |  5589 s elapsed  |  ETA 2120 s
+  progress  73.00 %  |  7.300e+07 / 1.000e+08 samples  |  5607 s elapsed  |  ETA 2074 s
+  progress  73.50 %  |  7.350e+07 / 1.000e+08 samples  |  5674 s elapsed  |  ETA 2046 s
+  progress  74.00 %  |  7.400e+07 / 1.000e+08 samples  |  5679 s elapsed  |  ETA 1995 s
+  progress  74.50 %  |  7.450e+07 / 1.000e+08 samples  |  5705 s elapsed  |  ETA 1953 s
+  progress  75.00 %  |  7.500e+07 / 1.000e+08 samples  |  5727 s elapsed  |  ETA 1909 s
+  progress  75.50 %  |  7.550e+07 / 1.000e+08 samples  |  5729 s elapsed  |  ETA 1859 s
+  progress  76.00 %  |  7.600e+07 / 1.000e+08 samples  |  5739 s elapsed  |  ETA 1812 s
+  progress  76.50 %  |  7.650e+07 / 1.000e+08 samples  |  5751 s elapsed  |  ETA 1767 s
+  progress  77.00 %  |  7.700e+07 / 1.000e+08 samples  |  5757 s elapsed  |  ETA 1720 s
+  progress  77.50 %  |  7.750e+07 / 1.000e+08 samples  |  5769 s elapsed  |  ETA 1675 s
+  progress  78.00 %  |  7.800e+07 / 1.000e+08 samples  |  5778 s elapsed  |  ETA 1630 s
+  progress  78.50 %  |  7.850e+07 / 1.000e+08 samples  |  5780 s elapsed  |  ETA 1583 s
+  progress  79.00 %  |  7.900e+07 / 1.000e+08 samples  |  5807 s elapsed  |  ETA 1544 s
+  progress  79.50 %  |  7.950e+07 / 1.000e+08 samples  |  5827 s elapsed  |  ETA 1503 s
+  progress  80.00 %  |  8.000e+07 / 1.000e+08 samples  |  5840 s elapsed  |  ETA 1460 s
+  progress  80.50 %  |  8.050e+07 / 1.000e+08 samples  |  5840 s elapsed  |  ETA 1415 s
+  progress  81.00 %  |  8.100e+07 / 1.000e+08 samples  |  5842 s elapsed  |  ETA 1370 s
+  progress  81.50 %  |  8.150e+07 / 1.000e+08 samples  |  5862 s elapsed  |  ETA 1331 s
+  progress  82.00 %  |  8.200e+07 / 1.000e+08 samples  |  5863 s elapsed  |  ETA 1287 s
+  progress  82.50 %  |  8.250e+07 / 1.000e+08 samples  |  5917 s elapsed  |  ETA 1255 s
+  progress  83.00 %  |  8.300e+07 / 1.000e+08 samples  |  5938 s elapsed  |  ETA 1216 s
+  progress  83.50 %  |  8.350e+07 / 1.000e+08 samples  |  5988 s elapsed  |  ETA 1183 s
+  progress  84.00 %  |  8.400e+07 / 1.000e+08 samples  |  6191 s elapsed  |  ETA 1179 s
+  progress  84.50 %  |  8.450e+07 / 1.000e+08 samples  |  6450 s elapsed  |  ETA 1183 s
+  progress  85.00 %  |  8.500e+07 / 1.000e+08 samples  |  6462 s elapsed  |  ETA 1140 s
+  progress  85.50 %  |  8.550e+07 / 1.000e+08 samples  |  6483 s elapsed  |  ETA 1099 s
+  progress  86.00 %  |  8.600e+07 / 1.000e+08 samples  |  6510 s elapsed  |  ETA 1060 s
+  progress  86.50 %  |  8.650e+07 / 1.000e+08 samples  |  6523 s elapsed  |  ETA 1018 s
+  progress  87.00 %  |  8.700e+07 / 1.000e+08 samples  |  6532 s elapsed  |  ETA 976 s
+  progress  87.07 %  |  8.707e+07 / 1.000e+08 samples  |  6584 s elapsed  |  ETA 978 s
+  progress  87.14 %  |  8.714e+07 / 1.000e+08 samples  |  6591 s elapsed  |  ETA 972 s
+  progress  87.64 %  |  8.764e+07 / 1.000e+08 samples  |  6610 s elapsed  |  ETA 932 s
+  progress  87.71 %  |  8.771e+07 / 1.000e+08 samples  |  6611 s elapsed  |  ETA 926 s
+  progress  88.21 %  |  8.821e+07 / 1.000e+08 samples  |  6624 s elapsed  |  ETA 885 s
+  progress  88.29 %  |  8.829e+07 / 1.000e+08 samples  |  6633 s elapsed  |  ETA 880 s
+  progress  88.79 %  |  8.879e+07 / 1.000e+08 samples  |  6640 s elapsed  |  ETA 839 s
+  progress  88.86 %  |  8.886e+07 / 1.000e+08 samples  |  6643 s elapsed  |  ETA 833 s
+  progress  88.93 %  |  8.893e+07 / 1.000e+08 samples  |  6648 s elapsed  |  ETA 828 s
+  progress  89.43 %  |  8.943e+07 / 1.000e+08 samples  |  6666 s elapsed  |  ETA 788 s
+  progress  89.93 %  |  8.993e+07 / 1.000e+08 samples  |  6676 s elapsed  |  ETA 748 s
+  progress  90.43 %  |  9.043e+07 / 1.000e+08 samples  |  6680 s elapsed  |  ETA 707 s
+  progress  90.93 %  |  9.093e+07 / 1.000e+08 samples  |  6680 s elapsed  |  ETA 666 s
+  progress  91.43 %  |  9.143e+07 / 1.000e+08 samples  |  6688 s elapsed  |  ETA 627 s
+  progress  91.93 %  |  9.193e+07 / 1.000e+08 samples  |  6695 s elapsed  |  ETA 588 s
+  progress  92.43 %  |  9.243e+07 / 1.000e+08 samples  |  6701 s elapsed  |  ETA 549 s
+  progress  92.93 %  |  9.293e+07 / 1.000e+08 samples  |  6709 s elapsed  |  ETA 511 s
+  progress  93.00 %  |  9.300e+07 / 1.000e+08 samples  |  6713 s elapsed  |  ETA 505 s
+  progress  93.07 %  |  9.307e+07 / 1.000e+08 samples  |  6714 s elapsed  |  ETA 500 s
+  progress  93.14 %  |  9.314e+07 / 1.000e+08 samples  |  6726 s elapsed  |  ETA 495 s
+  progress  93.64 %  |  9.364e+07 / 1.000e+08 samples  |  6748 s elapsed  |  ETA 458 s
+  progress  94.14 %  |  9.414e+07 / 1.000e+08 samples  |  6749 s elapsed  |  ETA 420 s
+  progress  94.21 %  |  9.421e+07 / 1.000e+08 samples  |  6752 s elapsed  |  ETA 415 s
+  progress  94.29 %  |  9.429e+07 / 1.000e+08 samples  |  6762 s elapsed  |  ETA 410 s
+  progress  94.36 %  |  9.436e+07 / 1.000e+08 samples  |  6767 s elapsed  |  ETA 405 s
+  progress  94.86 %  |  9.486e+07 / 1.000e+08 samples  |  6771 s elapsed  |  ETA 367 s
+  progress  94.93 %  |  9.493e+07 / 1.000e+08 samples  |  6772 s elapsed  |  ETA 362 s
+  progress  95.43 %  |  9.543e+07 / 1.000e+08 samples  |  6776 s elapsed  |  ETA 325 s
+  progress  95.50 %  |  9.550e+07 / 1.000e+08 samples  |  6778 s elapsed  |  ETA 319 s
+  progress  95.57 %  |  9.557e+07 / 1.000e+08 samples  |  6779 s elapsed  |  ETA 314 s
+  progress  96.07 %  |  9.607e+07 / 1.000e+08 samples  |  6782 s elapsed  |  ETA 277 s
+  progress  96.14 %  |  9.614e+07 / 1.000e+08 samples  |  6787 s elapsed  |  ETA 272 s
+  progress  96.64 %  |  9.664e+07 / 1.000e+08 samples  |  6788 s elapsed  |  ETA 236 s
+  progress  97.14 %  |  9.714e+07 / 1.000e+08 samples  |  6795 s elapsed  |  ETA 200 s
+  progress  97.21 %  |  9.721e+07 / 1.000e+08 samples  |  6795 s elapsed  |  ETA 195 s
+  progress  97.71 %  |  9.771e+07 / 1.000e+08 samples  |  6820 s elapsed  |  ETA 160 s
+  progress  97.79 %  |  9.779e+07 / 1.000e+08 samples  |  6821 s elapsed  |  ETA 154 s
+  progress  97.86 %  |  9.786e+07 / 1.000e+08 samples  |  6825 s elapsed  |  ETA 149 s
+  progress  98.36 %  |  9.836e+07 / 1.000e+08 samples  |  6832 s elapsed  |  ETA 114 s
+  progress  98.43 %  |  9.843e+07 / 1.000e+08 samples  |  6848 s elapsed  |  ETA 109 s
+  progress  98.50 %  |  9.850e+07 / 1.000e+08 samples  |  6855 s elapsed  |  ETA 104 s
+  progress  98.57 %  |  9.857e+07 / 1.000e+08 samples  |  6855 s elapsed  |  ETA 99 s
+  progress  98.64 %  |  9.864e+07 / 1.000e+08 samples  |  6860 s elapsed  |  ETA 94 s
+  progress  99.14 %  |  9.914e+07 / 1.000e+08 samples  |  6872 s elapsed  |  ETA 59 s
+  progress  99.21 %  |  9.921e+07 / 1.000e+08 samples  |  6875 s elapsed  |  ETA 54 s
+  progress  99.29 %  |  9.929e+07 / 1.000e+08 samples  |  6891 s elapsed  |  ETA 50 s
+  progress  99.36 %  |  9.936e+07 / 1.000e+08 samples  |  6905 s elapsed  |  ETA 45 s
+  progress  99.43 %  |  9.943e+07 / 1.000e+08 samples  |  6954 s elapsed  |  ETA 40 s
+  progress  99.93 %  |  9.993e+07 / 1.000e+08 samples  |  6985 s elapsed  |  ETA 5 s
+  progress 100.00 %  |  1.000e+08 / 1.000e+08 samples  |  7055 s elapsed  |  ETA 0 s
+===============================================================
+MC cross-check of beta_sys -- Warren X-brace truss
+===============================================================
+
+--- 1. Result --------------------------------------------------
+nFail        = 18820
+nTotal       = 100000012
+Pf_MC        = 1.88199977e-04
+95% CI       = [1.85511385e-04 , 1.90888570e-04]  (+/- 2.689e-06)
+beta_MC      = 3.556101
+CoV(Pf_MC)   = 0.73 %
+
+--- 2. Comparison ----------------------------------------------
+Pf_min  (component, member 11) = 4.62660874e-05
+Pf_sys  (PNET, rho0=0.7)       = 1.11915173e-04
+Pf_MC / Pf_min                 = 4.0678   (PNET claims 2.4189)
+Pf_MC / Pf_sys                 = 1.6816
+
+VERDICT: Pf_MC is significantly ABOVE Pf_sys -- PNET is
+         under-estimating the union here, the opposite of the
+         expected direction. Worth a closer look.
+
+--- 3. Per-chunk nFail -----------------------------------------
+ chunk         seed       nSamples      nFail
+     1         1001        3571429        692
+     2         1002        3571429        677
+     3         1003        3571429        692
+     4         1004        3571429        669
+     5         1005        3571429        657
+     6         1006        3571429        700
+     7         1007        3571429        642
+     8         1008        3571429        658
+     9         1009        3571429        655
+    10         1010        3571429        689
+    11         1011        3571429        669
+    12         1012        3571429        669
+    13         1013        3571429        707
+    14         1014        3571429        675
+    15         1015        3571429        736
+    16         1016        3571429        688
+    17         1017        3571429        636
+    18         1018        3571429        658
+    19         1019        3571429        697
+    20         1020        3571429        688
+    21         1021        3571429        688
+    22         1022        3571429        640
+    23         1023        3571429        687
+    24         1024        3571429        654
+    25         1025        3571429        618
+    26         1026        3571429        648
+    27         1027        3571429        626
+    28         1028        3571429        705
+
+mean nFail/chunk = 672.14, std = 27.23, Poisson sqrt(mean) = 25.93
+dispersion chi2 = 29.78 on 27 dof (expect ~27 if chunks homogeneous)
+
+--- 4. Timing ---------------------------------------------------
+wall time            = 7055.4 s  (1.96 h)
+samples per second   = 14174  (aggregate)
+per-chunk time       = 6583.1 .. 7054.6 s (mean 6777.7)
+per-core throughput  = 527 samples/s
+
+--- 5. Dominant failure modes (pooled) --------------------------
+(a) top 10 ORDERED removal sequences
+  rank  members                           count      share
+     1  [16 13]                            3831     20.36 %
+     2  [11 14]                            3822     20.31 %
+     3  [5 2]                              2861     15.20 %
+     4  [2 5]                              2836     15.07 %
+     5  [7 11]                             2659     14.13 %
+     6  [10 16]                            2650     14.08 %
+     7  [5 15]                               44      0.23 %
+     8  [9 16 2]                             32      0.17 %
+     9  [5 12]                               31      0.16 %
+    10  [8 11 2]                             31      0.16 %
+
+(b) top 10 UNORDERED cut-sets  [analytical top 3: [11 14], [1 2 8], [5 12]]
+  rank  members                           count      share
+     1  [2 5]                              5697     30.27 %
+     2  [13 16]                            3831     20.36 %
+     3  [11 14]                            3822     20.31 %
+     4  [7 11]                             2659     14.13 %
+     5  [10 16]                            2650     14.08 %
+     6  [5 15]                               44      0.23 %
+     7  [2 9 16]                             36      0.19 %
+     8  [2 8 11]                             33      0.18 %
+     9  [5 12]                               31      0.16 %
+    10  [8 11 15]                            12      0.06 %
+
+    analytical #1 [11 14]    : MC rank 3
+    analytical #2 [1 2 8]    : NOT observed in MC
+    analytical #3 [5 12]     : MC rank 9
+
+--- 6. Provenance -----------------------------------------------
+MATLAB               = 9.14.0.2337262 (R2023a) Update 5
+seeds                = 1001 .. 1028 (chunk w -> baseSeed + w)
+sub-batch size       = 500000 (seed set once per chunk, stream continues)
+oracle               = tests/progressiveCollapseMCFn.m (serial, brittle eta=0)
+===============================================================
+
+raw report written to: /home/sglanc/MatLab/system-reliability-truss-matlab/tests/mc_neptun/mc_neptun_report_20260801_191214.txt
+=== run_mc DONE in 118.4 min ===

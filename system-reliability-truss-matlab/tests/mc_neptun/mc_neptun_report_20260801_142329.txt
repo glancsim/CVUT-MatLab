@@ -1,0 +1,98 @@
+===============================================================
+MC cross-check of beta_sys -- Warren X-brace truss
+===============================================================
+
+--- 1. Result --------------------------------------------------
+nFail        = 1823
+nTotal       = 10000004
+Pf_MC        = 1.82299927e-04
+95% CI       = [1.73932159e-04 , 1.90667695e-04]  (+/- 8.368e-06)
+beta_MC      = 3.564464
+CoV(Pf_MC)   = 2.34 %
+
+--- 2. Comparison ----------------------------------------------
+Pf_min  (component, member 11) = 4.62660874e-05
+Pf_sys  (PNET, rho0=0.7)       = 1.11915173e-04
+Pf_MC / Pf_min                 = 3.9402   (PNET claims 2.4189)
+Pf_MC / Pf_sys                 = 1.6289
+
+VERDICT: Pf_MC is significantly ABOVE Pf_sys -- PNET is
+         under-estimating the union here, the opposite of the
+         expected direction. Worth a closer look.
+
+--- 3. Per-chunk nFail -----------------------------------------
+ chunk         seed       nSamples      nFail
+     1         1001         357143         77
+     2         1002         357143         63
+     3         1003         357143         51
+     4         1004         357143         68
+     5         1005         357143         71
+     6         1006         357143         75
+     7         1007         357143         75
+     8         1008         357143         53
+     9         1009         357143         67
+    10         1010         357143         72
+    11         1011         357143         56
+    12         1012         357143         66
+    13         1013         357143         75
+    14         1014         357143         60
+    15         1015         357143         62
+    16         1016         357143         60
+    17         1017         357143         65
+    18         1018         357143         79
+    19         1019         357143         74
+    20         1020         357143         66
+    21         1021         357143         58
+    22         1022         357143         59
+    23         1023         357143         45
+    24         1024         357143         57
+    25         1025         357143         71
+    26         1026         357143         72
+    27         1027         357143         58
+    28         1028         357143         68
+
+mean nFail/chunk = 65.11, std = 8.60, Poisson sqrt(mean) = 8.07
+dispersion chi2 = 30.67 on 27 dof (expect ~27 if chunks homogeneous)
+
+--- 4. Timing ---------------------------------------------------
+wall time            = 709.7 s  (0.20 h)
+samples per second   = 14090  (aggregate)
+per-chunk time       = 636.5 .. 708.9 s (mean 672.5)
+per-core throughput  = 532 samples/s
+
+--- 5. Dominant failure modes (pooled) --------------------------
+(a) top 10 ORDERED removal sequences
+  rank  members                           count      share
+     1  [11 14]                             384     21.06 %
+     2  [16 13]                             368     20.19 %
+     3  [2 5]                               285     15.63 %
+     4  [5 2]                               278     15.25 %
+     5  [10 16]                             246     13.49 %
+     6  [7 11]                              245     13.44 %
+     7  [5 12]                                8      0.44 %
+     8  [5 15]                                5      0.27 %
+     9  [8 11 2]                              3      0.16 %
+    10  [9 16 2]                              1      0.05 %
+
+(b) top 10 UNORDERED cut-sets  [analytical top 3: [11 14], [1 2 8], [5 12]]
+  rank  members                           count      share
+     1  [2 5]                               563     30.88 %
+     2  [11 14]                             384     21.06 %
+     3  [13 16]                             368     20.19 %
+     4  [10 16]                             246     13.49 %
+     5  [7 11]                              245     13.44 %
+     6  [5 12]                                8      0.44 %
+     7  [5 15]                                5      0.27 %
+     8  [2 8 11]                              3      0.16 %
+     9  [2 9 16]                              1      0.05 %
+
+    analytical #1 [11 14]    : MC rank 2
+    analytical #2 [1 2 8]    : NOT observed in MC
+    analytical #3 [5 12]     : MC rank 6
+
+--- 6. Provenance -----------------------------------------------
+MATLAB               = 9.14.0.2337262 (R2023a) Update 5
+seeds                = 1001 .. 1028 (chunk w -> baseSeed + w)
+sub-batch size       = 500000 (seed set once per chunk, stream continues)
+oracle               = tests/progressiveCollapseMCFn.m (serial, brittle eta=0)
+===============================================================

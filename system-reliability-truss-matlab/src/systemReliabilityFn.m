@@ -42,6 +42,11 @@ function results = systemReliabilityFn(nodes, members, kinematic, sections, rvSp
 %                          sequence for each cut-set
 %       .pnetGroups     - struct array from pnetSystemReliabilityFn
 %
+% REPRODUCIBILITY: this function is NOT deterministic -- cut-sets of four or
+% more members reach cornellIndexFn's randomised-QMC mvncdf path (see that
+% file's "NOT DETERMINISTIC FOR m >= 4" note for the measured scatter). Call
+% rng(<seed>) beforehand if the output must be reproducible.
+%
 % See also: equilibriumMatrixFn, nullSpaceCutSetsFn, mostProbableSequenceFn,
 %           equivalentPlaneFn, pnetSystemReliabilityFn, sequenceLimitStateFn
 %

@@ -38,6 +38,15 @@ function [beta_sys, Pf_sys, groups] = pnetSystemReliabilityFn(betaTilde, alphaTi
 
 if nargin < 3 || isempty(rho0), rho0 = 0.7; end
 
+% rho0 is a correlation threshold, so a value above 1 is not merely
+% unusual, it is meaningless -- and it would silently return q singleton
+% groups (see the grouping loop below). Reject it rather than answer it.
+if ~(isscalar(rho0) && isreal(rho0) && rho0 <= 1)
+    error('pnetSystemReliabilityFn:badRho0', ...
+        'rho0 is a correlation threshold and must be a real scalar <= 1; got %s.', ...
+        mat2str(rho0));
+end
+
 q = numel(betaTilde);
 betaTilde = betaTilde(:);
 
@@ -52,6 +61,17 @@ while any(remaining)
     rep = idxRemaining(1);          % worst (lowest beta) among remaining
 
     rho1k = alphaSorted(rep, :) * alphaSorted(idxRemaining, :)';   % 1 x numel(idxRemaining)
+
+    % A group always contains its own representative -- that is definitional,
+    % not a correlation test. Asserting it here also makes termination
+    % structural: every iteration clears at least one entry of `remaining`.
+    % Relying on rho1k(1) >= rho0 instead is unsafe, because the alphaTilde
+    % rows are unit-norm only to floating-point accuracy and a self-correlation
+    % can evaluate just below 1 (32 of 91 do so for the Warren X-brace
+    % example), which at rho0 = 1 leaves the representative ungrouped and the
+    % loop spinning.
+    rho1k(1) = 1;                       % idxRemaining(1) == rep by construction
+
     absorbedLocal = idxRemaining(rho1k >= rho0);
 
     g.repIdx  = order(rep);

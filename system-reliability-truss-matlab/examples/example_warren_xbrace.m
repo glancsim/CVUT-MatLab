@@ -7,6 +7,10 @@
 % horizontal roof/bridge truss with pin-roller supports instead of a
 % cantilevered, both-ends-pinned tower).
 %
+% The model itself (geometry, BCs, RV spec, FSD sizing) lives in
+% warrenXbraceModelFn.m, shared with example_warren_xbrace_paper.m and
+% make_paper_figures.m; this script is the interactive walk-through of it.
+%
 % GEOMETRY: 3 panels, 4 m each (12 m span), 2 m height. Bottom chord nodes
 % 1-4 at z=0, top chord nodes 5-8 directly above at z=2m. Members per
 % panel: bottom chord, top chord, vertical, AND both diagonals (X-brace)
@@ -17,113 +21,64 @@
 % 3-story truss's both-pinned cantilever-tower supports.
 %
 % LOADS: 2 independent downward point loads at the top-chord interior
-% nodes (6, 7), Gaussian, mean=50 kN, COV=0.15 -- same order of magnitude
-% as example_3story_truss's loads (44.45 kN), a plausible roof/floor point
-% load.
+% nodes (6, 7), Gaussian, mean=75 kN, COV=0.15 -- the same order of
+% magnitude as example_3story_truss's loads (44.45 kN), a plausible
+% roof/floor point load. See warrenXbraceModelFn.m for why 75 kN and not
+% the 50 kN of the first trial.
 %
-% RESISTANCES: 4 illustrative section/role groups (bottom chord, top
-% chord, verticals, diagonals -- diagonals in both directions share ONE
-% group since a symmetric X-brace panel has no preferred diagonal
-% direction), Gaussian, COV=0.08 (same COV(R) order as the 3-story
-% truss's 0.05-COV groups, slightly larger to reflect a less-refined,
-% illustrative section choice here). Mean resistances chosen loosely so
-% chords/diagonals are comparably utilized under the applied loads (not
-% independently fabrication-checked -- this is a worked demonstration,
-% not a real design).
+% RESISTANCES: 4 section/role groups (bottom chord, top chord, verticals,
+% diagonals -- diagonals in both directions share ONE group since a
+% symmetric X-brace panel has no preferred diagonal direction). Areas are
+% NOT chosen by hand: fullyStressedDesignFn.m iteratively sizes each group
+% (stress-ratio / FSD method) so its governing member reaches
+% sigmaAllow=210 MPa under the mean combined load -- a simple gross-stress
+% criterion (no buckling check, unlike en-truss-design-matlab), consistent
+% with this being a worked demonstration, not a code-compliant design.
+% rvSpec.resMean is then set to f_y*A (S355, f_y=355 MPa) for the
+% converged A of each group -- i.e. 210 MPa is treated as an implicit ASD
+% allowable stress (f_y/210 ~= 1.69, a plausible safety factor), giving a
+% real (non-degenerate) margin instead of resMean==sizing-stress*A, which
+% would force beta~=0 for every governing member by construction.
+% Gaussian, COV(R)=0.08 (same order as the 3-story truss's 0.05-COV
+% groups, slightly larger to reflect this simpler sizing method here).
 %
 % RUNTIME NOTE: an earlier 4-panel version of this truss (21 members) was
 % tried first and produced 153 cut-sets, 25 of them of size gH+1=5 (max
 % permutation count 5!=120 each) -- combined with mostProbableSequenceFn's
 % brute-force permutation search this made the full systemReliabilityFn
 % call impractically slow (>15 minutes, killed before completion). The
-% 3-panel version below (16 members, gH=3, 91 cut-sets, max size 4,
-% 4!=24 perms) profiles at roughly 3 minutes total and was used instead --
-% documented here since it's a real, reproducible cost of the brute-force
-% mostProbableSequenceFn approach (see that function's own header note on
-% scaling) rather than a bug.
+% 3-panel version used here (16 members, gH=3, 91 cut-sets, max size 4,
+% 4!=24 perms) profiles at roughly 30 s for the systemReliabilityFn call
+% and was used instead -- documented since it's a real, reproducible cost
+% of the brute-force mostProbableSequenceFn approach (see that function's
+% own header note on scaling) rather than a bug.
 %
 % (c) S. Glanc, 2026
 
 clear; close all;
-srcDir  = fullfile(fileparts(mfilename('fullpath')), '..', 'src');
-testDir = fullfile(fileparts(mfilename('fullpath')), '..', 'tests');
-femDir  = fullfile(fileparts(mfilename('fullpath')), '..', '..', 'fem-2d-truss-matlab', 'src');
-addpath(srcDir); addpath(testDir); addpath(femDir);
+rng(42);   % QMC quadrature inside mvncdf (cornellIndexFn) is randomised;
+           % fixed here so the published numbers are reproducible
 
-%% Geometry
-nPanels = 3;
-Lpanel  = 4;    % m
-H       = 2;    % m
+exDir   = fileparts(mfilename('fullpath'));
+srcDir  = fullfile(exDir, '..', 'src');
+testDir = fullfile(exDir, '..', 'tests');
+femDir  = fullfile(exDir, '..', '..', 'fem-2d-truss-matlab', 'src');
+addpath(exDir); addpath(srcDir); addpath(testDir); addpath(femDir);
 
-nBot = nPanels + 1;                    % 4 bottom nodes
-xBot = (0:nPanels)' * Lpanel;
-zBot = zeros(nBot, 1);
-xTop = xBot;
-zTop = H * ones(nBot, 1);
+%% Model setup (geometry, topology, BCs, RV spec, FSD sizing)
+model = warrenXbraceModelFn(struct('verbose', true));
 
-nodes.x = [xBot; xTop];
-nodes.z = [zBot; zTop];
+nodes     = model.nodes;
+members   = model.members;
+kinematic = model.kinematic;
+sections  = model.sections;
+rvSpec    = model.rvSpec;
+meanLoads = model.meanLoads;
+role      = model.role;
+roleNames = model.roleNames;
 
-nBotNodes = 1:nBot;
-nTopNodes = (nBot+1):(2*nBot);
-
-bc_head = nBotNodes(1:end-1)'; bc_end = nBotNodes(2:end)';       % bottom chord
-tc_head = nTopNodes(1:end-1)'; tc_end = nTopNodes(2:end)';       % top chord
-vert_head = nBotNodes';        vert_end = nTopNodes';            % verticals
-diag1_head = nBotNodes(1:end-1)'; diag1_end = nTopNodes(2:end)';     % ascending diagonal
-diag2_head = nBotNodes(2:end)';   diag2_end = nTopNodes(1:end-1)';   % descending diagonal (X-brace)
-
-members.nodesHead = [bc_head; tc_head; vert_head; diag1_head; diag2_head];
-members.nodesEnd  = [bc_end; tc_end; vert_end; diag1_end; diag2_end];
-members.nmembers  = numel(members.nodesHead);
-nm = members.nmembers;
-
-% Section/resistance role: 1=bottom chord, 2=top chord, 3=vertical, 4=diagonal (both directions)
-role = zeros(nm, 1);
-idx = 1;
-nBC = numel(bc_head);    role(idx:idx+nBC-1) = 1; idx = idx + nBC;
-nTC = numel(tc_head);    role(idx:idx+nTC-1) = 2; idx = idx + nTC;
-nV  = numel(vert_head);  role(idx:idx+nV-1)  = 3; idx = idx + nV;
-nD1 = numel(diag1_head); role(idx:idx+nD1-1) = 4; idx = idx + nD1;
-nD2 = numel(diag2_head); role(idx:idx+nD2-1) = 4; idx = idx + nD2;
-members.sections = role;
-
-sections.A = [20e-4; 20e-4; 8e-4; 6e-4];   % m^2: [bottom, top, vertical, diagonal]
-sections.E = 210e9 * ones(4, 1);           % Pa, steel
-
-% Boundary conditions: pin (node 1) + roller (node nBot=4)
-kinematic.x.nodes = [1];
-kinematic.z.nodes = [1; nBot];
-
-fprintf('=== Warren X-brace truss demo (simply-supported, %d panels) ===\n', nPanels);
-fprintf('nmembers = %d, nnodes = %d\n', nm, numel(nodes.x));
-
-%% Confirm indeterminacy
-A_eq = equilibriumMatrixFn(nodes, members, kinematic);
-[cutSetsCheck, gH, ~] = nullSpaceCutSetsFn(A_eq);
-fprintf('gH = %d, minimal cut-sets = %d\n', gH, numel(cutSetsCheck));
-
-%% Random variable spec
-rvSpec.resGroup = role;
-rvSpec.resMean  = [300; 300; 150; 120] * 1e3;   % N: [bottom, top, vertical, diagonal]
-rvSpec.resStd   = rvSpec.resMean * 0.08;        % COV(R) = 0.08
-
-topLoadNodes = nTopNodes(2:end-1)';    % interior top-chord nodes (6, 7)
-loads_p6.x.nodes = []; loads_p6.x.value = [];
-loads_p6.z.nodes = topLoadNodes(1); loads_p6.z.value = -1;
-loads_p7.x.nodes = []; loads_p7.x.value = [];
-loads_p7.z.nodes = topLoadNodes(2); loads_p7.z.value = -1;
-
-% Load level tuned so the MC oracle (modest 2e4 samples) actually observes
-% a handful of failures: a first trial at 50 kN gave beta_sys=5.26 (0/2e4
-% MC failures -- correct but uninformative, Pf~7e-8 needs far more samples
-% than practical here); 95 kN gave beta_sys=0.53 (an unrealistically
-% unsafe structure, just to prove the MC path works). 75 kN lands in a
-% realistic "somewhat under-designed but not absurd" range with enough MC
-% failures (~1-2%) for a meaningful beta_MC comparison at 2e4 samples.
-rvSpec.loadCases = {loads_p6, loads_p7};
-rvSpec.loadMean  = [75; 75] * 1e3;      % N, mean 75 kN each
-rvSpec.loadStd   = rvSpec.loadMean * 0.15;
+%% Visualize geometry, supports, and (mean) loads
+plotTrussFn(nodes, members, meanLoads, kinematic, 'Labels', true);
 
 %% System reliability (Phase C, analytical PNET)
 opts.eta     = 0;
@@ -138,14 +93,46 @@ fprintf('\n=== systemReliabilityFn result ===\n');
 fprintf('beta_sys = %.4f   Pf_sys = %.4e   (elapsed %.1f s)\n', results.beta_sys, results.Pf_sys, t_analytical);
 fprintf('finite and sensible: %d\n', isfinite(results.beta_sys) && isreal(results.beta_sys));
 
-%% Independent cross-check: progressive-collapse Monte Carlo
-mcOpts.verbose = true;
-mcOpts.seed = 7;
-[beta_MC, mcResults] = progressiveCollapseMCFn(nodes, members, kinematic, sections, rvSpec, 2e4, mcOpts);
+%% Most critical failure sequences (PNET-dominant cut-sets, worst-first)
+[~, pnetOrder] = sort([results.pnetGroups.beta], 'ascend');
+nShow = min(10, numel(pnetOrder));
 
-fprintf('\n=== progressiveCollapseMCFn cross-check ===\n');
-fprintf('beta_MC = %.4f  (analytical: %.4f)\n', beta_MC, results.beta_sys);
+fprintf('\n=== Most critical failure sequences (%d/%d PNET-dominant cut-sets shown) ===\n', ...
+    nShow, numel(results.pnetGroups));
+fprintf('%6s  %-24s  %-24s  %10s\n', 'rank', 'cut-set', 'rep. sequence', 'beta_p');
+for r = 1:nShow
+    g = results.pnetGroups(pnetOrder(r));
+    fprintf('%6d  %-24s  %-24s  %10.4f\n', r, mat2str(results.cutSets{g.repIdx}), ...
+        mat2str(results.repSequence{g.repIdx}), g.beta);
+end
 
-fprintf('\n=== SUMMARY ===\n');
-fprintf('Demonstration example ran end-to-end: beta_sys=%.4f (analytical), beta_MC=%.4f (MC, %d samples, %d failures)\n', ...
-    results.beta_sys, beta_MC, mcResults.nSamples, mcResults.nFail);
+%% Component reliability (per-member, intact structure, no redundancy credit)
+compResults = componentReliabilityFn(nodes, members, kinematic, sections, rvSpec);
+
+fprintf('\n=== componentReliabilityFn result (weakest-link-first) ===\n');
+fprintf('%6s  %-14s  %8s  %12s\n', 'member', 'role', 'beta_i', 'Pf_i');
+for k = 1:members.nmembers
+    i = compResults.sortIdx(k);
+    fprintf('%6d  %-14s  %8.4f  %12.4e\n', i, roleNames{role(i)}, compResults.beta(i), compResults.Pf(i));
+end
+beta_min = min(compResults.beta);
+fprintf('\nweakest component: member %d, beta_min = %.4f (naive series-system estimate)\n', ...
+    compResults.sortIdx(1), beta_min);
+fprintf('beta_sys (system, redundancy credited) = %.4f  ->  redundancy gain = %.4f\n', ...
+    results.beta_sys, results.beta_sys - beta_min);
+
+% %% Independent cross-check: progressive-collapse Monte Carlo
+% % NOTE: at 75 kN the system failure probability is Pf_sys ~ 1.1e-04
+% % (0.011 %), so a 2e4-sample run expects ~2 failures -- far too few for a
+% % meaningful beta_MC. A useful MC cross-check needs on the order of 1e7
+% % samples; see tests/mc_neptun/ for that separate run.
+% mcOpts.verbose = true;
+% mcOpts.seed = 7;
+% [beta_MC, mcResults] = progressiveCollapseMCFn(nodes, members, kinematic, sections, rvSpec, 2e4, mcOpts);
+%
+% fprintf('\n=== progressiveCollapseMCFn cross-check ===\n');
+% fprintf('beta_MC = %.4f  (analytical: %.4f)\n', beta_MC, results.beta_sys);
+%
+% fprintf('\n=== SUMMARY ===\n');
+% fprintf('Demonstration example ran end-to-end: beta_sys=%.4f (analytical), beta_MC=%.4f (MC, %d samples, %d failures)\n', ...
+%     results.beta_sys, beta_MC, mcResults.nSamples, mcResults.nFail);

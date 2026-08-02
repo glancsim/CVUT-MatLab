@@ -37,6 +37,20 @@ function [beta_p, rho] = cornellIndexFn(alpha, betaVec)
 % exactly mvncdf((-beta)', zeros(1,m), rho) -- confirmed against the
 % independent-case product-of-marginals identity during development.
 %
+% NOT DETERMINISTIC FOR m >= 4: MATLAB evaluates mvncdf by Genz's
+% randomised quasi-Monte Carlo quadrature once the dimension reaches 4
+% (below that it uses deterministic quadrature), so this function returns a
+% slightly different beta_p on every call with identical inputs. The
+% scatter is small but not negligible after it propagates through
+% equivalentPlaneFn and the PNET grouping: on the Warren X-brace example
+% (examples/example_warren_xbrace.m, cut-sets up to size 4) 20 unseeded
+% runs give beta_sys = 3.6971 +- 0.0083 and a PNET group count wandering
+% between 13 and 20 as borderline correlations cross rho0. Callers that
+% need reproducible output must fix the global stream themselves --
+% rng(42) before systemReliabilityFn -- since seeding here would silently
+% break a caller's own stream. Do NOT "fix" this by tightening mvncdf's
+% tolerances: that changes the results rather than stabilizing them.
+%
 % See also: sequenceLimitStateFn, mostProbableSequenceFn
 %
 % (c) S. Glanc, 2026

@@ -26,3 +26,10 @@ reliability-truss-matlab/examples/plotTrussBeta_preview.png
 reliability-truss-matlab/examples/IPW2026/reliability_results_practice.mat
 *.mat
 *.fig
+
+# Reference papers (paywalled publisher PDFs — kept locally, never redistributed)
+.references/
+
+# One-off transfer bundles for the neptun MC runs
+mc_neptun_transfer.zip
+mc_neptun_transfer/
