@@ -2,39 +2,59 @@ function make_paper_figures(outDir, whichFigs)
 % make_paper_figures  Export the NNM 2026 / Acta Polytechnica figures for the
 % Warren X-brace example as vector PDFs (plus PNG previews at final size).
 %
-%   make_paper_figures()             % all seven -> C:\GitHub\ctu-nnm-2026\figures
-%   make_paper_figures(outDir)       % custom directory
-%   make_paper_figures([], 3)        % just figure 3, default directory
-%   make_paper_figures([], [3 7])    % figures 3 and 7
+%   make_paper_figures()                      % the published set
+%   make_paper_figures(outDir)                % custom directory
+%   make_paper_figures([], 'accumulation')    % just one, default directory
+%   make_paper_figures([], {'accumulation', 'pnet_vs_mc'})
+%   make_paper_figures([], 'all')             % including the retired ones
 %
-% The whichFigs argument exists because MATLAB's figure rendering is fragile
-% on the development machines here: exporting one figure at a time isolates
-% which one is at fault, and makes iterating on a single layout cheap.
+% Figures are selected by NAME, not by number. The paper has renumbered its
+% figures twice while this script stayed put, so any numbering baked in here
+% would be a standing invitation to draw the wrong conclusion; the file names
+% are the stable identifiers. Selecting one at a time also keeps iterating on
+% a single layout cheap, and isolates which figure is at fault when MATLAB's
+% renderer misbehaves -- which it does on the machines here.
 %
-% FIGURES
-%   fig_geometry.pdf            truss, supports, mean loads, numbering
-%   fig_component_beta.pdf      per-member beta_i, sorted, with the
-%                               [beta_min, beta_min+0.2] band
-%   fig_accumulation.pdf        Pf_min vs Pf_sys (PNET) vs Pf_MC, stacked
-%   fig_failure_paths.pdf       the five dominant MC mechanisms on the truss
-%   fig_cutset_correlation.pdf  (a) top cut-sets vs (b) PNET representatives
-%   fig_rho0_sensitivity.pdf    ratio against rho0, vs the simulation line
-%   fig_pnet_vs_mc.pdf          per-group PNET Pf vs MC Pf, log axis
+% PUBLISHED FIGURES
+%   fig_geometry                truss, supports, mean loads, numbering
+%   fig_failure_paths           the five dominant MC mechanisms on the truss
+%   fig_accumulation            Pf_min vs Pf_sys (PNET) vs Pf_MC, decomposed
+%   fig_pnet_vs_mc              per-group PNET Pf vs MC Pf, log axis
+%   fig_cutset_correlation      (a) top cut-sets vs (b) PNET representatives
+%   fig_cutset_correlation_bw   the same, ramped on |rho| for print
+%   fig_rho0_sensitivity        ratio against rho0, vs the simulation line
 %
-% MONTE CARLO: figures 3, 4, 6 and 7 consume
-% tests/mc_neptun/mc_neptun_result.mat (10^8 samples, 18 820 failures). The
-% mechanism tally and the per-PNET-group MC probabilities are derived from
-% out.failSequences rather than transcribed, so they track the raw data.
+% RETIRED (still callable via 'all' or by name, no longer part of the set)
+%   fig_component_beta          per-member beta_i as a sorted bar chart.
+%       Dropped in round 3: members 12 and 15 sit at beta = 10.2966, so the
+%       axis has to span 3.9 to 10.3 and the six near-critical members occupy
+%       about a fiftieth of it. Their bars are visually identical, the
+%       beta_min and beta_min+0.2 guides coincide, and the whole message ends
+%       up carried by a text annotation -- so the graphic was doing no work.
+%       The paper's Table 4 carries it better, and shows the exactly-equal
+%       pairs (11/16, 7/10, 13/14, 1/3, 4/6, 12/15) that are the fingerprint
+%       of the truss's symmetry, which the bar chart hid.
+%
+% MONTE CARLO: fig_accumulation, fig_failure_paths, fig_pnet_vs_mc and
+% fig_rho0_sensitivity consume tests/mc_neptun/mc_neptun_result.mat (10^8
+% samples, 18 820 failures). The mechanism tally and the per-PNET-group MC
+% probabilities are derived from out.failSequences rather than transcribed,
+% so they track the raw data.
 %
 % STYLE: single-column Acta Polytechnica figures -- 8.4 cm wide, serif 8 pt,
-% no titles (captions live in the LaTeX source), greyscale-safe (series are
-% separated by lightness, marker, hatch or line style, never by hue alone),
-% lines >= 0.75 pt, margins trimmed to the drawing.
+% no titles (captions live in the LaTeX source), lines >= 0.75 pt, margins
+% trimmed to the drawing.
+%
+% COLOUR: the journal prints in black and white while the online edition is
+% in colour (manuscript-example-2022.tex, line 135), so colour is used only
+% as a REDUNDANT channel. Every distinction that carries information is also
+% encoded in lightness, hatch, marker or position. In particular no pair of
+% information-bearing fills is separated by hue alone -- a saturated red and
+% a saturated blue of equal lightness convert to the same grey.
 %
 % DATA: reuses examples/warren_xbrace_paper_results.mat if it exists (written
 % by example_warren_xbrace_paper.m). Otherwise it recomputes -- the headline
-% run plus the eight-point rho0 sweep, each under rng(42); nine
-% systemReliabilityFn calls, so roughly 1 to 5 minutes.
+% run plus the rho0 sweep, each under rng(42); roughly 1 to 5 minutes.
 %
 % See also: warrenXbraceModelFn, example_warren_xbrace_paper
 %
@@ -43,7 +63,7 @@ function make_paper_figures(outDir, whichFigs)
 if nargin < 1 || isempty(outDir)
     outDir = 'C:\GitHub\ctu-nnm-2026\figures';
 end
-if nargin < 2 || isempty(whichFigs), whichFigs = 1:7; end
+if nargin < 2, whichFigs = []; end
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 
 exDir = fileparts(mfilename('fullpath'));
@@ -52,19 +72,55 @@ addpath(fullfile(exDir, '..', 'src'));
 addpath(fullfile(exDir, '..', 'tests'));
 addpath(fullfile(exDir, '..', '..', 'fem-2d-truss-matlab', 'src'));
 
+% name, maker, in the published set
+CATALOGUE = { ...
+    'geometry',           @figGeometryFn,          true ; ...
+    'failure_paths',      @figFailurePathsFn,      true ; ...
+    'accumulation',       @figAccumulationFn,      true ; ...
+    'pnet_vs_mc',         @figPnetVsMcFn,          true ; ...
+    'cutset_correlation', @figCutsetCorrelationFn, true ; ...
+    'rho0_sensitivity',   @figRho0SensitivityFn,   true ; ...
+    'component_beta',     @figComponentBetaFn,     false};
+
+sel = selectFiguresFn(CATALOGUE, whichFigs);
+
 fprintf('=== make_paper_figures -> %s ===\n', outDir);
-fprintf('figures requested: %s\n', mat2str(whichFigs));
+fprintf('exporting: %s\n', strjoin(CATALOGUE(sel, 1)', ', '));
 S = loadOrComputeFn(exDir);
 
-makers = {@figGeometryFn, @figComponentBetaFn, @figAccumulationFn, ...
-          @figFailurePathsFn, @figCutsetCorrelationFn, @figRho0SensitivityFn, ...
-          @figPnetVsMcFn};
-for k = whichFigs(:)'
-    fprintf('-- figure %d\n', k);
-    makers{k}(S, outDir);
+for k = sel(:)'
+    fprintf('-- fig_%s\n', CATALOGUE{k, 1});
+    CATALOGUE{k, 2}(S, outDir);
 end
 fprintf('done.\n');
 
+end
+
+%--------------------------------------------------------------------------
+function sel = selectFiguresFn(catalogue, want)
+% Resolve the whichFigs argument to row indices into the catalogue. Accepts
+% [] (the published set), 'all', a single name, or a cellstr of names. A
+% leading 'fig_' is tolerated so the argument can be copied from a filename.
+names = catalogue(:, 1)';
+if isempty(want)
+    sel = find([catalogue{:, 3}]);
+    return;
+end
+if ischar(want) || isstring(want), want = cellstr(want); end
+if strcmpi(want{1}, 'all')
+    sel = 1:size(catalogue, 1);
+    return;
+end
+sel = zeros(1, numel(want));
+for k = 1:numel(want)
+    nm = regexprep(char(want{k}), '^fig_', '');
+    idx = find(strcmpi(names, nm), 1);
+    if isempty(idx)
+        error('make_paper_figures:unknownFigure', ...
+            'Unknown figure "%s". Known: %s', nm, strjoin(names, ', '));
+    end
+    sel(k) = idx;
+end
 end
 
 % =========================================================================
@@ -273,12 +329,17 @@ function hL = legendKeysFn(ax, greys, xAnchor)
 % but the legend: NaN vertices first, then a three-vertex patch whose x
 % coordinates were all identical (zero area, collinear). Give each key a
 % proper rectangle and park it below the y limits so it clips away.
-n  = numel(greys);
+hL = legendKeysColFn(ax, greys(:) * [1 1 1], xAnchor);
+end
+
+function hL = legendKeysColFn(ax, cols, xAnchor)
+% As legendKeysFn, but takes an n-by-3 RGB matrix instead of grey levels.
+n  = size(cols, 1);
 hL = gobjects(n, 1);
 for g = 1:n
     % multiplicative width so the same helper works on a log x axis too
     hL(g) = patch(ax, 'XData', xAnchor * [1 1.05 1.05 1], 'YData', [-9 -9 -8 -8], ...
-        'FaceColor', greys(g)*[1 1 1], 'EdgeColor', 'k', 'LineWidth', 0.6);
+        'FaceColor', cols(g, :), 'EdgeColor', 'k', 'LineWidth', 0.6);
 end
 end
 
@@ -295,13 +356,52 @@ end
 end
 
 function exportFn(f, outDir, name)
+% 'Padding','figure' exports the whole 8.4 cm canvas. Without it
+% exportgraphics crops to the ink bounding box, which lands somewhere
+% different in every figure -- measured across the set: 7.41 to 8.26 cm. Each
+% file then gets a different magnification from \includegraphics[width=
+% \linewidth], and the 8 pt type the whole style is built on arrives in the
+% typeset paper as anything from 8.1 to 9.1 pt. With the full canvas,
+% width=\linewidth is the no-op it was always assumed to be.
+%
+% This does NOT restore MATLAB's default margins: every layout in this file
+% sets its axes Position explicitly, so the canvas edge is already where the
+% drawing should stop.
 pdf = fullfile(outDir, [name '.pdf']);
 png = fullfile(outDir, [name '.png']);
-exportgraphics(f, pdf, 'ContentType', 'vector', 'BackgroundColor', 'white');
-exportgraphics(f, png, 'Resolution', 300, 'BackgroundColor', 'white');
+exportgraphics(f, pdf, 'ContentType', 'vector', 'BackgroundColor', 'white', ...
+    'Padding', 'figure');
+exportgraphics(f, png, 'Resolution', 300, 'BackgroundColor', 'white', ...
+    'Padding', 'figure');
+canvas = f.Position(3:4);
 close(f);
+
+% Verify the export really is the canvas. 'Padding','figure' still grows the
+% page if anything is drawn outside the figure -- text objects do not clip by
+% default -- and a figure that quietly comes out wider gets a different
+% magnification from \includegraphics[width=\linewidth] than its neighbours.
+% Cheaper to measure every time than to discover it in the typeset paper.
+[pw, ph] = pdfBoxFn(pdf);
 d = dir(pdf);
-fprintf('  %-28s %6.1f kB   +preview\n', [name '.pdf'], d.bytes/1024);
+flag = '';
+if abs(pw - canvas(1)) > 0.05 || abs(ph - canvas(2)) > 0.05
+    flag = sprintf('  <-- OVERFLOWS canvas %.2f x %.2f', canvas(1), canvas(2));
+end
+fprintf('  %-28s %6.1f kB  %5.2f x %5.2f cm%s\n', [name '.pdf'], d.bytes/1024, pw, ph, flag);
+end
+
+function [wcm, hcm] = pdfBoxFn(pdf)
+% Page size of a PDF, in cm, straight from its MediaBox.
+fid = fopen(pdf, 'r');
+raw = fread(fid, 4096, '*char')';
+fclose(fid);
+tok = regexp(raw, '/MediaBox\s*\[\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)', 'tokens', 'once');
+if isempty(tok)
+    wcm = NaN; hcm = NaN; return;
+end
+v = str2double(tok);
+wcm = (v(3) - v(1)) / 72 * 2.54;
+hcm = (v(4) - v(2)) / 72 * 2.54;
 end
 
 % =========================================================================
@@ -494,116 +594,94 @@ exportFn(f, outDir, 'fig_component_beta');
 end
 
 % =========================================================================
-%  SEGMENT FILLS shared by figures 3 and 7
-% =========================================================================
-function st = segStyleFn(label)
-% One (grey, hatch) pair per cut-set identity, used consistently wherever
-% that identity appears -- so {11,14} is recognisably the same block in the
-% analytical stack and in the simulated stack of figure 3, and the cut-sets
-% that appear in only one of them are visibly unique.
-%
-% Hatching is VERTICAL rather than diagonal on purpose: the bars are tall
-% and narrow, so a diagonal at a fixed data-space slope would look like a
-% different angle in every segment.
-tbl = { ...
-    '{11,14}',    0.32, true ; ...
-    '{1,2,8}',    0.55, false; ...
-    '{5,12}',     0.75, false; ...
-    '{4,8,9,16}', 0.92, false; ...
-    '{2,5}',      0.44, false; ...
-    '{13,16}',    0.66, true ; ...
-    '{7,11}',     0.84, true ; ...
-    '{10,16}',    0.97, true ; ...
-    'others',     1.00, false};
-idx = find(strcmp(tbl(:,1), label), 1);
-if isempty(idx), idx = size(tbl, 1); end
-st.grey  = tbl{idx, 2};
-st.hatch = tbl{idx, 3};
-end
-
-function hatchRectFn(ax, xc, bw, y0, y1, col)
-% Vertical hatch lines inside an axis-aligned rectangle.
-n = 5;
-xs = linspace(xc - bw/2, xc + bw/2, n + 2);
-for k = 2:n+1
-    plot(ax, [xs(k) xs(k)], [y0 y1], '-', 'Color', col, 'LineWidth', 0.4);
-end
-end
-
-function h = stackBarFn(ax, xc, bw, vals, labels)
-% Stacked bar at xc; returns one handle per segment (for the legend).
-h = gobjects(numel(vals), 1);
-cum = 0;
-for k = 1:numel(vals)
-    st = segStyleFn(labels{k});
-    h(k) = patch(ax, 'XData', xc + bw/2*[-1 1 1 -1], ...
-        'YData', [cum cum cum+vals(k) cum+vals(k)], ...
-        'FaceColor', st.grey*[1 1 1], 'EdgeColor', 'k', 'LineWidth', 0.7);
-    if st.hatch
-        hatchRectFn(ax, xc, bw, cum, cum+vals(k), [0.15 0.15 0.15]);
-    end
-    cum = cum + vals(k);
-end
-end
-
-% =========================================================================
-%  FIGURE 3 -- Pf_min vs PNET vs simulation, both stacked
+%  FIGURE fig_accumulation -- Pf_min vs PNET vs simulation
 % =========================================================================
 function figAccumulationFn(S, outDir)
+% Three totals, two of them decomposed, on one linear axis.
+%
+% REDRAW (round 3). The previous version stacked every PNET group and every
+% observed mechanism -- eight slices keyed to an eight-entry legend that ate
+% 40 % of the width. Matching swatch to slice was an assignment puzzle, and
+% the identities were never the point: they are in the paper's tables. The
+% point is that the slices are MANY and COMPARABLE. So: top three plus a
+% pooled remainder, and the labels sit on the segments instead of in a key.
+%
+% Labels go INSIDE the segment wherever it is tall enough, and only spill to
+% a leader line when it is not (which happens once, for the analytical bar's
+% 6 % remainder). The brief asked for leader lines throughout; in-segment
+% labels win the two-second test outright, because there is nothing to match
+% up -- and freeing the side margins is what let the bars grow wide enough to
+% hold a label in the first place.
+%
+% Colour is one hue per bar, four lightness steps within it, so the segment
+% count survives greyscale conversion. Hue never carries information on its
+% own here: the bars are told apart by position and tick label, the segments
+% within a bar by lightness and by their own printed labels.
+
 mc = S.mc;
 if ~mc.available, fprintf('  fig_accumulation SKIPPED (no MC data)\n'); return; end
 
-% --- analytical stack: the four groups that carry the total -----------
-aVals = S.gPf(1:4);
-aLbls = S.gLabel(1:4);
-aRest = sum(S.gPf(5:end));
-if aRest > 0.02*S.Pf_sys, aVals(end+1) = aRest; aLbls{end+1} = 'others'; end
+[aVals, aLbls] = topThreeFn(S.gPf,      S.gLabel,      S.Pf_sys);
+[mVals, mLbls] = topThreeFn(mc.mechPf,  mc.mechLabel,  mc.Pf);
 
-% --- simulated stack: mechanisms above 2 %, remainder pooled ----------
-keep  = mc.mechPf >= 0.02 * mc.Pf;
-mVals = mc.mechPf(keep);
-mLbls = mc.mechLabel(keep);
-mRest = sum(mc.mechPf(~keep));
-if mRest > 0, mVals(end+1) = mRest; mLbls{end+1} = 'others'; end
+BLUE   = [0.13 0.29 0.53; 0.29 0.47 0.71; 0.55 0.68 0.84; 0.80 0.87 0.94];
+ORANGE = [0.60 0.24 0.05; 0.85 0.44 0.13; 0.96 0.67 0.38; 0.99 0.86 0.72];
+GREY   = [0.38 0.38 0.38];
 
-f  = newFigFn(8.4, 6.6);
-ax = axes('Parent', f, 'Position', [0.155 0.235 0.475 0.715]); hold(ax, 'on');
+yMax = 2.1e-4;
+xs   = [1 2 3];
+bw   = 0.62;
+
+% Margins: the y exponent (x10^-4) needs ~0.4 cm above the axes and the
+% three-line tick labels ~1.7 cm below. Both were clipped at 6.8 cm tall
+% with a 0.795-high axes.
+f  = newFigFn(8.4, 7.4);
+ax = axes('Parent', f, 'Position', [0.155 0.235 0.815 0.705]); hold(ax, 'on');
 styleAxFn(ax);
 
-xs = [1 2 3]; bw = 0.5;
-yMax = 2.12e-4;
-
+% --- bar 1: the weakest member on its own, no decomposition ----------
 patch(ax, 'XData', xs(1) + bw/2*[-1 1 1 -1], 'YData', [0 0 S.Pf_min S.Pf_min], ...
-    'FaceColor', 0.32*[1 1 1], 'EdgeColor', 'k', 'LineWidth', 0.7);
-hA = stackBarFn(ax, xs(2), bw, aVals, aLbls);
-hM = stackBarFn(ax, xs(3), bw, mVals, mLbls);
+    'FaceColor', GREY, 'EdgeColor', 'k', 'LineWidth', 0.7);
 
-% 95 % CI on the simulated total
+% --- bars 2 and 3 ------------------------------------------------------
+stackedBarFn(ax, xs(2), bw, aVals, aLbls, BLUE,   S.Pf_sys, yMax, 'left');
+stackedBarFn(ax, xs(3), bw, mVals, mLbls, ORANGE, mc.Pf,    yMax, 'right');
+
+% --- 95 % CI on the simulated total ------------------------------------
+% At 10^8 samples the interval is +-1.4 % of Pf_MC, which on this axis is a
+% 1.3 mm gap between the caps -- shorter than the bar outline is thick. Left
+% unlabelled it does not read as an error bar at all (the author's reaction
+% to the first render was to ask what the symbol was), so it gets named. The
+% smallness is itself the point: the simulation is precise enough that its
+% uncertainty will not draw at this scale.
 plot(ax, xs(3)*[1 1], [mc.ciLo mc.ciHi], 'k-', 'LineWidth', 0.9);
-plot(ax, xs(3) + 0.11*[-1 1], mc.ciLo*[1 1], 'k-', 'LineWidth', 0.9);
-plot(ax, xs(3) + 0.11*[-1 1], mc.ciHi*[1 1], 'k-', 'LineWidth', 0.9);
+plot(ax, xs(3) + 0.10*[-1 1], mc.ciLo*[1 1], 'k-', 'LineWidth', 0.9);
+plot(ax, xs(3) + 0.10*[-1 1], mc.ciHi*[1 1], 'k-', 'LineWidth', 0.9);
+text(ax, xs(3), mc.ciHi + 0.035e-4, '95 % CI', 'FontName', 'Times New Roman', ...
+    'FontSize', 6.5, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
 
-% lower bound: the first analytical segment alone equals Pf_min
-plot(ax, [0.5 3.62], S.Pf_min*[1 1], 'k--', 'LineWidth', 0.8);
-text(ax, 0.58, S.Pf_min + 0.10e-4, sprintf('lower bound:\nP_{f,sys} \\geq P_{f,min}'), ...
+% --- the lower bound ---------------------------------------------------
+% Coincides exactly with the top of bar 2's first segment; that coincidence
+% IS the message, so the line is drawn across all three bars.
+plot(ax, [0.45 3.72], S.Pf_min*[1 1], 'k--', 'LineWidth', 0.8);
+text(ax, 0.50, S.Pf_min + 0.025e-4, {'lower bound:', 'P_{f,sys} \geq P_{f,min}'}, ...
     'FontName', 'Times New Roman', 'FontSize', 6.5, 'VerticalAlignment', 'bottom');
 
-% headline ratio, Pf_min -> Pf_MC
-xa = 3.50;
+% --- ratios ------------------------------------------------------------
+xa = 3.52;
 arrowPairFn(ax, xa, S.Pf_min, mc.Pf, 0.045, 0.05e-4, 'k');
-% Above the arrow, not beside it: beside it the label runs past the axes and
-% under the legend box, which silently ate the "x" of "4.07x".
-text(ax, xa, mc.Pf + 0.06e-4, sprintf('%.2f\\times', mc.Pf/S.Pf_min), ...
-    'FontName', 'Times New Roman', 'FontSize', 8.5, 'HorizontalAlignment', 'center', ...
+text(ax, xa, mc.Pf + 0.07e-4, sprintf('%.2f\\times', mc.Pf/S.Pf_min), ...
+    'FontName', 'Times New Roman', 'FontSize', 9, 'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'bottom');
-% and the discreet one, PNET -> simulation
-xb = 2.60;
-arrowPairFn(ax, xb, S.Pf_sys, mc.Pf, 0.035, 0.04e-4, [0.4 0.4 0.4]);
+
+xb = 2.56;
+arrowPairFn(ax, xb, S.Pf_sys, mc.Pf, 0.032, 0.04e-4, [0.4 0.4 0.4]);
 text(ax, xb - 0.05, (S.Pf_sys + mc.Pf)/2, sprintf('%.2f\\times', mc.Pf/S.Pf_sys), ...
     'FontName', 'Times New Roman', 'FontSize', 6.5, 'Color', [0.4 0.4 0.4], ...
     'HorizontalAlignment', 'right', 'VerticalAlignment', 'middle');
 
-xlim(ax, [0.5 3.75]); ylim(ax, [0 yMax]);
+% --- axes --------------------------------------------------------------
+xlim(ax, [0.45 3.85]); ylim(ax, [0 yMax]);
 set(ax, 'XTick', xs, 'XTickLabel', { ...
     'P_{f,min}\newline\fontsize{6.5}weakest\newlinemember', ...
     'P_{f,sys}\newline\fontsize{6.5}cut-set\newlineanalysis', ...
@@ -612,18 +690,74 @@ ax.XAxis.TickLabelInterpreter = 'tex';
 ylabel(ax, 'failure probability  [-]', 'FontName', 'Times New Roman', 'FontSize', 8);
 ax.YAxis.Exponent = -4;
 
-% one legend, keyed by cut-set identity across both stacks
-[uLbl, ia] = unique([aLbls, mLbls], 'stable');
-hAll = [hA(:); hM(:)];
-lg = legend(ax, hAll(ia), uLbl, 'Box', 'on');
-styleLegendFn(lg, 6.5);
-lg.Interpreter = 'none';        % keep the braces of {11,14}; tex eats them
-lg.Units = 'normalized';
-lg.Position = [0.675 0.30 0.30 0.60];
+fprintf('  [fig3] analytical: %s\n', segSummaryFn(aVals, aLbls, S.Pf_sys));
+fprintf('  [fig3] simulated : %s\n', segSummaryFn(mVals, mLbls, mc.Pf));
 
 exportFn(f, outDir, 'fig_accumulation');
 end
 
+%--------------------------------------------------------------------------
+function [v, l] = topThreeFn(vals, labels, total)
+% Three largest contributors plus everything else pooled. `vals` arrives
+% sorted descending in both callers (PNET groups by ascending beta, MC
+% mechanisms by descending count), so no re-sort is needed -- but the
+% remainder is taken against the true total rather than against sum(vals),
+% so the bar height stays exactly Pf_sys / Pf_MC.
+n = min(3, numel(vals));
+v = vals(1:n);
+l = labels(1:n);
+rest = total - sum(v);
+if rest > 0
+    v(end+1) = rest;
+    l{end+1} = 'others';
+end
+end
+
+%--------------------------------------------------------------------------
+function s = segSummaryFn(vals, lbls, total)
+parts = arrayfun(@(k) sprintf('%s %.0f%%', lbls{k}, 100*vals(k)/total), ...
+    1:numel(vals), 'UniformOutput', false);
+s = strjoin(parts, ' | ');
+end
+
+%--------------------------------------------------------------------------
+function stackedBarFn(ax, xc, bw, vals, lbls, cmap, total, yMax, side)
+% Stacked bar with the labels on the segments. Segments are separated by a
+% white rule so the count stays legible where two fills are close in tone.
+MIN_H = 0.085 * yMax;          % below this a label will not fit inside
+cum = 0;
+for k = 1:numel(vals)
+    col = cmap(min(k, size(cmap, 1)), :);
+    patch(ax, 'XData', xc + bw/2*[-1 1 1 -1], ...
+        'YData', [cum cum cum+vals(k) cum+vals(k)], ...
+        'FaceColor', col, 'EdgeColor', 'w', 'LineWidth', 1.0);
+    yMid = cum + vals(k)/2;
+    pct  = sprintf('%.0f%%', 100*vals(k)/total);
+    if vals(k) >= MIN_H
+        text(ax, xc, yMid, {lbls{k}, pct}, 'FontName', 'Times New Roman', ...
+            'FontSize', 6.5, 'Color', onFillFn(col), 'Interpreter', 'none', ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle');
+    else
+        if strcmp(side, 'left'), s = -1; ha = 'right'; else, s = 1; ha = 'left'; end
+        plot(ax, xc + s*[bw/2 bw/2+0.10], [yMid yMid], '-', ...
+            'Color', [0.45 0.45 0.45], 'LineWidth', 0.5);
+        text(ax, xc + s*(bw/2 + 0.14), yMid, sprintf('%s %s', lbls{k}, pct), ...
+            'FontName', 'Times New Roman', 'FontSize', 6.5, 'Interpreter', 'none', ...
+            'HorizontalAlignment', ha, 'VerticalAlignment', 'middle');
+    end
+    cum = cum + vals(k);
+end
+plot(ax, xc + bw/2*[-1 1 1 -1 -1], [0 0 total total 0], '-', ...
+    'Color', 'k', 'LineWidth', 0.7);
+end
+
+%--------------------------------------------------------------------------
+function c = onFillFn(rgb)
+% Readable ink for a label sitting on a filled patch.
+if (0.299*rgb(1) + 0.587*rgb(2) + 0.114*rgb(3)) < 0.5, c = 'w'; else, c = 'k'; end
+end
+
+%--------------------------------------------------------------------------
 function arrowPairFn(ax, x, y0, y1, halfW, headH, col)
 % Vertical double-headed arrow between y0 and y1 at abscissa x.
 plot(ax, [x x], [y0 y1], '-', 'Color', col, 'LineWidth', 0.7);
@@ -632,7 +766,6 @@ patch(ax, 'XData', x + halfW*[0 -1 1], 'YData', [y0, y0+headH, y0+headH], ...
 patch(ax, 'XData', x + halfW*[0 -1 1], 'YData', [y1, y1-headH, y1-headH], ...
     'FaceColor', col, 'EdgeColor', 'none');
 end
-
 % =========================================================================
 %  FIGURE 4 -- the five dominant SIMULATED failure mechanisms
 % =========================================================================
@@ -642,6 +775,13 @@ if ~mc.available, fprintf('  fig_failure_paths SKIPPED (no MC data)\n'); return;
 model = S.model;
 nP    = 5;
 tags  = {'a', 'b', 'c', 'd', 'e'};
+
+% The highlighted members ARE the content here, so this is where colour buys
+% the most. Deep red on light grey is a luminance gap of 0.29 against 0.72,
+% so it survives conversion to greyscale for print; the line-weight
+% difference (0.5 vs 2.1 pt) carries it a second time.
+FAILED = [0.72 0.11 0.11];
+INTACT = 0.72*[1 1 1];
 
 xlimits = [-0.95, 12.95];
 zlimits = [-0.95, 2.55];
@@ -660,9 +800,9 @@ for k = 1:nP
     r = ceil(k/2); c = 2 - mod(k, 2);
     ax = panelAxFn(f, w, h, colW, drawW, drawH, rowH, subH, r, c, xlimits, zlimits);
 
-    drawTrussFn(ax, model, mech, 0.5, 1.9, 0.72*[1 1 1], 'k');
-    drawSupportFn(ax, model.nodes.x(1), model.nodes.z(1), 'pin',    0.55, 0.72*[1 1 1]);
-    drawSupportFn(ax, model.nodes.x(4), model.nodes.z(4), 'roller', 0.55, 0.72*[1 1 1]);
+    drawTrussFn(ax, model, mech, 0.5, 2.1, INTACT, FAILED);
+    drawSupportFn(ax, model.nodes.x(1), model.nodes.z(1), 'pin',    0.55, INTACT);
+    drawSupportFn(ax, model.nodes.x(4), model.nodes.z(4), 'roller', 0.55, INTACT);
 
     text(ax, mean(xlimits), zlimits(1) - 0.09*diff(zlimits), ...
         sprintf('(%s) \\{%s\\},  %.1f %%', tags{k}, ...
@@ -675,10 +815,10 @@ end
 % sixth cell: key for the two line styles
 ax = panelAxFn(f, w, h, colW, drawW, drawH, rowH, subH, 3, 2, xlimits, zlimits);
 yk = [1.75 0.85];
-plot(ax, [1.2 4.6], yk(1)*[1 1], '-', 'Color', 'k', 'LineWidth', 1.9);
+plot(ax, [1.2 4.6], yk(1)*[1 1], '-', 'Color', FAILED, 'LineWidth', 2.1);
 text(ax, 5.4, yk(1), 'failed member', 'FontName', 'Times New Roman', 'FontSize', 7.5, ...
     'VerticalAlignment', 'middle');
-plot(ax, [1.2 4.6], yk(2)*[1 1], '-', 'Color', 0.72*[1 1 1], 'LineWidth', 0.5);
+plot(ax, [1.2 4.6], yk(2)*[1 1], '-', 'Color', INTACT, 'LineWidth', 0.5);
 text(ax, 5.4, yk(2), 'intact member', 'FontName', 'Times New Roman', 'FontSize', 7.5, ...
     'VerticalAlignment', 'middle');
 
@@ -695,79 +835,108 @@ xlim(ax, xlimits); ylim(ax, zlimits);
 end
 
 % =========================================================================
-%  FIGURE 5 -- correlation, cut-sets (a) vs PNET representatives (b)
+%  FIGURE fig_cutset_correlation -- PNET representatives
 % =========================================================================
 function figCutsetCorrelationFn(S, outDir)
-% Panel (a) is the diagnostic: the most critical CUT-SETS are all mutually
-% correlated at or above rho0, so PNET collapses them into a single group --
-% including four cut-sets the simulation shows to be genuinely distinct,
-% mutually exclusive mechanisms. Panel (b) is the complement: once grouped,
-% the surviving representatives really are near-independent. The defect is
-% in what gets absorbed, not in how the survivors are combined.
+% Correlation among the equivalent linear planes of the eight lowest-beta
+% PNET group REPRESENTATIVES. Once the grouping step has run, the survivors
+% are close to independent -- which is what Pf_sys = 1 - prod(1 - Pf_i)
+% assumes, so this is the panel that licenses the combination step.
 %
-% n = 8 rather than 10: two labelled 10x10 grids with in-cell numerals do
-% not fit a single 8.4 cm column without collisions, and the addendum
-% permits dropping to eight.
+% A second panel showing the same thing for the most critical CUT-SETS was
+% dropped in round 4. It held two distinct values, 0.894 and 1.000, so it was
+% a uniform dark block whose whole message was "all of these are above the
+% threshold" -- one clause of text, which the paper already carries. Side by
+% side the two also read as a before/after of the same objects, which they
+% are not: they are different sets, and the caption then had to concede that
+% the low values here are partly guaranteed by construction.
+%
+% The cut-set statistics are still COMPUTED and printed below, because the
+% paper quotes them (0.894 / 1.000, mean 0.941). Only the panel is gone.
+%
+% n = 8 rather than 10: keeps the numerals legible in a single column.
 rho0 = 0.7;
 n    = 8;
 
 [~, ordC] = sort(S.res.betaTilde, 'ascend');
 selC = ordC(1:n);
 RC   = symFn(S.res.alphaTilde(selC, :) * S.res.alphaTilde(selC, :)', n);
-lblC = cellfun(@(c) setLabelFn(c), S.res.cutSets(selC), 'UniformOutput', false);
 
 selG = S.gRepIdx(1:n);
 RG   = symFn(S.res.alphaTilde(selG, :) * S.res.alphaTilde(selG, :)', n);
 lblG = S.gLabel(1:n);
 
 msk = triu(true(n), 1);
-reportCorrFn('cut-sets',        RC, msk, rho0);
-reportCorrFn('representatives', RG, msk, rho0);
+reportCorrFn('cut-sets (not plotted)', RC, msk, rho0);
+reportCorrFn('representatives',        RG, msk, rho0);
 
-% Layout, top-down in cm: 0.70 margin+tag | 3.90 panel (a) | 0.85 gap+tag |
-% 3.90 panel (b) | 0.50 note | 0.05 margin. Square panels of 3.90 cm give
-% 0.4875 cm cells, which the 6 pt numerals clear.
+% Two exports, per the journal's note that the printed edition is black and
+% white. The diverging map is the honest choice for signed data on screen,
+% but a saturated red at +0.7 and a saturated blue at -0.7 convert to nearly
+% the same grey -- so the print variant ramps on |rho| instead and carries
+% the sign by hatching the negative cells.
+corrVariantFn(outDir, 'fig_cutset_correlation',    'colour', RG, lblG, rho0, msk);
+corrVariantFn(outDir, 'fig_cutset_correlation_bw', 'bw',     RG, lblG, rho0, msk);
+end
+
+%--------------------------------------------------------------------------
+function corrVariantFn(outDir, name, mode, R, lbl, rho0, msk)
+% Layout, top-down in cm: 0.15 margin | 5.00 panel | 0.70 note (two lines) |
+% 0.05 margin. The print variant carries one more line, so it gets 0.40 more.
 %
-% The tags need more clearance than looks necessary. heatPanelFn draws each
-% at y = -0.1 in data units, but the axis top is y = 0.5, not 0, so the
-% baseline sits 0.6 rows (~0.29 cm) above the panel and the glyphs rise
-% ~0.28 cm further. Two earlier attempts undershot: a 0.25 cm gap put panel
-% (b)'s tag inside panel (a), and a 0.45 cm top margin clipped panel (a)'s
-% tag off the top of the figure altogether.
-%
-% The result is a 9.9 cm tall figure, well over the 6.5 cm guidance -- but
-% two labelled 8x8 matrices with in-cell values cannot be had for less in a
-% single column.
-w = 8.4;  h = 9.90;
-pan = 3.90;  labW = 1.55;
+% Across the width: 1.55 row labels | 5.00 panel | 0.15 | 0.35 colourbar |
+% 1.35 colourbar labels. The panel is square, so its 8 cells are 0.625 cm --
+% roomier than the two-panel layout managed, which is the point of dropping
+% the second matrix.
+isBW = strcmp(mode, 'bw');
+w    = 8.4;
+pan  = 5.00;  labW = 1.55;
+noteCm = 0.70;
+h    = 0.15 + pan + noteCm + 0.05 + 0.40*isBW;
+
 f = newFigFn(w, h);
-gridW = pan / w;
-gridH = pan / h;
-x0    = labW / w;
-yA    = (h - 0.70 - pan) / h;
-yB    = (h - 0.70 - pan - 0.85 - pan) / h;
-axA = axes('Parent', f, 'Position', [x0 yA gridW gridH]);
-axB = axes('Parent', f, 'Position', [x0 yB gridW gridH]);
+ax = axes('Parent', f, 'Position', [labW/w, (h - 0.15 - pan)/h, pan/w, pan/h]);
+heatPanelFn(ax, R, lbl, rho0, '', [1 4], mode);
 
-heatPanelFn(axA, RC, lblC, rho0, '(a) most critical cut-sets', []);
-heatPanelFn(axB, RG, lblG, rho0, '(b) PNET group representatives', [1 4]);
-
-cb = colorbar(axB, 'eastoutside');
+cb = colorbar(ax, 'eastoutside');
 cb.Units = 'normalized';
-cb.Position = [(labW + pan + 0.15)/w, yB, 0.35/w, (yA + gridH) - yB];
-set(cb, 'FontName', 'Times New Roman', 'FontSize', 7, 'LineWidth', 0.5, ...
-    'Ticks', [-1 -0.5 0 0.5 0.7 1], 'TickLabels', {'-1', '-0.5', '0', '0.5', '\rho_0=0.7', '1'});
+cb.Position = [(labW + pan + 0.15)/w, (h - 0.15 - pan)/h, 0.35/w, pan/h];
+set(cb, 'FontName', 'Times New Roman', 'FontSize', 7, 'LineWidth', 0.5);
+if isBW
+    set(cb, 'Ticks', [0 0.5 0.7 1], 'TickLabels', {'0', '0.5', '\rho_0=0.7', '1'});
+    cb.Label.String = '|\rho|';
+    set(cb.Label, 'FontName', 'Times New Roman', 'FontSize', 7, 'Interpreter', 'tex');
+else
+    set(cb, 'Ticks', [-1 -0.5 0 0.5 0.7 1], ...
+        'TickLabels', {'-1', '-0.5', '0', '0.5', '\rho_0=0.7', '1'});
+end
 cb.TickLabelInterpreter = 'tex';
 
-annotation(f, 'textbox', [0.02 0.002 0.96 0.048], 'String', ...
-    sprintf(['(a) %d/%d pairs \\geq \\rho_0, mean %.2f    ' ...
-             '(b) %d/%d, mean %.2f;  boxed cell straddles \\rho_0'], ...
-    sum(RC(msk) >= rho0), sum(msk(:)), mean(RC(msk)), ...
-    sum(RG(msk) >= rho0), sum(msk(:)), mean(RG(msk))), ...
+% NEVER put a tex command through sprintf's format string: '\rho' contains
+% \r, which sprintf turns into a carriage return, so the label rendered as
+% "ho_0" and split across three overlapping lines. The tex bits go through
+% as %s arguments, where sprintf copies them verbatim.
+%
+% Two deliberate lines. One line of this at 6.5 pt measures about 9.7 cm and
+% would wrap on its own, somewhere sprintf does not get to choose.
+note = { ...
+    sprintf('%d of %d pairs reach %s = %.1f;  range [%.2f, %.2f], mean %.2f', ...
+        sum(R(msk) >= rho0), sum(msk(:)), '\rho_0', rho0, ...
+        min(R(msk)), max(R(msk)), mean(R(msk))), ...
+    sprintf('dotted cell: the pair that straddles %s across RNG branches', '\rho_0')};
+annotation(f, 'textbox', [0.02 0.010 0.96 (noteCm - 0.05)/h], 'String', note, ...
     'FontName', 'Times New Roman', 'FontSize', 6.5, 'EdgeColor', 'none', ...
     'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', 'Interpreter', 'tex');
+if isBW
+    annotation(f, 'textbox', [0.02 (noteCm + 0.02)/h 0.96 0.38/h], 'String', ...
+        'print variant: shade is |\rho|, hatched cells are negative', ...
+        'FontName', 'Times New Roman', 'FontSize', 6.5, 'Color', [0.35 0.35 0.35], ...
+        'EdgeColor', 'none', 'HorizontalAlignment', 'center', ...
+        'VerticalAlignment', 'middle', 'Interpreter', 'tex');
+end
 
-exportFn(f, outDir, 'fig_cutset_correlation');
+fprintf('  [%s] single panel, %.2f x %.2f cm\n', name, w, h);
+exportFn(f, outDir, name);
 end
 
 function R = symFn(R, n)
@@ -780,12 +949,21 @@ fprintf('  [fig5] %-16s %d/%d off-diagonal pairs >= %.2f  (min %.3f, max %.3f, m
     name, sum(R(msk) >= rho0), sum(msk(:)), rho0, min(R(msk)), max(R(msk)), mean(R(msk)));
 end
 
-function heatPanelFn(ax, R, lbl, rho0, tag, flagCell)
+function heatPanelFn(ax, R, lbl, rho0, tag, flagCell, mode)
 % One correlation panel. Row and column order are identical, so only the row
 % labels are drawn -- two sets of rotated column labels would not fit.
+%
+%   mode 'colour' : diverging map on rho, clim [-1 1]
+%   mode 'bw'     : sequential ramp on |rho|, clim [0 1], negative cells
+%                   hatched. The numerals keep their sign in both.
 n = size(R, 1);
+isBW = strcmp(mode, 'bw');
 hold(ax, 'on');
-imagesc(ax, R); colormap(ax, divergingMapFn(255)); clim(ax, [-1 1]);
+if isBW
+    imagesc(ax, abs(R)); colormap(ax, sequentialMapFn(255)); clim(ax, [0 1]);
+else
+    imagesc(ax, R); colormap(ax, divergingMapFn(255)); clim(ax, [-1 1]);
+end
 axis(ax, 'ij'); axis(ax, 'tight');
 styleAxFn(ax);
 set(ax, 'XTick', [], 'YTick', 1:n, 'YTickLabel', lbl, 'TickLength', [0 0], ...
@@ -796,6 +974,9 @@ for i = 1:n
     for j = 1:n
         v = R(i, j);
         if abs(v) > 0.55, tc = 'w'; else, tc = 'k'; end
+        if isBW && v < 0
+            hatchCellFn(ax, i, j, tc);
+        end
         text(ax, j, i, sprintf('%.2f', v), 'FontName', 'Times New Roman', ...
             'FontSize', 6, 'Color', tc, 'HorizontalAlignment', 'center', ...
             'VerticalAlignment', 'middle');
@@ -815,8 +996,34 @@ for k = 0.5:1:(n+0.5)
     plot(ax, [0.5 n+0.5], [k k], '-', 'Color', 'w', 'LineWidth', 0.4);
     plot(ax, [k k], [0.5 n+0.5], '-', 'Color', 'w', 'LineWidth', 0.4);
 end
-text(ax, 0.5, -0.1, tag, 'FontName', 'Times New Roman', 'FontSize', 7.5, ...
-    'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', 'Clipping', 'off');
+if ~isempty(tag)
+    text(ax, 0.5, -0.1, tag, 'FontName', 'Times New Roman', 'FontSize', 7.5, ...
+        'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', 'Clipping', 'off');
+end
+end
+
+function hatchCellFn(ax, i, j, col)
+% Diagonal hatch marking a negative correlation in the print variant.
+%
+% Confined to the cell's bottom-left corner rather than run across the whole
+% cell: full-width strokes cut straight through the numeral and made "-0.07"
+% and "-0.54" hard to read, which defeats the point, since the numeral is
+% the primary carrier of the sign and the hatch is only the redundant cue.
+% The furthest stroke still clears the text box (it lies on v-u = 0.58 in
+% cell-relative coordinates; the nearest corner of a 6 pt numeral is at
+% v-u = 0.47). The panel axes are square with unit cells, so these render at
+% a true 45 degrees on the page.
+for d = [0.20 0.31 0.42]
+    plot(ax, [j-0.5+d, j-0.5], [i+0.5, i+0.5-d], '-', ...
+        'Color', col, 'LineWidth', 0.45);
+end
+end
+
+function cm = sequentialMapFn(n)
+% White -> near-black ramp for |rho|. Monotone in luminance by construction,
+% so it already IS its own greyscale.
+t  = linspace(0, 1, n)';
+cm = (1 - t) * [1 1 1] + t * [0.12 0.14 0.20];
 end
 
 function cm = divergingMapFn(n)
@@ -919,6 +1126,15 @@ aPf  = S.gPf(1:nR);
 mPf  = mc.groupPf(1:nR);
 lbl  = S.gLabel(1:nR);
 
+% Hue and lightness. Two cues, not three: the hatch that used to sit on the
+% simulation series was a leftover from the greyscale-only design and came
+% off in round 4. At luminance 0.33 against 0.77 the pair already separates
+% by more than a factor of two in print, and the vertical hatch rules read
+% too much like the segment boundaries in fig_accumulation -- where they do
+% divide meaningful pieces, which here they would not.
+C_PNET = [0.20 0.36 0.60];
+C_MC   = [0.98 0.78 0.50];
+
 % Group 3's MC probability is 7.5e-07, so the axis must start well below
 % 1e-06 or its bar would be drawn backwards off the left edge.
 xLo = 2.5e-7; xHi = 2.6e-4;
@@ -931,11 +1147,10 @@ bh = 0.30;
 for k = 1:nR
     yA = k - 0.17; yM = k + 0.17;
     patch(ax, 'XData', [xLo aPf(k) aPf(k) xLo], 'YData', yA + bh/2*[-1 -1 1 1], ...
-        'FaceColor', 0.45*[1 1 1], 'EdgeColor', 'k', 'LineWidth', 0.6);
+        'FaceColor', C_PNET, 'EdgeColor', 'k', 'LineWidth', 0.6);
     if mPf(k) > 0
         patch(ax, 'XData', [xLo mPf(k) mPf(k) xLo], 'YData', yM + bh/2*[-1 -1 1 1], ...
-            'FaceColor', 0.92*[1 1 1], 'EdgeColor', 'k', 'LineWidth', 0.6);
-        hatchRectHFn(ax, xLo, mPf(k), yM, bh, [0.2 0.2 0.2]);
+            'FaceColor', C_MC, 'EdgeColor', 'k', 'LineWidth', 0.6);
     else
         % exactly zero -- an explicit marker at the axis edge, never a fake
         % epsilon bar that the reader would mistake for a measurement
@@ -963,7 +1178,7 @@ set(ax, 'XTick', [1e-6 1e-5 1e-4], 'XMinorTick', 'on');
 xlabel(ax, 'failure probability of the group  [-]', 'FontName', 'Times New Roman', 'FontSize', 8);
 ylabel(ax, 'PNET group', 'FontName', 'Times New Roman', 'FontSize', 8);
 
-hKey = legendKeysFn(ax, [0.45 0.92], xLo);
+hKey = legendKeysColFn(ax, [C_PNET; C_MC], xLo);
 lg = legend(ax, hKey, {'cut-set analysis', 'simulation'}, 'Box', 'on', 'Location', 'southeast');
 styleLegendFn(lg, 6.5);
 
@@ -974,10 +1189,3 @@ end
 exportFn(f, outDir, 'fig_pnet_vs_mc');
 end
 
-function hatchRectHFn(ax, x0, x1, yc, bh, col)
-% Horizontal hatch inside a log-x bar: lines evenly spaced in log space.
-xs = logspace(log10(x0), log10(x1), 9);
-for k = 2:numel(xs)-1
-    plot(ax, [xs(k) xs(k)], yc + bh/2*[-1 1], '-', 'Color', col, 'LineWidth', 0.35);
-end
-end

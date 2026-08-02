@@ -11,6 +11,182 @@ Acta Polytechnica paper, the corresponding brief and report live in
 
 ---
 
+## 2026-08-02 — per-member resistances strengthen the effect, and relocate the bound
+
+**Driver:** `RESISTANCE_MODEL_BRIEF.md`. Report:
+`ctu-nnm-2026/RESISTANCE_MODEL_REPORT.md`. New scripts:
+`tests/mc_neptun/diagnostics/resistance_model_{compare,mc,detail}.m`.
+
+Robustness check ahead of review: the paper gives 16 members only 4 resistance
+variables, and three of its claims lean on that. Changing **only**
+`rvSpec.resGroup/resMean/resStd` to one variable per member — areas and
+`members.sections` untouched, so the structure is physically identical — gives
+`beta_sys` 3.690481 → **3.613315** against an unchanged `beta_min = 3.909383`.
+The effect does not merely survive, it grows: `Pf_sys/Pf_min` 2.4189 → 3.2670,
+and the simulation moves the same way, `Pf_MC` 1.882e-04 → 2.290e-04
+(10⁶ samples, 229 events; `1.22x`, CI [1.07, 1.39] against the 10⁸ run of
+record).
+
+### The Limitations hedge was wrong, and in the safe direction
+
+`paper.tex` currently says per-member scatter "would weaken the bound to a
+numerical statement rather than an identity". `beta_p({11,14})` does move off
+`beta_min` (+1.070e-03) — but `{7,11}` and `{10,16}` **inherit** the bound at
+`min_p beta_p - beta_min = +9.021e-10`. The reason is physical, not
+probabilistic: losing end-panel diagonal 11 puts the support vertical 7 at
+utilisation **1.427** (75.0 kN demand against 52.6 kN mean resistance, 5.3σ),
+so it fails with conditional probability `1 - 3.7e-09` under any resistance
+model. The bound is a property of the *set* of cut-sets; reasoning about one
+member of it is what produced the wrong hedge.
+
+### Why the union beats the intersection
+
+Both effects were measured rather than argued. The intersection effect is
+**nil**: `Pf({11,14})` falls by 0.4 %, and the `beta_p` distribution over all 91
+cut-sets barely moves (median 7.0833 and max 16.1378 identical). Cut-set
+probabilities here are load-driven — conditioning on member 11 failing
+conditions on a high load, which drags member 14's demand up with it, so
+de-correlating resistances cannot break a dependence running through the loads.
+At `COV(P)=0.15` vs `COV(R)=0.08` that is the expected regime.
+
+The union effect is large and localised: the grouped model's leading group
+absorbs 26 cut-sets and counts `Pf = 4.6266e-05` **once**; per-member it splits
+into `{7,11}` and `{10,16}`, each carrying the same probability, so the
+dominant term is counted **twice**. That one regrouping is ~85 % of the total
+`Pf_sys` increase. Consistent with the `PREEMPTION_CHECK` entry below, which
+finds all of the shortfall in that same group.
+
+### The correlation collapse is real but does not close the gap
+
+Among the 8 leading cut-sets, pairs above `rho0` fall 28/28 → 12/28
+(mean 0.939 → 0.605) and PNET groups go 18 → 36. Yet the shortfall only shrinks
+68 % → 51 %, and the six pairwise correlations among the four leading simulated
+mechanisms show exactly why:
+
+| pair | grouped | per-member |
+|---|---|---|
+| `{11,14}`–`{7,11}` (sequences `[11 14]`, `[11 7]`) | 1.0000 | **1.0000** |
+| `{13,16}`–`{10,16}` (sequences `[16 13]`, `[16 10]`) | 1.0000 | **1.0000** |
+| the four cross-panel pairs | 0.8940 | 0.3077–0.3095 |
+
+Two sequences that **open on the same member** have identical equivalent planes
+whatever the resistance model, because `equivalentPlaneFn` reduces a sequence to
+one plane dominated by its first limit state. Shared resistance explains the
+four pairs that collapse; the one-plane-per-cut-set reduction explains the two
+that do not. The paper attributes all of it to the shared resistance.
+
+### Three brief predictions that did not hold
+
+- The 68 % shortfall would "shrink or disappear" — it shrank to 51 % and
+  structurally cannot close (above).
+- The bound "stops being an identity" — only for `{11,14}`; the bound itself
+  holds to 9e-10.
+- The seed scatter "may well come out deterministic" once the shared-`R_4` tie
+  is gone — it does not. **18 distinct `beta_sys` values in 20 seeds** against
+  the grouped model's 13, group count 37–42 against 13–20. The std is smaller
+  (0.006955 vs 0.008306) only because the range is narrower. The paper's
+  "not diffuse but a single grouping decision flipping" is a grouped-model
+  statement and must not be generalised.
+
+### Two errors found in `paper.tex` in passing
+
+- Line 667 calls `{11,14}` "the two diagonals of the **central** panel". Member
+  11 is node 1 `(0,0)`→node 6 `(4,2)` and member 14 is node 2 `(4,0)`→node 5
+  `(0,2)`: they cross in `x ∈ [0,4]`, the **end** panel at the pinned support.
+  The central panel's X is `{12,15}`, the two *least* critical members
+  (`beta = 10.2966`). The sentence sits inside the bound argument, where the
+  end-panel location is exactly the point.
+- Lines 721–724 quote the representative correlations as "mean of 0.020" while
+  citing the 8-representative figure. `0.020` is the mean over **ten** (45
+  pairs); over the eight plotted (28 pairs) it is `0.057`. Min and max coincide
+  at both `n`, so only the mean is affected.
+
+### Notes for anyone repeating this
+
+`equivalentPlaneFn` costs `2n` `cornellIndexFn` calls per cut-set, so tripling
+`nU` from 6 to 18 looked like it would triple runtime. It did not — measured
+slowdown **1.10x**, because the FEM solves in `mostProbableSequenceFn` dominate.
+52 pipeline runs took 12.7 min.
+
+The two MC variants share chunk seeds but are **not** paired and the grouped
+10⁶ run is **not** a subset of the published 10⁸: `progressiveCollapseMCFn`
+allocates `randn(nSamples, nGroups)` column-major, so both a different
+`nGroups` (4 vs 16) and a different `nSamples` per chunk (62 500 vs 3 571 429)
+reshuffle the stream entirely. Agreement with the published number is a wiring
+check, not a second estimate.
+
+Nothing committed, no figure regenerated, `paper.tex` untouched. The concurrent
+`preemption_check.m` job and the modified `make_paper_figures.m` were left
+alone.
+
+---
+
+## 2026-08-02 — the per-group "overcount" was never an overcount
+
+**Driver:** `PREEMPTION_CHECK_BRIEF.md`. Report:
+`ctu-nnm-2026/PREEMPTION_CHECK_REPORT.md`. New script:
+`tests/mc_neptun/diagnostics/preemption_check.m`.
+
+The entry above attributes the whole PNET discrepancy to the grouping step and
+reads figure `fig_pnet_vs_mc` row by row: two groups undercounted, two
+overcounted, errors nearly cancelling. **The two "overcounted" rows were being
+read wrong**, and the reason is that the figure puts two different quantities
+side by side — an analytical probability of an event that *overlaps* its
+neighbours, against a simulated count that is a *disjoint partition* of
+observed collapses.
+
+Measured over all 10⁸ samples, every analytical cut-set probability is right:
+
+| representative | predicted | observed | z |
+|---|---|---|---|
+| `{11,14}` | 4626.6 | 4609 | −0.26 |
+| `{1,2,8}` | 2943.2 | 2861 | −1.52 |
+| `{5,12}` | 2914.7 | 2930 | +0.28 |
+| `{4,8,9,16}` | 707.4 | 702 | −0.20 |
+
+`{5,12}` is violated 2 930 times and completes the collapse 31 times, because
+in 97 % of those samples the structure has already failed as `{2,5}`.
+`{4,8,9,16}` is violated 754 times and completes 0 times — `{13,16}` gets there
+first in 91 %. Pre-emption, not overestimation.
+
+**The sharp version.** 2 929 of `{5,12}`'s 2 930 samples are *the same samples*
+the simulation books as `{2,5}`. The two cut-sets are one event reached in
+opposite orders: `mostProbableSequenceFn` prices only the single most probable
+ordering of each cut-set (`min beta_p` over `perms`), so the member-2-first
+order is filed under `{2,5}` in group 2 and the member-5-first order under
+`{5,12}`/`{5,15}` in group 3. Re-pair the groups and the discrepancy vanishes:
+groups 2+3 give `5.8579e-05` against a simulated `5.7720e-05` (0.99), while
+groups 1+4 stay 2.45× short. **All of the 7.63e-05 system shortfall is in the
+`{11,14}` group** — so "concentrated in the grouping step" is now literally
+true, rather than four errors that happen to sum correctly.
+
+### Two traps worth not stepping in twice
+
+**The stored `.mat` cannot answer this question.** `failSequences` holds only
+*failed* samples and each sequence stops at the first mechanism, so "all members
+of the cut-set failed" collapses into "the cut-set *was* the mechanism". The way
+round it, without a second 2 h run: **deterministic replay**. For a fixed set of
+surviving members the axial forces are linear in the two load multipliers, so
+one pair of unit-load FEM solves per structural state (18 states, memoised)
+reproduces every sample's outcome exactly — 10⁸ samples in 91 s instead of 2 h,
+gated on reproducing all 28 per-chunk failure counts and all 12 mechanism counts
+bit-for-bit.
+
+**`rng(seed)` does not set the generator, only the seed.** The run of record is
+reproducible only under **Threefry**, because a parpool worker's default
+generator is Threefry while the client's is Mersenne Twister. `runMcChunk.m`
+(the no-PCT fallback) is seeded identically and will *not* reproduce the numbers
+of record. Under `'twister'` the same seeds give `nFail = 18 799` instead of
+`18 820`. Documented in `tests/mc_neptun/README.md`.
+
+Also found: `MC_NEPTUN_FINDINGS.md` §2 states group 3 is "33× over". The ratio
+is `2.9147e-05 / 7.500e-07 = 38.9`; the paper's 39 is the correct one.
+
+Nothing was committed, no figure regenerated and `paper.tex` untouched — the
+report proposes the wording changes for §3.3 and leaves the decision open.
+
+---
+
 ## 2026-08-02 — Monte Carlo cross-check lands, and it overturns the headline
 
 **Driver:** `FIGURES_ADDENDUM_MC.md`. The 10⁸-sample progressive-collapse run

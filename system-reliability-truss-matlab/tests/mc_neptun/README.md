@@ -136,10 +136,34 @@ them directly; they resolve their own paths.
 | `seq_diff.m` | `repSequence` stability across RNG seeds |
 | `final_cause.m` | §4 — the `{4,8,9,16}` correlation flip that causes the bimodality |
 | `pnetTieBreakFn.m` | deterministic-tie-break variant of `pnetSystemReliabilityFn` |
+| `preemption_check.m` | `ctu-nnm-2026/PREEMPTION_CHECK_REPORT.md` — deterministic replay of the whole run; how often each PNET representative's cut-set is *satisfied* versus how often it is the mechanism that *completes* |
 
-`group_membership.m` and `mode_stats.m` read `mc_neptun_result.mat`, so they
-need a completed run present; the others recompute the analytical side only
-and work from a clean checkout.
+`group_membership.m`, `mode_stats.m` and `preemption_check.m` read
+`mc_neptun_result.mat`, so they need a completed run present; the others
+recompute the analytical side only and work from a clean checkout.
+
+`preemption_check.m` replays all 10⁸ samples in ~100 s without a single
+per-sample FEM solve: for a fixed set of surviving members the axial forces are
+linear in the two load multipliers, so one pair of unit-load solves per
+structural state (18 of them) reproduces every sample's outcome exactly. It
+asserts that all 28 per-chunk failure counts and all 12 mechanism counts match
+the stored run before deriving anything.
+
+## Reproducibility trap: the generator, not just the seed
+
+The run of record is reproducible **only under the Threefry generator**.
+`mcRunChunk` seeds each chunk with `rng(1000+w)`, which sets the seed but
+**keeps the current generator type** — and a parpool worker's default generator
+is Threefry, whereas the MATLAB client's is Mersenne Twister. Anything that
+re-runs `mcRunChunk` outside a `parfor` (including `runMcChunk.m`, the no-PCT
+fallback) therefore draws a *different* stream and will not reproduce the
+numbers of record, even though it is seeded identically.
+
+Replaying the 28 chunks under `'twister'` gives per-chunk counts off by up to
+80 and `nFail = 18 799` instead of `18 820` — a statistically consistent but
+different run (`Pf = 1.8799e-04` against `1.8820e-04`, so it doubles as a free
+independent confirmation of the estimate). Add `rng(seed, 'threefry')` if bit
+reproducibility outside a pool is ever needed.
 
 ## Design notes
 
