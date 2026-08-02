@@ -343,6 +343,21 @@ implementaci bere ze \textbf{středního} (očekávaného) kombinovaného zatí�
 konstrukci (\code{sequenceLimitStateFn.m:112-116}) -- jednoznačná volba, když působí víc nezávislých
 zatížení současně.
 
+\begin{remark}[Modelovací rozhodnutí: $\eta=0$ jako standardní volba projektu]
+\label{rem:eta-zero}
+Celý projekt fixuje $\eta_l=0$ pro všechny pruty a příklady (\code{opts.eta} default v
+\code{systemReliabilityFn}) -- selhaný prut nepřenáší žádnou zbytkovou sílu, druhý člen v (C.1)
+identicky mizí. Důvody: (1) oba zdrojové papery svá vlastní ověřovací čísla počítají výhradně s
+$\eta=0$, je to tedy jediná cesta krytá referenčními hodnotami; (2) větev $\eta>0$ je v kódu
+implementovaná (\S\ref{sec:faze-b}, \code{residualMemberList}), ale numericky neověřená proti žádnému
+referenčnímu příkladu; (3) $\eta=0$ je konzervativní dolní mez skutečné únosnosti. Klíčový důsledek
+pro implementaci: s $\eta=0$ závisí $g_i$ na pozici $\mathrm{pos}$ pouze na \textbf{množině} už
+odstraněných prutů $\{\mathrm{sequence}(1{:}\mathrm{pos}{-}1)\}$, nikoli na jejich pořadí -- což
+umožňuje memoizaci $b_{ij}$ napříč permutacemi v \code{mostProbableSequenceFn} (viz metodika.md,
+sekce "Modelovací rozhodnutí: $\eta=0$"). Detail viz \code{sequenceLimitStateFn.m:102-105}: pro
+$\eta=0$ se \code{residualList} vůbec nepočítá.
+\end{remark}
+
 \paragraph{Standardizace na sdílený gaussovský vektor $U$.} Aby $g_i$ vyšlo \textbf{přesně lineární}
 v nezávislých standardizovaných normálních veličinách (nutná podmínka pro Cornellův index níže),
 modelujeme kapacitu i zatížení přímo jako gaussovské náhodné veličiny:
@@ -527,6 +542,28 @@ což je přesně krok 8 (Wei \& Deng rov. 48) a \code{pnetSystemReliabilityFn.m:
 \textbf{přesné} pro skutečně nezávislé jevy a \textbf{aproximace} v tom rozsahu, v jakém
 skupiny nejsou zcela nezávislé (řízeno prahem $\rho_0$ -- kompromis mezi přesností a výpočetní
 náročností plného $q$-rozměrného integrálu).
+
+\begin{remark}[Modelovací rozhodnutí: $\rho_0=0{,}7$ přebráno od Wei \& Deng, neladíme]
+\label{rem:rho0}
+$\rho_0$ je čistě heuristický práh -- ani Wei \& Deng, ani 2024-paper pro něj nemají uzavřený
+vzorec, jen empiricky doladěnou hodnotu $0{,}7$--$0{,}85$ ověřenou proti MCS. Tento projekt fixuje
+$\rho_0=0{,}7$ (Wei\&Deng's own hodnota) jako standardní volbu pro všechny příklady a neladí ji na
+jednotlivé konstrukce. Citlivost: $\rho_0\to1$ (těžší seskupit) $\Rightarrow$ víc reprezentativních
+skupin $\Rightarrow$ $P_{f,\mathrm{sys}}$ roste (příliš mnoho korelovaných členů bráno jako
+kvazi-nezávislé) $\Rightarrow$ $\beta_{\mathrm{sys}}$ klesá $\Rightarrow$ nekonzervativně vysoký
+odhad rizika. $\rho_0\to0$ (snáz seskupit) $\Rightarrow$ v limitě jedna skupina $\Rightarrow$
+$P_{f,\mathrm{sys}}\to$ pravděpodobnost jediného nejhoršího cut-setu $\Rightarrow$
+$\beta_{\mathrm{sys}}$ se vrátí k naivnímu komponentnímu odhadu $\beta_{\min}$ $\Rightarrow$
+podceňuje riziko (ignoruje ostatní, ne-úplně-korelované selhávací cesty). Empiricky pozorováno na
+\code{example\_warren\_xbrace.m} (FSD-navržené průřezy, 91 cut-setů): $\rho_0=0{,}7$ seskupí do 17
+reprezentativních skupin, $P_{f,\mathrm{sys}}$ vyjde $\approx\!2{,}3\times$ vyšší než $P_f$
+samotného nejkritičtějšího prutu ($\beta_{\mathrm{sys}}=3{,}7071$ vs.
+$\beta_{\min}=3{,}9094$ z \code{componentReliabilityFn}) -- citlivě mezi oběma limitami výše.
+Protože $\rho_0$ nemá nezávislé zdůvodnění mimo autorovu vlastní kalibraci, jakékoli tvrzení o
+přesné hodnotě $\beta_{\mathrm{sys}}$ je podmíněné touto volbou; pro publikaci je proto důležité
+vždy uvést $\rho_0=0{,}7$ jako převzatý (ne odvozený) parametr. Detail viz metodika.md, sekce
+"Modelovací rozhodnutí: $\rho_0=0{,}7$".
+\end{remark}
 
 \subsection{Orchestrace celého pipeline (\code{systemReliabilityFn.m})}
 

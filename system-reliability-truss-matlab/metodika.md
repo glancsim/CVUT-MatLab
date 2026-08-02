@@ -195,6 +195,37 @@ konstrukce (tj. pro sekvenci délky `m` je potřeba `m` FEM řešení) — ale t
 dělá JEN JEDNOU na reprezentativní pořadí každého cut-setu, ne pro každý MC
 vzorek. To je hlavní výpočetní úspora oproti brute-force progressive-collapse MC.
 
+### Modelovací rozhodnutí: `η = 0` (křehký model) jako standardní volba projektu
+
+Celý projekt (všechny příklady, `systemReliabilityFn`'s default `opts.eta = 0`)
+používá **výhradně `η=0`** — selhaný prut nepřenáší žádnou zbytkovou sílu, síla
+v něm padne okamžitě na nulu a redistribuce se děje čistě přes změnu tuhosti
+(statická neurčitost), ne přes reziduální zatížení sousedů.
+
+**Proč:** (1) Oba zdrojové papery (Wei & Deng 2022, Rodrigues da Silva et al.
+2024) ve svých vlastních ověřovacích příkladech `η>0` nikde nepoužívají — je to
+tedy jediná cesta krytá referenčními čísly, na která se dá odvolat. (2) `η>0`
+větev je v kódu implementovaná (`sequenceLimitStateFn`, `reducedStructureInfluenceFn`'s
+`residualMemberList`), ale **nikde numericky neověřená** proti žádnému
+referenčnímu příkladu ani nezávislému MC — pouze `progressiveCollapseMCFn` ji
+teoreticky podporuje (η jako frakce zbytkové uzlové zátěže), ale srovnání
+analytická-vs-MC pro `η>0` nikdy neproběhlo. (3) `η=0` je konzervativní (dolní
+mez skutečné únosnosti) — bezpečnější výchozí předpoklad pro nástroj posuzující
+spolehlivost.
+
+**Důsledek:** protože `η=0` znamená, že `a_il`/`η_l` člen v `g_i` (rov. výše)
+identicky mizí, `g_i` na pozici `pos` závisí **jen na MNOŽINĚ** už odstraněných
+prutů `{sequence(1..pos-1)}`, ne na jejich POŘADÍ (viz `sequenceLimitStateFn.m:102-105`,
+kde se `residualList` počítá jen když `η≠0`). To je klíčový poznatek pro
+optimalizaci `mostProbableSequenceFn` (brute-force přes `k!` permutací) —
+memoizace `reducedStructureInfluenceFn` podle (seřazené) množiny `removedSoFar`
+sníží počet unikátních FEM-těžkých volání z `k!·k` na `2^k−1`, viz komentář
+u `mostProbableSequenceFn.m` a plánovaná optimalizace (TODO níže).
+
+Chce-li budoucí uživatel `η>0`, musí si napřed sám vybudovat nezávislé ověření
+(např. `progressiveCollapseMCFn` s `mcOpts.eta` na jednoduché 2-3 prutové
+konstrukci) — v aktuálním stavu to NENÍ doporučeno pro produkční posudek.
+
 ### Modelovací rozhodnutí: `R_i = S_i·A_i` jako přímá Gaussovská RV
 
 Cornell index + PNET (níže) vyžadují **lineární** `g` v Gaussovských RV. Proto
@@ -237,6 +268,37 @@ Pro `q` minimálních cut-setů (= `q` ekvivalentních `β̃_k`, seřazeno vzest
 3. Opakovat pro zbylé (dokud nejsou všechny seskupeny) → `w` reprezentativních
    skupin
 4. `Pf_sys = 1 - Π_{i=1}^{w} (1 - Pf_i)` (rov. 48), `β_sys = -Φ^{-1}(Pf_sys)` (rov. 49)
+
+### Modelovací rozhodnutí: `ρ_0 = 0.7` přebráno od Wei & Deng, neladíme
+
+`ρ_0` je čistě heuristický práh — ani Wei & Deng, ani 2024-paper pro něj nemají
+uzavřený vzorec, jen empiricky doladěnou hodnotu `0.7–0.85` ověřenou proti MCS.
+Tento projekt **fixuje `ρ_0=0.7`** (Wei&Deng's own hodnota) jako standardní
+volbu pro všechny příklady a NEladí ji na jednotlivé konstrukce.
+
+**Proč na tom záleží (citlivost):**
+- **`ρ_0 → 1`** (těžší seskupit) → víc reprezentativních skupin přežije →
+  `Pf_sys` roste (moc členů se bere jako kvazi-nezávislé, i když reálně
+  sdílejí pruty/zatížení a jsou korelované) → `β_sys` klesá →
+  **nekonzervativně vysoký odhad rizika**.
+- **`ρ_0 → 0`** (snáz seskupit) → v limitě jedna skupina → `Pf_sys →`
+  pravděpodobnost jediného nejhoršího cut-setu → `β_sys` se vrátí zpátky
+  k naivnímu komponentnímu odhadu (`β_min`) → **podceňuje riziko**, protože
+  ignoruje ostatní, ne-úplně-korelované selhávací cesty.
+
+Empiricky pozorováno na `example_warren_xbrace.m` (FSD-navržené průřezy,
+91 cut-setů): `ρ_0=0.7` seskupí 91 cut-setů do 17 reprezentativních skupin,
+`Pf_sys` vyjde ~2.3× vyšší než `Pf` samotného nejkritičtějšího prutu
+(`β_sys=3.7071` vs. `β_min=3.9094` z `componentReliabilityFn`) — tedy
+citlivě mezi oběma limitami výše, ne v žádném extrému.
+
+**Důsledek:** protože `ρ_0` nemá nezávislé zdůvodnění mimo autorovu vlastní
+kalibraci, jakékoli tvrzení o přesné hodnotě `β_sys` je podmíněné touto
+volbou. Pro publikaci je proto důležité vždy uvést `ρ_0=0.7` jako převzatý
+(ne odvozený) parametr. Chce-li budoucí uživatel citlivost skutečně ověřit
+pro konkrétní konstrukci, jediná spolehlivá cesta je sweep `ρ_0` a srovnání
+s `progressiveCollapseMCFn` (nezávislý MC oracle, sekce 6) — ne spoléhat na
+jedinou publikovanou hodnotu.
 
 **Referenční ověření — 3-podlažní příhrada (Wei&Deng kap. 6.2, Fig. 4, Table 2-4):**
 16 elementů, 6 volných uzlů, 3 nezávislá horizontální zatížení `p3,p5,p7`
