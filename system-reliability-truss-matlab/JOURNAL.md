@@ -11,6 +11,60 @@ Acta Polytechnica paper, the corresponding brief and report live in
 
 ---
 
+## 2026-08-05 — in-figure ratio labels rounded to two significant figures
+
+**Driver:** `FIGURES_ROUND5_BRIEF.md`, itself downstream of M. Sýkora's
+co-author review (paper tag `feedback-1`): stop printing more precision than
+the numbers carry. `paper.tex` had already been rounded; the figures had not,
+so `fig_accumulation` said `4.07x` next to body text saying `4.1`.
+
+Formatting only — four `sprintf` format strings in `make_paper_figures.m`,
+`%.2f` → `%.1f`. Every ratio the labels print lies in [1, 10), so `%.1f` *is*
+two significant figures here; nothing was recomputed and no layout moved. The
+underlying values were captured at ten digits before and after and are
+identical (`Pf_MC/Pf_min = 4.0677737849`, `Pf_MC/Pf_sys = 1.6816305849`,
+group ratios `2.8199917413` / `1.9356557464` / `0.0257316973`,
+`sweepRatio(0.7) = 2.4189461237`).
+
+`1.68x` in `fig_accumulation` deliberately keeps two decimals and now carries a
+comment saying so. It is the graphical form of the `68 %` underestimate quoted
+verbatim in the abstract, §3.3, §4 and the conclusions; at `%.1f` it prints
+`1.7`, which reads as 70 % and contradicts all four. The rule is *two
+significant figures on every ratio label, except where the label is the
+graphical form of a percentage quoted in the text* — and it does not extend
+further than that.
+
+### The `-batch` graphics blocker has a workaround: the COM automation server
+
+The entry below records that MATLAB graphics never initialise under `-batch` or
+`-nodesktop` on these machines and that figures "have to be rendered from an
+interactive desktop". Two launch mechanisms were tried again here and both
+failed, in two *different* ways worth telling apart:
+
+- `matlab -batch` — hangs exactly as documented, at the first `axes()` inside
+  `figAccumulationFn`. Killed after 600 s, nothing written.
+- `matlab -wait -sd ... -r` (a real desktop, spawned from a shell) — the
+  process *dies silently* mid-figure instead of hanging: launcher exits 0, no
+  crash dump, no error, the `try/catch` never reached, nothing written. Also
+  note plain `matlab -r` without `-wait` returns immediately on Windows
+  (`matlab.exe` is only a launcher), so anything reading a log after it sees a
+  mid-run snapshot and the session gets reaped with the shell's process tree.
+
+What **does** work, and is not in the ruled-out list: the **COM automation
+server**. From PowerShell,
+
+    $ml = New-Object -ComObject Matlab.Application
+    $ml.Execute("run('<driver>.m')")
+    $ml.Quit()
+
+`figure()` and `axes()` both return, all three figures exported first try, and
+`Execute` hands back the command-window output as a string so the console
+diagnostics survive without a `diary`. A `diary` inside a COM session came back
+empty, so rely on the returned string. This makes headless figure regeneration
+possible again — worth trying before anything else next time.
+
+---
+
 ## 2026-08-02 — per-member resistances strengthen the effect, and relocate the bound
 
 **Driver:** `RESISTANCE_MODEL_BRIEF.md`. Report:

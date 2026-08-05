@@ -668,12 +668,21 @@ text(ax, 0.50, S.Pf_min + 0.025e-4, {'lower bound:', 'P_{f,sys} \geq P_{f,min}'}
     'FontName', 'Times New Roman', 'FontSize', 6.5, 'VerticalAlignment', 'bottom');
 
 % --- ratios ------------------------------------------------------------
+% Two significant figures on the ratio labels, following the co-author review
+% of 2026-08-05: differences in the third digit of a beta or a Pf are not
+% claimable, so printing them only invites the reader to compare noise. The
+% body text quotes 4.1 for this one.
 xa = 3.52;
 arrowPairFn(ax, xa, S.Pf_min, mc.Pf, 0.045, 0.05e-4, 'k');
-text(ax, xa, mc.Pf + 0.07e-4, sprintf('%.2f\\times', mc.Pf/S.Pf_min), ...
+text(ax, xa, mc.Pf + 0.07e-4, sprintf('%.1f\\times', mc.Pf/S.Pf_min), ...
     'FontName', 'Times New Roman', 'FontSize', 9, 'HorizontalAlignment', 'center', ...
     'VerticalAlignment', 'bottom');
 
+% DELIBERATELY still two decimals, and the only ratio label in the set that
+% is. This one is the graphical form of the "68 %" underestimate quoted
+% verbatim in the abstract, section 3.3, section 4 and the conclusions; at
+% %.1f it prints 1.7, which reads as 70 % and contradicts all four. Do not
+% "harmonise" it with the labels above and below.
 xb = 2.56;
 arrowPairFn(ax, xb, S.Pf_sys, mc.Pf, 0.032, 0.04e-4, [0.4 0.4 0.4]);
 text(ax, xb - 0.05, (S.Pf_sys + mc.Pf)/2, sprintf('%.2f\\times', mc.Pf/S.Pf_sys), ...
@@ -1067,7 +1076,9 @@ rMC = mc.Pf/S.Pf_min; rLo = mc.ciLo/S.Pf_min; rHi = mc.ciHi/S.Pf_min;
 patch(ax, 'XData', [xLim(1) xLim(2) xLim(2) xLim(1)], 'YData', [rLo rLo rHi rHi], ...
     'FaceColor', [0.78 0.78 0.78], 'EdgeColor', 'none');
 plot(ax, xLim, rMC*[1 1], '-', 'Color', 'k', 'LineWidth', 1.1);
-text(ax, 0.30, rMC + 0.13, sprintf('simulation, 10^{8} samples (%.2f\\times)', rMC), ...
+% Two significant figures on the ratio; the sample count stays, since section
+% 3.3 still states it.
+text(ax, 0.30, rMC + 0.13, sprintf('simulation, 10^{8} samples (%.1f\\times)', rMC), ...
     'FontName', 'Times New Roman', 'FontSize', 7.5, 'VerticalAlignment', 'bottom');
 
 % lower bound
@@ -1094,7 +1105,7 @@ for k = 1:numel(x)
     end
 end
 
-text(ax, x(iOp) - 0.02, y(iOp) + 0.28, sprintf('\\rho_0 = 0.7:  %.2f\\times', y(iOp)), ...
+text(ax, x(iOp) - 0.02, y(iOp) + 0.28, sprintf('\\rho_0 = 0.7:  %.1f\\times', y(iOp)), ...
     'FontName', 'Times New Roman', 'FontSize', 8, 'HorizontalAlignment', 'right', ...
     'VerticalAlignment', 'bottom');
 % Inside the shaded band but clear of both the curve (which enters it at
@@ -1165,7 +1176,10 @@ tickLbl = cell(nR, 1);
 for k = 1:nR
     if mPf(k) > 0
         r = mPf(k)/aPf(k);
-        if r >= 1, rt = sprintf('%.2f\\times under', r); else, rt = sprintf('%.0f\\times over', 1/r); end
+        % Two significant figures. The "over" branch already had them (39x);
+        % the "under" branch printed 2.82 and 1.94, and the body text quotes
+        % 2.8 for the first group.
+        if r >= 1, rt = sprintf('%.1f\\times under', r); else, rt = sprintf('%.0f\\times over', 1/r); end
     else
         rt = 'never observed';
     end
