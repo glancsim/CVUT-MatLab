@@ -37,3 +37,12 @@ zatíženími (sníh, vítr, teplota). V repozitáři už existuje:
 
 Každý soubor: kdo je → práce (problém, metoda, výsledky s čísly, přiznaná omezení) →
 průsečík s disertací → 3–5 konkrétních otázek → seznam zdrojů se stavem.
+
+## Průběh (doplněno po dokončení)
+- Všech 5 rešerší proběhlo paralelně (1 agent = 1 řečník), každá jen přes WebSearch.
+- Během práce se vyčerpal **sdílený limit 200 vyhledávání na session**. Poslední dotazy
+  u všech řečníků proto neproběhly. Co zůstalo neověřené, je v každém souboru výslovně uvedeno.
+- Program IPW 2026 (dicea.unipd.it/ipw-2026-padova/agenda) potvrzuje keynotes Köhler,
+  Sudret, O'Connor a Gardoni. Van Coile v nalezených úryvcích programu nebyl dohledán.
+  Úryvek u Sudreta uvádí termín workshopu 23.–25. 9. 2026, což je nutné ověřit.
+- Co číst jako první, až bude přístup k plným textům: 06-synteza.md §6.
