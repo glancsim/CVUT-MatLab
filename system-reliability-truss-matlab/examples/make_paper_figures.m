@@ -80,7 +80,9 @@ CATALOGUE = { ...
     'pnet_vs_mc',         @figPnetVsMcFn,          true ; ...
     'cutset_correlation', @figCutsetCorrelationFn, true ; ...
     'rho0_sensitivity',   @figRho0SensitivityFn,   true ; ...
-    'component_beta',     @figComponentBetaFn,     false};
+    'component_beta',     @figComponentBetaFn,     false; ...
+    'member_numbers',     @figMemberNumbersFn,     false; ...
+    'redistribution',     @figRedistributionFn,    false};
 
 sel = selectFiguresFn(CATALOGUE, whichFigs);
 
@@ -591,6 +593,181 @@ lg = legend(ax, hL, model.roleNames, 'Location', 'northeast', 'Box', 'on');
 styleLegendFn(lg, 7);
 
 exportFn(f, outDir, 'fig_component_beta');
+end
+
+% =========================================================================
+%  FIGURE fig_redistribution -- what redundancy buys, and where it runs out
+% =========================================================================
+function figRedistributionFn(S, outDir) %#ok<INUSL>
+% Talk figure (NMM 2026, motivation slide): one X-braced bay in three states.
+%
+%   (a) intact
+%   (b) one diagonal lost -- the bay STILL STANDS, the other diagonal carries
+%   (c) the second one lost too -- now it is a mechanism
+%
+% Step (b) is the one that matters: losing a single diagonal does not make a
+% mechanism, which is exactly the redundancy the opening claim is about. The
+% smallest cut-sets of the worked example are of size two for the same
+% reason, so this drawing is also a cut-set in three pictures.
+%
+% Deliberately a generic bay and not the worked example: the geometry of the
+% actual truss arrives four slides later and should land once, not twice.
+%
+% Exported three times, cumulatively (fig_redistribution_1 .. _3), so the
+% slide can either show all three side by side or reveal them with beamer
+% overlays without regenerating anything.
+%
+% No model data is used; this is a schematic.
+FAILED = [0.72 0.11 0.11];
+GREY   = 0.72*[1 1 1];
+GHOST  = 0.87*[1 1 1];
+BLACK  = [0 0 0];
+
+BAY = 4.0; HGT = 2.0; GAP = 5.2; RACK = 0.55;
+
+xlimits = [-0.80, 15.30];
+zlimits = [-1.60,  3.40];
+w = 12.0;
+h = w * diff(zlimits) / diff(xlimits);
+
+for shown = 1:3
+    f  = newFigFn(w, h);
+    ax = axes('Parent', f, 'Position', [0 0 1 1]); hold(ax, 'on');
+    axis(ax, 'off'); set(ax, 'DataAspectRatio', [1 1 1]);
+    xlim(ax, xlimits); ylim(ax, zlimits);
+
+    for state = 1:shown
+        x0 = (state - 1) * GAP;
+
+        switch state
+            case 1      % ---------------------------------- intact
+                bayLinesFn(ax, x0, BAY, HGT, GREY, '-', 1.1);
+                plot(ax, [x0 x0+BAY], [0 HGT], '-', 'Color', GREY, 'LineWidth', 1.1);
+                plot(ax, [x0 x0+BAY], [HGT 0], '-', 'Color', GREY, 'LineWidth', 1.1);
+                nodesAtFn(ax, x0, 0, BAY, HGT, GREY);
+                cap = '(a) intact';
+
+            case 2      % ------------------- one diagonal lost, still standing
+                bayLinesFn(ax, x0, BAY, HGT, GREY, '-', 1.1);
+                ghostDiagFn(ax, x0, BAY, HGT, GHOST, FAILED, +1);
+                plot(ax, [x0 x0+BAY], [HGT 0], '-', 'Color', BLACK, 'LineWidth', 1.9);
+                nodesAtFn(ax, x0, 0, BAY, HGT, GREY);
+                cap = '(b) one lost, the other carries';
+
+            case 3      % ------------------------------- both lost, mechanism
+                % Original outline as a ghost, the racked shape solid: the bay
+                % has become a parallelogram and can sway.
+                bayLinesFn(ax, x0, BAY, HGT, GHOST, '--', 0.9);
+                ghostDiagFn(ax, x0, BAY, HGT, GHOST, FAILED, +1);
+                ghostDiagFn(ax, x0, BAY, HGT, GHOST, FAILED, -1);
+                plot(ax, [x0 x0+BAY], [0 0], '-', 'Color', BLACK, 'LineWidth', 1.4);
+                plot(ax, [x0+RACK x0+BAY+RACK], [HGT HGT], '-', 'Color', BLACK, 'LineWidth', 1.4);
+                plot(ax, [x0 x0+RACK], [0 HGT], '-', 'Color', BLACK, 'LineWidth', 1.4);
+                plot(ax, [x0+BAY x0+BAY+RACK], [0 HGT], '-', 'Color', BLACK, 'LineWidth', 1.4);
+                nodesAtFn(ax, x0, RACK, BAY, HGT, BLACK);
+                cap = '(c) both lost: mechanism';
+        end
+
+        % --- supports ---------------------------------------------------
+        drawSupportFn(ax, x0,     0, 'pin',    0.42, GREY);
+        drawSupportFn(ax, x0+BAY, 0, 'roller', 0.42, GREY);
+
+        % --- load -------------------------------------------------------
+        xa = x0 + BAY + RACK*(state == 3);
+        plot(ax, [xa xa], [HGT+0.42, HGT+0.95], '-', 'Color', BLACK, 'LineWidth', 1.0);
+        patch(ax, 'XData', [xa, xa-0.18, xa+0.18], ...
+                  'YData', [HGT+0.42, HGT+0.78, HGT+0.78], ...
+                  'FaceColor', BLACK, 'EdgeColor', 'none');
+
+        % --- caption ----------------------------------------------------
+        text(ax, x0 + BAY/2, -1.08, cap, 'FontName', 'Times New Roman', ...
+            'FontSize', 8, 'HorizontalAlignment', 'center', ...
+            'VerticalAlignment', 'middle');
+    end
+
+    exportFn(f, outDir, sprintf('fig_redistribution_%d', shown));
+end
+end
+
+%--------------------------------------------------------------------------
+function bayLinesFn(ax, x0, bay, hgt, col, style, lw)
+% The four non-diagonal members of a bay.
+plot(ax, [x0 x0+bay], [0 0],       style, 'Color', col, 'LineWidth', lw);
+plot(ax, [x0 x0+bay], [hgt hgt],   style, 'Color', col, 'LineWidth', lw);
+plot(ax, [x0 x0],     [0 hgt],     style, 'Color', col, 'LineWidth', lw);
+plot(ax, [x0+bay x0+bay], [0 hgt], style, 'Color', col, 'LineWidth', lw);
+end
+
+%--------------------------------------------------------------------------
+function ghostDiagFn(ax, x0, bay, hgt, ghost, failed, dir)
+% A lost diagonal: faint dashed where it used to be, with the failure marked
+% in the red used for failed members throughout. dir = +1 rising, -1 falling.
+%
+% The cross goes at t = 0.75 along the member, NOT at the midpoint: the two
+% diagonals cross at the midpoint, so a marker there sits on both of them and
+% reads as though the surviving diagonal were the one that failed.
+if dir > 0
+    zz = [0 hgt];
+else
+    zz = [hgt 0];
+end
+plot(ax, [x0 x0+bay], zz, '--', 'Color', ghost, 'LineWidth', 0.9);
+t = 0.75;
+plot(ax, x0 + t*bay, zz(1) + t*(zz(2)-zz(1)), 'x', 'Color', failed, ...
+    'MarkerSize', 8, 'LineWidth', 1.8);
+end
+
+%--------------------------------------------------------------------------
+function nodesAtFn(ax, x0, shift, bay, hgt, col)
+% Node discs; the top pair is offset by `shift` so the racked bay keeps its
+% joints on the drawn members.
+plot(ax, [x0 x0+bay], [0 0], 'o', 'MarkerSize', 3.2, ...
+    'MarkerFaceColor', col, 'MarkerEdgeColor', col, 'LineStyle', 'none');
+plot(ax, [x0+shift x0+bay+shift], [hgt hgt], 'o', 'MarkerSize', 3.2, ...
+    'MarkerFaceColor', col, 'MarkerEdgeColor', col, 'LineStyle', 'none');
+end
+
+% =========================================================================
+%  FIGURE fig_member_numbers -- a bare numbering key
+% =========================================================================
+function figMemberNumbersFn(S, outDir)
+% Talk figure (NMM 2026, slide 8): the member numbering, so that "members 11
+% and 16" spoken aloud has somewhere to land. Supports are kept because
+% without them the outline floats; loads, dimensions and highlighting are not
+% -- fig_geometry carries those three slides earlier, and repeating them here
+% would make the audience re-read a drawing they have already parsed.
+model = S.model; nodes = model.nodes; mem = model.members;
+GREY = 0.62*[1 1 1];
+INK  = [0 0 0];
+
+xlimits = [-0.55, 12.55];
+zlimits = [-0.95,  2.55];
+w = 5.6;                        % small: this is a key, not a figure
+h = w * diff(zlimits) / diff(xlimits);
+
+f  = newFigFn(w, h);
+ax = axes('Parent', f, 'Position', [0 0 1 1]); hold(ax, 'on');
+axis(ax, 'off'); set(ax, 'DataAspectRatio', [1 1 1]);
+xlim(ax, xlimits); ylim(ax, zlimits);
+
+drawTrussFn(ax, model, [], 0.9, 0.9, GREY, GREY);
+drawSupportFn(ax, nodes.x(1), nodes.z(1), 'pin',    0.42, GREY);
+drawSupportFn(ax, nodes.x(4), nodes.z(4), 'roller', 0.42, GREY);
+
+% Diagonals are labelled at t = 0.30 rather than the midpoint: both
+% diagonals of an X-braced panel share a midpoint.
+for p = 1:mem.nmembers
+    xh = nodes.x(mem.nodesHead(p)); zh = nodes.z(mem.nodesHead(p));
+    xe = nodes.x(mem.nodesEnd(p));  ze = nodes.z(mem.nodesEnd(p));
+    isDiag = (xh ~= xe) && (zh ~= ze);
+    t = 0.30 * isDiag + 0.50 * ~isDiag;
+    text(ax, xh + t*(xe-xh), zh + t*(ze-zh), sprintf('%d', p), ...
+        'FontName', 'Times New Roman', 'FontSize', 8, 'Color', INK, ...
+        'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+        'BackgroundColor', 'w', 'Margin', 0.5);
+end
+
+exportFn(f, outDir, 'fig_member_numbers');
 end
 
 % =========================================================================
