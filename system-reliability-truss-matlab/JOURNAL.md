@@ -11,6 +11,74 @@ Acta Polytechnica paper, the corresponding brief and report live in
 
 ---
 
+## 2026-10-17 — a real structure: lattice portal frame (Polák AT / Montcome)
+
+**Driver:** the committee wants an existing structure; roof trusses are
+statically determinate. A lattice portal frame is indeterminate without any
+X-bracing. New files: `examples/polakFrameModelFn.m` (parametric model),
+`examples/example_polak_frame.m` (driver, runs under `-batch`, ~11 min).
+Topology was **read off the manufacturer's schematic** (no drawings yet):
+Pratt rafter with posts, Warren column zigzag, eave strut + corner diagonal
+O1-T0, tapered foot ending in one pin. Montcome = same frame with two pinned
+branch feet (`taperedFoot = false`), described in words only. All dimensions
+(span 15 m, eaves 5 m, pitch 15°, depth 0.6 m), loads and FSD sections are
+placeholders.
+
+**Cut-sets (topology only — histograms identical when span, depth, eaves
+height and pitch are all changed: 3 geometries tapered, 2 two-point):**
+
+| variant | members | gH | cut-sets by size 1..gH+1 |
+|---|---|---|---|
+| AT, tapered foot | 129 | 1 | [4, 7750] |
+| two-point base | 131 | 3 | [4, 549, 16 636, 5 515 735] |
+| two-point base, Warren rafter | 135 | 3 | [4, 591, 18 308, 6 234 047] |
+| UT arched (crude), tapered | 145 | 1 | [4, 9870] |
+
+- gH = 1 tapered: every member except four carries the single self-stress
+  (horizontal thrust), so every pair of them is a cut-set — removing any single
+  member leaves a stable statically determinate frame, the 7750 = C(125, 2).
+- The 4 necessary bars are the two bars meeting at the **outer eaves corner
+  node** (rafter top chord C_out-T0, column outer chord C_out-O1), both sides:
+  as drawn the corner diagonal runs O1-T0, so C_out is a two-bar node (a dyad,
+  zero self-stress). In the real frame the chords are continuous through the
+  corner — an artefact of the pin-jointed idealisation. `cornerDiagonal =
+  'Cout-Cin'` moves it to rafter post 0 instead (sizes [2, 8001]).
+- Degenerate geometry does matter: flat roof (pitch 0) makes every rafter web
+  member necessary (51 necessary bars) because the thrust then has no shear
+  component along the rafter. Pratt column (horizontal struts) makes the foot
+  strut necessary.
+- Two-point base, size 2 = two "shear releases" that slide the same way: two
+  web members of one rafter half (420), or two column diagonals in the same
+  column or one in each column = sway (120).
+
+**Trap — size-(gH+1) explosion.** `nullSpaceCutSetsFn` enumerates every
+k-subset and dedupes in O(q²): a 59-member two-point frame took 424 s for
+200 k sets, the full one (5.5 M) is out of reach. Added a counting-only path
+(`computeCutSets = 'count'`, local `cutSetSizeCount`): same rank tests and
+tolerances, vectorised screening, size-4 counted without being listed.
+Matches the enumeration exactly on four small frames ([4 35 426 49144],
+[4 45 630 71724], [4 79 1210 199644], [4 93 1550 263804]).
+
+**Reliability, placeholder design** (G 2.4 kN/m COV 0.10 + S 2.0 kN/m COV 0.25
+on the roof top chord, 3 FSD groups chords / rafter web / column web,
+`resMean = f_y·A`, COV_R 0.08, η = 0, ρ0 = 0.7, rng(42)):
+
+- AT: `beta_min = 3.7349` (six knee members tied: column inner chord 1, eave
+  strut, corner diagonal — one per group), `beta_sys = 3.4498`,
+  `Pf_sys = 2.805e-4` = **2.99 × Pf_min**, 6 PNET groups, 552 s, reproduced
+  by a second independent run. The three leading groups are "knee member →
+  rafter chord" with β_p within 0.003 of β_min: once a knee member goes, the
+  determinate remainder fails almost surely, so gH = 1 buys nothing and three
+  independent resistance groups add up. Same accumulation story as the Warren
+  paper, stronger.
+- Two-point base: **not run in full.** 16 636 size-3 sets ≈ 40 min (0.144 s
+  each, measured), size 4 infeasible. Truncated to size ≤ 2 (553 sets, 39 s)
+  every group has β ≥ 8.38, so `pnetSystemReliabilityFn` prints `beta_sys =
+  Inf` (1 − Π(1 − Pf) rounds to 0) — an artefact; the dominant two-point paths
+  have ≥ 3 members. `beta_min = 3.7349` as for AT.
+
+---
+
 ## 2026-08-05 — in-figure ratio labels rounded to two significant figures
 
 **Driver:** `FIGURES_ROUND5_BRIEF.md`, itself downstream of M. Sýkora's
